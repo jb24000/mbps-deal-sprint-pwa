@@ -1,9 +1,9 @@
 /* eslint-disable no-restricted-globals */
-const VERSION = 'v1.0.1';
-const CACHE = `pds-${VERSION}`;
+const VERSION = 'v1.1.0';
+const CACHE = `mbps-ds-${VERSION}`;
 const ASSETS = [
   'index.html','style.css','app.js','pwa.js','manifest.json',
-  'icons/icon-192.png','icons/icon-512.png'
+  'icons/icon-192.png','icons/icon-512.png','icons/apple-180.png','icons/logo-192.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -14,7 +14,7 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.filter(k => k.startsWith('pds-') && k !== CACHE).map(k => caches.delete(k)))),
+    caches.keys().then(keys => Promise.all(keys.filter(k => k.startsWith('mbps-ds-') && k !== CACHE).map(k => caches.delete(k))))
   );
   self.clients.claim();
 });
@@ -25,7 +25,7 @@ self.addEventListener('fetch', (event) => {
   // Only handle GET and same-origin
   if (req.method !== 'GET' || url.origin !== self.location.origin) return;
 
-  // Try cache first, then network; fall back to index.html for navigations
+  // Cache-first; fallback to index for navigations
   event.respondWith(
     caches.match(req).then(cached => {
       if (cached) return cached;
