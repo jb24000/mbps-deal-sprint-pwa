@@ -1,12 +1,12 @@
 {
   "name": "MB Property Solutions \u2014 Deal Sprint",
   "short_name": "MB Deal Sprint",
-  "description": "7-Day sprint to land a wholesale deal using Privy. Offline-first PWA.",
+  "description": "7-Day wholesale deal sprint. Offline-first PWA.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#0b132e",
-  "theme_color": "#0ea5e9",
+  "theme_color": "#00a8ff",
   "orientation": "portrait",
   "icons": [
     {
@@ -20,6 +20,11 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "icons/apple-180.png",
+      "sizes": "180x180",
+      "type": "image/png"
     }
   ]
 }
