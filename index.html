@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>MB Property Solutions — Deal Sprint</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0ea5e9">
+  <meta name="description" content="7-Day sprint to land a wholesale deal using Privy. Checklists, leads, buyers, scripts, MAO calculator. Works offline.">
+
+  <!-- iOS / Android full-screen -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Deal Sprint">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="icons/apple-180.png">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="left">
+      <img src="icons/logo-192.png" alt="MB Property Solutions" style="height:36px;width:36px;border-radius:8px;margin-right:8px;vertical-align:middle;object-fit:contain;" />
+      <h1>MB Property Solutions — Deal Sprint</h1>
+      <span id="online" class="badge online">Online</span>
+      <span id="offline" class="badge offline" hidden>Offline</span>
+    </div>
+    <nav class="tabs">
+      <button data-tab="dashboard" class="active">Dashboard</button>
+      <button data-tab="leads">Leads</button>
+      <button data-tab="buyers">Buyers</button>
+      <button data-tab="scripts">Scripts</button>
+      <button data-tab="calculator">Calculator</button>
+      <button data-tab="settings">Settings</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Dashboard -->
+    <section id="dashboard" class="tab active">
+      <div class="card">
+        <h2>7-Day Sprint Plan</h2>
+        <p class="muted">Follow these daily tasks to land a deal in a week. Tap to check off. Progress saves offline.</p>
+        <div id="progressWrap" class="progress-wrap">
+          <div id="progressBar" class="progress-bar"></div>
+        </div>
+        <div id="days" class="days"></div>
+        <div class="hint">Tip: In Privy, use <strong>Investor Activity</strong> to pick hot ZIPs, set <strong>Saved Searches + Alerts</strong>, and comp with <strong>Comparative Search</strong> / Live CMA.</div>
+      </div>
+    </section>
+
+    <!-- Leads -->
+    <section id="leads" class="tab">
+      <div class="card">
+        <h2>Leads</h2>
+        <form id="leadForm" class="grid">
+          <input type="hidden" name="id" id="leadId">
+          <label>Address<input name="address" id="leadAddress" placeholder="123 Main St" required></label>
+          <label>City<input name="city" id="leadCity" placeholder="Greensboro"></label>
+          <label>ZIP<input name="zip" id="leadZip" placeholder="27401"></label>
+          <label>List Price ($)<input name="list" id="leadList" type="number" inputmode="decimal" placeholder="150000"></label>
+          <label>ARV ($)<input name="arv" id="leadArv" type="number" inputmode="decimal" placeholder="250000"></label>
+          <label>Repairs ($)<input name="repairs" id="leadRepairs" type="number" inputmode="decimal" placeholder="40000"></label>
+          <label>Offer ($)<input name="offer" id="leadOffer" type="number" inputmode="decimal" placeholder="145000"></label>
+          <label>Agent Name<input name="agent" id="leadAgent" placeholder="Jane Doe"></label>
+          <label>Agent Phone<input name="phone" id="leadPhone" placeholder="(555) 123-4567"></label>
+          <label>Status
+            <select name="status" id="leadStatus">
+              <option value="New">New</option>
+              <option value="Called">Called</option>
+              <option value="Offered">Offered</option>
+              <option value="Counter">Counter</option>
+              <option value="Accepted">Accepted</option>
+              <option value="Dead">Dead</option>
+            </select>
+          </label>
+          <label class="full">Notes<textarea name="notes" id="leadNotes" rows="3" placeholder="Comp notes, DOM, price drops, access..."></textarea></label>
+          <div class="actions full">
+            <button type="submit" class="btn primary">Save Lead</button>
+            <button type="button" id="leadReset" class="btn">Reset</button>
+            <button type="button" id="exportLeads" class="btn">Export CSV</button>
+          </div>
+        </form>
+      </div>
+      <div class="card">
+        <div class="table-actions">
+          <input id="leadSearch" placeholder="Search leads...">
+        </div>
+        <table id="leadTable">
+          <thead>
+            <tr>
+              <th>Address</th><th>ZIP</th><th>List</th><th>ARV</th><th>Repairs</th><th>MAO</th><th>Offer</th><th>Status</th><th>Agent</th><th></th><th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Buyers -->
+    <section id="buyers" class="tab">
+      <div class="card">
+        <h2>Buyers</h2>
+        <form id="buyerForm" class="grid">
+          <input type="hidden" id="buyerId">
+          <label>Name<input id="buyerName" placeholder="Active Investor LLC" required></label>
+          <label>Email<input id="buyerEmail" placeholder="investor@example.com"></label>
+          <label>Phone<input id="buyerPhone" placeholder="(555) 987-6543"></label>
+          <label>Target ZIPs<input id="buyerZips" placeholder="27401, 27405"></label>
+          <label>Criteria<input id="buyerCriteria" placeholder="SFR, ARV 150–350k, light/medium rehab"></label>
+          <label class="full">Notes<textarea id="buyerNotes" rows="2"></textarea></label>
+          <div class="actions full">
+            <button type="submit" class="btn primary">Save Buyer</button>
+            <button type="button" id="buyerReset" class="btn">Reset</button>
+            <button type="button" id="exportBuyers" class="btn">Export CSV</button>
+          </div>
+        </form>
+      </div>
+      <div class="card">
+        <div class="table-actions">
+          <input id="buyerSearch" placeholder="Search buyers...">
+        </div>
+        <table id="buyerTable">
+          <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>ZIPs</th><th>Criteria</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Scripts -->
+    <section id="scripts" class="tab">
+      <div class="card">
+        <h2>Agent Script (Call)</h2>
+        <pre class="script" id="scriptAgent">Hi [Name], Melvin here. I buy and assign light-to-medium rehabs in [area]. I’m reviewing [123 Main St]. Based on comps, my MAO is around $___ all-cash, quick close, as-is. Does the seller have flexibility on price and terms if we can move fast?
+If we’re close, I’ll send an offer today with proof of funds and short DD.</pre>
+        <button class="btn" data-copy="scriptAgent">Copy</button>
+      </div>
+      <div class="card">
+        <h2>Buyer Blast</h2>
+        <pre class="script" id="scriptBuyer">Off-market pricing on an on-market deal (MLS): [123 Main, ZIP]
+ARV: $___ | Repairs: $___ (see attached comp screenshots)
+Price: $___ (assignment) | Access: [lockbox/agent] | Close: ≤10 days
+Reply ‘INTERESTED’ for walkthrough booking today.</pre>
+        <button class="btn" data-copy="scriptBuyer">Copy</button>
+      </div>
+      <div class="card">
+        <h2>Follow-Up</h2>
+        <pre class="script" id="scriptFollow">Circling back on 123 Main—any guidance from the seller? I can tighten timelines and keep it as-is if we can land at $___ and sign today.</pre>
+        <button class="btn" data-copy="scriptFollow">Copy</button>
+      </div>
+    </section>
+
+    <!-- Calculator -->
+    <section id="calculator" class="tab">
+      <div class="card">
+        <h2>MAO Calculator</h2>
+        <form id="calcForm" class="grid">
+          <label>ARV ($)<input id="calcArv" type="number" inputmode="decimal" placeholder="250000"></label>
+          <label>Repairs ($)<input id="calcRepairs" type="number" inputmode="decimal" placeholder="40000"></label>
+          <label>Percent of ARV<input id="calcPercent" type="number" step="0.01" min="0" max="1" placeholder="0.70"></label>
+          <label>Assignment Fee ($)<input id="calcFee" type="number" inputmode="decimal" placeholder="10000"></label>
+          <div class="actions full">
+            <button class="btn primary" type="submit">Compute MAO</button>
+            <span id="calcOut" class="calc-out"></span>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- Settings -->
+    <section id="settings" class="tab">
+      <div class="card">
+        <h2>Settings</h2>
+        <form id="settingsForm" class="grid">
+          <label>Company Name<input id="setCompany" placeholder="MB Property Solutions"></label>
+          <label>Sender Name<input id="setSenderName" placeholder="Your name"></label>
+          <label>Reply-To Email<input id="setReplyEmail" placeholder="you@example.com"></label>
+          <label>Phone<input id="setPhone" placeholder="(xxx) xxx-xxxx"></label>
+          <label class="full"><input type="checkbox" id="setZipFilter" checked> Only email buyers whose target ZIPs include the lead's ZIP</label>
+
+          <label>Target ZIPs (comma-separated)<input id="setZips" placeholder="27401, 27405"></label>
+          <label>Default % of ARV<input id="setPercent" type="number" step="0.01" min="0" max="1" placeholder="0.70"></label>
+          <label>Default Assignment Fee ($)<input id="setFee" type="number" inputmode="decimal" placeholder="10000"></label>
+          <label>Daily Offer Target<input id="setOffers" type="number" placeholder="10"></label>
+          <div class="actions full">
+            <button class="btn primary" type="submit">Save Settings</button>
+            <button class="btn" type="button" id="resetAll">Reset All Data</button>
+          </div>
+        </form>
+      </div>
+      <div class="card">
+        <p class="muted">Disclaimer: Numbers are quick estimates. Confirm local laws (assignment vs double-close) with your attorney/title.</p>
+      </div>
+    </section>
+  </main>
+
+  <div id="installBanner" class="install-banner" hidden>
+    <div>Install this app for full-screen offline access.</div>
+    <div class="install-actions">
+      <button id="installBtn" class="btn primary">Install</button>
+      <button id="dismissInstall" class="btn">Not now</button>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <small>© <span id="year"></span> Deal Sprint • Offline-ready PWA</small>
+  </footer>
+
+  <script src="app.js"></script>
+  <script src="pwa.js"></script>
+</body>
+</html>
