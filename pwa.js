@@ -1,8 +1,7 @@
-// Register Service Worker from root scope for GH Pages / any host
+// Register Service Worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    const sw = new URL('service-worker.js', window.location.href).pathname;
-    navigator.serviceWorker.register(sw).catch(()=>{});
+    navigator.serviceWorker.register('service-worker.js').catch(()=>{});
   });
 }
 
@@ -17,7 +16,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
   deferredPrompt = e;
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
   if (isStandalone) return;
-  banner.hidden = false;
+  if (banner) banner.hidden = false;
 });
 
 installBtn?.addEventListener('click', async () => {
@@ -25,9 +24,9 @@ installBtn?.addEventListener('click', async () => {
   deferredPrompt.prompt();
   await deferredPrompt.userChoice;
   deferredPrompt = null;
-  banner.hidden = true;
+  if (banner) banner.hidden = true;
 });
 
 dismissBtn?.addEventListener('click', () => {
-  banner.hidden = true;
+  if (banner) banner.hidden = true;
 });
