@@ -3,246 +3,346 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>MB Property Solutions — Deal Sprint</title>
+  <title>MBPS Deal Sprint (PWA)</title>
 
-  <!-- PWA -->
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#00a8ff">
-  <meta name="description" content="MB Property Solutions: 7-Day wholesale deal sprint. Leads, buyers, scripts, MAO calculator. Works offline as a PWA.">
+  <!-- PWA basics -->
+  <meta name="theme-color" content="#0ea5e9" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="manifest.json" />
 
-  <!-- iOS / Android full-screen -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="MB Deal Sprint">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="apple-touch-icon" href="icons/apple-180.png">
+  <!-- Icons (update paths/sizes to your real files) -->
+  <link rel="icon" sizes="192x192" href="static/icons/icon-192.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="static/icons/icon-192.png" />
 
-  <link rel="stylesheet" href="style.css">
+  <style>
+    :root { --brand:#0ea5e9; --brand-700:#0369a1; --bg:#0b1020; --card:#121a34; --text:#e6f1ff; --muted:#a9b3c9; }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; background: linear-gradient(160deg, #0b1020, #101a3b);
+      color: var(--text); font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    }
+
+    .container { max-width: 1100px; margin: 0 auto; padding: env(safe-area-inset-top) 16px 24px; }
+    header {
+      position: sticky; top: 0; z-index: 20; backdrop-filter: blur(8px);
+      background: rgba(11,16,32,0.75); border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .bar { display:flex; align-items:center; justify-content:space-between; gap:12px; padding: 12px 6px; }
+    .brand { display:flex; align-items:center; gap:10px; }
+    .brand img { width:36px; height:36px; border-radius:10px; }
+    .brand h1 { font-size: 16px; margin:0; letter-spacing: .4px; }
+    .pill { font-size:12px; color:#9cc9ff; background:#0b2a4a; padding:4px 8px; border:1px solid #174a7a; border-radius:999px; }
+
+    main { padding-top: 10px; display:grid; gap:16px; }
+    .card {
+      background: var(--card); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px; padding: 16px;
+    }
+    .row { display:grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+    .col-4 { grid-column: span 4; }
+    .col-8 { grid-column: span 8; }
+    .col-12 { grid-column: span 12; }
+    @media (max-width: 900px) { .col-4, .col-8 { grid-column: span 12; } }
+
+    .btn {
+      appearance: none; border: 1px solid rgba(255,255,255,.12);
+      background: linear-gradient(180deg, var(--brand), var(--brand-700));
+      color: #fff; padding: 12px 16px; border-radius: 12px; font-weight: 600; cursor: pointer;
+      transition: transform .05s ease, filter .15s ease;
+    }
+    .btn:active { transform: translateY(1px) scale(.99); }
+    .btn.secondary { background: #192240; border-color: rgba(255,255,255,.1); }
+    .btn.block { width: 100%; }
+
+    input, textarea, select {
+      width: 100%; padding: 10px 12px; border-radius: 10px; background: #0c1430; color: var(--text);
+      border: 1px solid rgba(255,255,255,.08); outline: none;
+    }
+    label { font-size: 12px; color: var(--muted); display:block; margin-bottom: 6px; }
+
+    /* ===== Modal (starts hidden!) ===== */
+    .modal {
+      position: fixed; inset: 0; display: none; /* critical: start hidden */
+      align-items: center; justify-content: center; z-index: 50;
+    }
+    .modal.show { display: flex; }
+    .backdrop {
+      position: absolute; inset: 0; background: rgba(0, 8, 24, .65);
+      backdrop-filter: blur(4px);
+    }
+    .modal-card {
+      position: relative; z-index: 1; width: min(720px, 92vw);
+      background: #0f1732; border: 1px solid rgba(255,255,255,.08);
+      border-radius: 16px; padding: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.45);
+      max-height: 85vh; overflow: auto;
+    }
+    .modal-header { display:flex; align-items:center; justify-content:space-between; gap: 10px; margin-bottom: 10px; }
+    .modal-title { margin:0; font-size: 16px; }
+    .close-btn {
+      appearance:none; border:none; background:transparent; color:#b9c6de; font-size:22px; cursor:pointer; line-height:1;
+    }
+
+    /* Utility */
+    .grid-2 { display:grid; gap:12px; grid-template-columns: 1fr 1fr; }
+    @media (max-width:700px){ .grid-2 { grid-template-columns: 1fr; } }
+    .muted { color: var(--muted); font-size: 12px; }
+  </style>
 </head>
 <body>
-  <header class="app-header">
-    <div class="left">
-      <img src="icons/logo-192.png" alt="MB Property Solutions" style="height:36px;width:36px;border-radius:8px;margin-right:8px;vertical-align:middle;object-fit:contain;" />
-      <h1>MB Property Solutions — Deal Sprint</h1>
-      <span id="online" class="badge online">Online</span>
-      <span id="offline" class="badge offline" hidden>Offline</span>
+  <header>
+    <div class="container bar">
+      <div class="brand">
+        <img src="static/icons/icon-192.png" alt="logo" />
+        <div>
+          <h1>MBPS Deal Sprint</h1>
+          <div class="pill">Installable PWA</div>
+        </div>
+      </div>
+
+      <!-- Primary action that USED to auto-open; now strictly click-driven -->
+      <button id="openEmailBtn" class="btn">Send Outreach</button>
     </div>
-    <nav class="tabs">
-      <button data-tab="dashboard" class="active">Dashboard</button>
-      <button data-tab="leads">Leads</button>
-      <button data-tab="buyers">Buyers</button>
-      <button data-tab="scripts">Scripts</button>
-      <button data-tab="calculator">Calculator</button>
-      <button data-tab="settings">Settings</button>
-    </nav>
   </header>
 
-  <main>
-    <!-- Dashboard -->
-    <section id="dashboard" class="tab active">
-      <div class="card">
-        <h2>7-Day Sprint Plan</h2>
-        <p class="muted">Follow these daily tasks to land a deal in a week. Tap to check off. Progress saves offline.</p>
-        <div id="progressWrap" class="progress-wrap">
-          <div id="progressBar" class="progress-bar"></div>
-        </div>
-        <div id="days" class="days"></div>
-        <div class="hint">Tip: In Privy, use <strong>Investor Activity</strong> to pick hot ZIPs, set <strong>Saved Searches + Alerts</strong>, and comp with <strong>Comparative Search</strong> / Live CMA.</div>
-      </div>
-    </section>
-
-    <!-- Leads -->
-    <section id="leads" class="tab">
-      <div class="card">
-        <h2>Leads</h2>
-        <form id="leadForm" class="grid">
-          <input type="hidden" name="id" id="leadId">
-          <label>Address<input name="address" id="leadAddress" placeholder="123 Main St" required></label>
-          <label>City<input name="city" id="leadCity" placeholder="Greensboro"></label>
-          <label>ZIP<input name="zip" id="leadZip" placeholder="27401"></label>
-          <label>List Price ($)<input name="list" id="leadList" type="number" inputmode="decimal" placeholder="150000"></label>
-          <label>ARV ($)<input name="arv" id="leadArv" type="number" inputmode="decimal" placeholder="250000"></label>
-          <label>Repairs ($)<input name="repairs" id="leadRepairs" type="number" inputmode="decimal" placeholder="40000"></label>
-          <label>Offer ($)<input name="offer" id="leadOffer" type="number" inputmode="decimal" placeholder="145000"></label>
-          <label>Agent Name<input name="agent" id="leadAgent" placeholder="Jane Doe"></label>
-          <label>Agent Phone<input name="phone" id="leadPhone" placeholder="(555) 123-4567"></label>
-          <label>Photos Link (optional)<input name="photos" id="leadPhotos" placeholder="https://drive.google.com/..."></label>
-          <label>Comps Link (optional)<input name="comps" id="leadComps" placeholder="https://app.privy.pro/..."></label>
-          <label>Status
-            <select name="status" id="leadStatus">
-              <option value="New">New</option>
-              <option value="Called">Called</option>
-              <option value="Offered">Offered</option>
-              <option value="Counter">Counter</option>
-              <option value="Accepted">Accepted</option>
-              <option value="Dead">Dead</option>
+  <div class="container">
+    <main>
+      <!-- Example dashboard / filters -->
+      <section class="card">
+        <div class="row">
+          <div class="col-4">
+            <label for="market">Market</label>
+            <select id="market">
+              <option value="">All</option>
+              <option>Greensboro</option>
+              <option>Durham</option>
+              <option>Raleigh</option>
             </select>
-          </label>
-          <label class="full">Notes<textarea name="notes" id="leadNotes" rows="3" placeholder="Comp notes, DOM, price drops, access..."></textarea></label>
-          <div class="actions full">
-            <button type="submit" class="btn primary">Save Lead</button>
-            <button type="button" id="leadReset" class="btn">Reset</button>
-            <button type="button" id="exportLeads" class="btn">Export CSV</button>
           </div>
-        </form>
-      </div>
-      <div class="card">
-        <div class="table-actions">
-          <input id="leadSearch" placeholder="Search leads...">
+          <div class="col-4">
+            <label for="status">Deal Status</label>
+            <select id="status">
+              <option value="">Any</option>
+              <option>New</option>
+              <option>Hot</option>
+              <option>Follow-up</option>
+            </select>
+          </div>
+          <div class="col-4" style="display:flex; align-items:end;">
+            <button class="btn secondary block" id="refreshBtn">Refresh</button>
+          </div>
         </div>
-        <table id="leadTable">
-          <thead>
-            <tr>
-              <th>Address</th><th>ZIP</th><th>List</th><th>ARV</th><th>Repairs</th><th>MAO</th><th>Offer</th><th>Status</th><th>Agent</th><th></th><th></th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </section>
+      </section>
 
-    <!-- Buyers -->
-    <section id="buyers" class="tab">
-      <div class="card">
-        <h2>Buyers</h2>
-        <form id="buyerForm" class="grid">
-          <input type="hidden" id="buyerId">
-          <label>Name<input id="buyerName" placeholder="Active Investor LLC" required></label>
-          <label>Email<input id="buyerEmail" placeholder="investor@example.com"></label>
-          <label>Phone<input id="buyerPhone" placeholder="(555) 987-6543"></label>
-          <label>Target ZIPs<input id="buyerZips" placeholder="27401, 27405"></label>
-          <label>Criteria<input id="buyerCriteria" placeholder="SFR, ARV 150–350k, light/medium rehab"></label>
-          <label class="full">Notes<textarea id="buyerNotes" rows="2"></textarea></label>
-          <div class="actions full">
-            <button type="submit" class="btn primary">Save Buyer</button>
-            <button type="button" id="buyerReset" class="btn">Reset</button>
-            <button type="button" id="exportBuyers" class="btn">Export CSV</button>
+      <!-- Comps / pipeline -->
+      <section class="row">
+        <div class="col-8">
+          <div class="card">
+            <h3 style="margin-top:0;">Pipeline</h3>
+            <div id="pipelineList" class="muted">Your properties and leads will appear here…</div>
           </div>
-        </form>
-      </div>
-      <div class="card">
-        <div class="table-actions">
-          <input id="buyerSearch" placeholder="Search buyers...">
         </div>
-        <table id="buyerTable">
-          <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>ZIPs</th><th>Criteria</th><th></th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- Scripts -->
-    <section id="scripts" class="tab">
-      <div class="card">
-        <h2>Agent Script (Call)</h2>
-        <pre class="script" id="scriptAgent">Hi [Name], Melvin here. I buy and assign light-to-medium rehabs in [area]. I’m reviewing [123 Main St]. Based on comps, my MAO is around $___ all-cash, quick close, as-is. Does the seller have flexibility on price and terms if we can move fast?
-If we’re close, I’ll send an offer today with proof of funds and short DD.</pre>
-        <button class="btn" data-copy="scriptAgent">Copy</button>
-      </div>
-      <div class="card">
-        <h2>Buyer Blast</h2>
-        <pre class="script" id="scriptBuyer">Off-market pricing on an on-market deal (MLS): [123 Main, ZIP]
-ARV: $___ | Repairs: $___ (see attached comp screenshots)
-Price: $___ (assignment) | Access: [lockbox/agent] | Close: ≤10 days
-Reply ‘INTERESTED’ for walkthrough booking today.</pre>
-        <button class="btn" data-copy="scriptBuyer">Copy</button>
-      </div>
-      <div class="card">
-        <h2>Follow-Up</h2>
-        <pre class="script" id="scriptFollow">Circling back on 123 Main—any guidance from the seller? I can tighten timelines and keep it as-is if we can land at $___ and sign today.</pre>
-        <button class="btn" data-copy="scriptFollow">Copy</button>
-      </div>
-    </section>
-
-    <!-- Calculator -->
-    <section id="calculator" class="tab">
-      <div class="card">
-        <h2>MAO Calculator</h2>
-        <form id="calcForm" class="grid">
-          <label>ARV ($)<input id="calcArv" type="number" inputmode="decimal" placeholder="250000"></label>
-          <label>Repairs ($)<input id="calcRepairs" type="number" inputmode="decimal" placeholder="40000"></label>
-          <label>Percent of ARV<input id="calcPercent" type="number" step="0.01" min="0" max="1" placeholder="0.70"></label>
-          <label>Assignment Fee ($)<input id="calcFee" type="number" inputmode="decimal" placeholder="10000"></label>
-          <div class="actions full">
-            <button class="btn primary" type="submit">Compute MAO</button>
-            <span id="calcOut" class="calc-out"></span>
+        <div class="col-4">
+          <div class="card">
+            <h3 style="margin-top:0;">Quick Actions</h3>
+            <div style="display:grid; gap:10px;">
+              <button class="btn" id="quickEmail">Compose Email</button>
+              <button class="btn" id="quickSMS">Compose Text</button>
+              <button class="btn secondary" id="quickPreview">Preview Last Message</button>
+            </div>
           </div>
-        </form>
-      </div>
-    </section>
+        </div>
+      </section>
+    </main>
+  </div>
 
-    <!-- Settings -->
-    <section id="settings" class="tab">
-      <div class="card">
-        <h2>Settings</h2>
-        <form id="settingsForm" class="grid">
-          <label>Company Name<input id="setCompany" placeholder="MB Property Solutions"></label>
-          <label>Sender Name<input id="setSenderName" placeholder="Your name"></label>
-          <label>Reply-To Email<input id="setReplyEmail" placeholder="you@example.com"></label>
-          <label>Phone<input id="setPhone" placeholder="(xxx) xxx-xxxx"></label>
-          <label>Target ZIPs (comma-separated)<input id="setZips" placeholder="27401, 27405"></label>
-          <label>Default % of ARV<input id="setPercent" type="number" step="0.01" min="0" max="1" placeholder="0.70"></label>
-          <label>Default Assignment Fee ($)<input id="setFee" type="number" inputmode="decimal" placeholder="10000"></label>
-          <label>Daily Offer Target<input id="setOffers" type="number" placeholder="10"></label>
-          <label class="full"><input type="checkbox" id="setZipFilter" checked> Only email/text buyers whose target ZIPs include the lead's ZIP</label>
-          <div class="actions full">
-            <button class="btn primary" type="submit">Save Settings</button>
-            <button class="btn" type="button" id="resetAll">Reset All Data</button>
-          </div>
-        </form>
-      </div>
-      <div class="card">
-        <p class="muted">Disclaimer: Numbers are quick estimates. Confirm local laws (assignment vs double-close) with your attorney/title.</p>
-      </div>
-    </section>
-  </main>
-
-  <!-- Preview Modal -->
-  <div id="previewModal" class="modal" hidden>
-    <div class="modal-card">
+  <!-- ===== Outreach Modal ===== -->
+  <div id="emailModal" class="modal" aria-hidden="true" aria-modal="true" role="dialog">
+    <div class="backdrop" data-close="backdrop"></div>
+    <div class="modal-card" role="document">
       <div class="modal-header">
-        <h3>Preview Outreach</h3>
-        <button id="modalClose" class="btn">✕</button>
+        <h2 class="modal-title">Email / Text Outreach</h2>
+        <button id="closeEmailBtn" class="close-btn" aria-label="Close">&times;</button>
       </div>
-      <div class="modal-body">
-        <div class="tabs" style="margin-bottom:8px">
-          <button data-mtab="email" class="active">Email</button>
-          <button data-mtab="sms">Text/SMS</button>
+
+      <div class="grid-2">
+        <div>
+          <label for="recipient">To</label>
+          <input id="recipient" type="text" placeholder="name@email.com or (555) 123-4567" />
         </div>
-        <div id="modalEmail" class="mtab active">
-          <div class="grid">
-            <label class="full">Subject
-              <input id="previewSubject">
-            </label>
-            <label class="full">Body
-              <textarea id="previewBody" rows="8"></textarea>
-            </label>
-          </div>
-          <div class="actions" style="margin-top:8px">
-            <button id="openEmail" class="btn primary">Open Email</button>
-            <button id="copyEmail" class="btn">Copy Email</button>
-          </div>
+        <div>
+          <label for="channel">Channel</label>
+          <select id="channel">
+            <option value="email">Email</option>
+            <option value="sms">Text (SMS)</option>
+          </select>
         </div>
-        <div id="modalSMS" class="mtab">
-          <div class="grid">
-            <label class="full">Message
-              <textarea id="previewSMS" rows="8"></textarea>
-            </label>
-          </div>
-          <div class="actions" style="margin-top:8px">
-            <button id="openSMS" class="btn primary">Open Messages</button>
-            <button id="copySMS" class="btn">Copy SMS</button>
-          </div>
-        </div>
+      </div>
+
+      <div style="margin-top:12px;">
+        <label for="subject">Subject (email only)</label>
+        <input id="subject" type="text" placeholder="Quick question about your property on Main St" />
+      </div>
+
+      <div style="margin-top:12px;">
+        <label for="messageBody">Message</label>
+        <textarea id="messageBody" rows="8" placeholder="Hi {owner_name}, I’m interested in your property at {address}…"></textarea>
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top:14px; justify-content:flex-end;">
+        <button class="btn secondary" id="previewBtn">Preview</button>
+        <button class="btn" id="sendBtn">Send</button>
       </div>
     </div>
   </div>
 
-  <footer class="app-footer">
-    <small>© <span id="year"></span> MB Property Solutions • Offline-ready PWA</small>
-  </footer>
+  <!-- ===== Preview Modal ===== -->
+  <div id="previewModal" class="modal" aria-hidden="true" aria-modal="true" role="dialog">
+    <div class="backdrop" data-close="backdrop"></div>
+    <div class="modal-card" role="document">
+      <div class="modal-header">
+        <h2 class="modal-title">Preview</h2>
+        <button id="closePreviewBtn" class="close-btn" aria-label="Close">&times;</button>
+      </div>
+      <div id="previewContent" class="card" style="background:#0c1430; border-color:#14244a;"></div>
+      <div style="display:flex; gap:10px; margin-top:14px; justify-content:flex-end;">
+        <button class="btn secondary" id="previewClose">Close</button>
+      </div>
+    </div>
+  </div>
 
-  <script src="app.js"></script>
-  <script src="pwa.js"></script>
+  <script>
+    // --- PWA: register SW (safe/no-op if already registered) ---
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js').catch(() => {});
+      });
+    }
+
+    // ---- Modal helpers (NO auto-open on load) ----
+    const qs  = sel => document.querySelector(sel);
+    const qsa = sel => Array.from(document.querySelectorAll(sel));
+
+    const emailModal   = () => qs('#emailModal');
+    const previewModal = () => qs('#previewModal');
+
+    function showModal(modalEl) {
+      if (!modalEl) return;
+      modalEl.classList.add('show');
+      modalEl.setAttribute('aria-hidden', 'false');
+      // prevent background scroll
+      document.documentElement.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden';
+      // focus first field if email modal
+      if (modalEl.id === 'emailModal') {
+        setTimeout(() => qs('#recipient')?.focus(), 10);
+      }
+    }
+
+    function hideModal(modalEl) {
+      if (!modalEl) return;
+      modalEl.classList.remove('show');
+      modalEl.setAttribute('aria-hidden', 'true');
+      // restore scroll if no other modal is open
+      const anyOpen = qsa('.modal').some(m => m.classList.contains('show'));
+      if (!anyOpen) {
+        document.documentElement.style.overflow = '';
+        document.body.style.overflow = '';
+      }
+    }
+
+    // Guard to ensure nothing auto-opens:
+    // Do NOT call showModal(...) here on load. Only attach handlers.
+    document.addEventListener('DOMContentLoaded', () => {
+      // Open controls
+      qs('#openEmailBtn')?.addEventListener('click', () => showModal(emailModal()));
+      qs('#quickEmail')?.addEventListener('click', () => {
+        qs('#channel').value = 'email';
+        showModal(emailModal());
+      });
+      qs('#quickSMS')?.addEventListener('click', () => {
+        qs('#channel').value = 'sms';
+        showModal(emailModal());
+      });
+      qs('#quickPreview')?.addEventListener('click', () => {
+        // open preview of last message if you store it; for now, show placeholder
+        qs('#previewContent').innerHTML = `<p class="muted">No recent message to preview.</p>`;
+        showModal(previewModal());
+      });
+
+      // Close controls (X buttons)
+      qs('#closeEmailBtn')?.addEventListener('click', () => hideModal(emailModal()));
+      qs('#closePreviewBtn')?.addEventListener('click', () => hideModal(previewModal()));
+      qs('#previewClose')?.addEventListener('click', () => hideModal(previewModal()));
+
+      // Backdrop click to close
+      qsa('.modal .backdrop').forEach(bd => {
+        bd.addEventListener('click', (e) => {
+          const m = e.currentTarget.closest('.modal');
+          hideModal(m);
+        });
+      });
+
+      // ESC to close topmost open modal
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          const open = qsa('.modal.show');
+          const top = open[open.length - 1];
+          if (top) hideModal(top);
+        }
+      });
+
+      // Preview flow
+      qs('#previewBtn')?.addEventListener('click', () => {
+        const channel = qs('#channel').value;
+        const to = (qs('#recipient').value || '').trim();
+        const subject = (qs('#subject').value || '').trim();
+        const body = (qs('#messageBody').value || '').trim();
+
+        const html = `
+          <div style="display:grid; gap:8px;">
+            <div><strong>Channel:</strong> ${channel.toUpperCase()}</div>
+            <div><strong>To:</strong> ${to || '<span class="muted">[missing]</span>'}</div>
+            ${channel === 'email' ? `<div><strong>Subject:</strong> ${subject || '<span class="muted">[none]</span>'}</div>` : ''}
+            <div><strong>Message:</strong><br/><pre style="white-space:pre-wrap;margin:0">${body || '[empty message]'}</pre></div>
+          </div>`;
+        qs('#previewContent').innerHTML = html;
+        showModal(previewModal());
+      });
+
+      // Send (stub – wire to EmailJS/Twilio/etc.)
+      qs('#sendBtn')?.addEventListener('click', async () => {
+        const channel = qs('#channel').value;
+        const to = (qs('#recipient').value || '').trim();
+        const subject = (qs('#subject').value || '').trim();
+        const body = (qs('#messageBody').value || '').trim();
+
+        if (!to) { alert('Please enter a recipient.'); qs('#recipient').focus(); return; }
+        if (channel === 'email' && !subject) { if(!confirm('Send without a subject?')) return; }
+        if (!body) { if(!confirm('Send an empty message?')) return; }
+
+        try {
+          // TODO: replace this with your actual integration
+          // await sendOutreach({ channel, to, subject, body });
+          hideModal(emailModal());
+          alert('Message queued (demo). Hook up your provider to actually send.');
+        } catch (err) {
+          console.error(err);
+          alert('Failed to send. Check your provider config.');
+        }
+      });
+
+      // Example refresh button
+      qs('#refreshBtn')?.addEventListener('click', () => {
+        // re-fetch your pipeline; placeholder:
+        qs('#pipelineList').textContent = 'Refreshing…';
+        setTimeout(() => qs('#pipelineList').textContent = 'No new items found (demo).', 700);
+      });
+    });
+  </script>
 </body>
 </html>
