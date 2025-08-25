@@ -43,3 +43,11 @@ main{max-width:1000px;margin:0 auto;padding:8px 16px 60px}
 @media (max-width: 720px){
   .grid{grid-template-columns:1fr}
 }
+
+/* Modal */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;z-index:50}
+.modal-card{width:min(900px,96%);background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--line)}
+.modal-body{padding:12px 14px}
+.mtab{display:none}
+.mtab.active{display:block}
