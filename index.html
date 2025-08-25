@@ -7,13 +7,13 @@
 
   <!-- PWA -->
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0ea5e9">
-  <meta name="description" content="7-Day sprint to land a wholesale deal using Privy. Checklists, leads, buyers, scripts, MAO calculator. Works offline.">
+  <meta name="theme-color" content="#00a8ff">
+  <meta name="description" content="MB Property Solutions: 7-Day wholesale deal sprint. Leads, buyers, scripts, MAO calculator. Works offline as a PWA.">
 
   <!-- iOS / Android full-screen -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Deal Sprint">
+  <meta name="apple-mobile-web-app-title" content="MB Deal Sprint">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="icons/apple-180.png">
 
@@ -66,6 +66,8 @@
           <label>Offer ($)<input name="offer" id="leadOffer" type="number" inputmode="decimal" placeholder="145000"></label>
           <label>Agent Name<input name="agent" id="leadAgent" placeholder="Jane Doe"></label>
           <label>Agent Phone<input name="phone" id="leadPhone" placeholder="(555) 123-4567"></label>
+          <label>Photos Link (optional)<input name="photos" id="leadPhotos" placeholder="https://drive.google.com/..."></label>
+          <label>Comps Link (optional)<input name="comps" id="leadComps" placeholder="https://app.privy.pro/..."></label>
           <label>Status
             <select name="status" id="leadStatus">
               <option value="New">New</option>
@@ -178,12 +180,11 @@ Reply ‘INTERESTED’ for walkthrough booking today.</pre>
           <label>Sender Name<input id="setSenderName" placeholder="Your name"></label>
           <label>Reply-To Email<input id="setReplyEmail" placeholder="you@example.com"></label>
           <label>Phone<input id="setPhone" placeholder="(xxx) xxx-xxxx"></label>
-          <label class="full"><input type="checkbox" id="setZipFilter" checked> Only email buyers whose target ZIPs include the lead's ZIP</label>
-
           <label>Target ZIPs (comma-separated)<input id="setZips" placeholder="27401, 27405"></label>
           <label>Default % of ARV<input id="setPercent" type="number" step="0.01" min="0" max="1" placeholder="0.70"></label>
           <label>Default Assignment Fee ($)<input id="setFee" type="number" inputmode="decimal" placeholder="10000"></label>
           <label>Daily Offer Target<input id="setOffers" type="number" placeholder="10"></label>
+          <label class="full"><input type="checkbox" id="setZipFilter" checked> Only email/text buyers whose target ZIPs include the lead's ZIP</label>
           <div class="actions full">
             <button class="btn primary" type="submit">Save Settings</button>
             <button class="btn" type="button" id="resetAll">Reset All Data</button>
@@ -196,16 +197,49 @@ Reply ‘INTERESTED’ for walkthrough booking today.</pre>
     </section>
   </main>
 
-  <div id="installBanner" class="install-banner" hidden>
-    <div>Install this app for full-screen offline access.</div>
-    <div class="install-actions">
-      <button id="installBtn" class="btn primary">Install</button>
-      <button id="dismissInstall" class="btn">Not now</button>
+  <!-- Preview Modal -->
+  <div id="previewModal" class="modal" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Preview Outreach</h3>
+        <button id="modalClose" class="btn">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="tabs" style="margin-bottom:8px">
+          <button data-mtab="email" class="active">Email</button>
+          <button data-mtab="sms">Text/SMS</button>
+        </div>
+        <div id="modalEmail" class="mtab active">
+          <div class="grid">
+            <label class="full">Subject
+              <input id="previewSubject">
+            </label>
+            <label class="full">Body
+              <textarea id="previewBody" rows="8"></textarea>
+            </label>
+          </div>
+          <div class="actions" style="margin-top:8px">
+            <button id="openEmail" class="btn primary">Open Email</button>
+            <button id="copyEmail" class="btn">Copy Email</button>
+          </div>
+        </div>
+        <div id="modalSMS" class="mtab">
+          <div class="grid">
+            <label class="full">Message
+              <textarea id="previewSMS" rows="8"></textarea>
+            </label>
+          </div>
+          <div class="actions" style="margin-top:8px">
+            <button id="openSMS" class="btn primary">Open Messages</button>
+            <button id="copySMS" class="btn">Copy SMS</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
   <footer class="app-footer">
-    <small>© <span id="year"></span> Deal Sprint • Offline-ready PWA</small>
+    <small>© <span id="year"></span> MB Property Solutions • Offline-ready PWA</small>
   </footer>
 
   <script src="app.js"></script>
