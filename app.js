@@ -1,6 +1,6 @@
 (() => {
   // Simple store
-  const KEY = "pds_v1";
+  const KEY = "mbps_ds_v1";
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
@@ -62,7 +62,6 @@
 
   function renderDays() {
     const wrap = $("#days"); wrap.innerHTML = "";
-    let total = 0, done = 0;
     dayTasks.forEach((tasks, idx) => {
       const d = idx + 1;
       const box = document.createElement("div");
@@ -72,13 +71,11 @@
       box.appendChild(h);
       const list = document.createElement("div");
       tasks.forEach((t, ti) => {
-        total++;
         const row = document.createElement("label");
         row.className = "task";
         const cb = document.createElement("input");
         cb.type = "checkbox";
         cb.checked = !!(state.tasks[d]?.[ti]);
-        if (cb.checked) done++;
         cb.addEventListener("change", () => {
           if (!state.tasks[d]) state.tasks[d] = [];
           state.tasks[d][ti] = cb.checked;
@@ -152,41 +149,6 @@
 
   function money(n){ const v = parseFloat(n||0); return isNaN(v) ? "$0" : "$"+v.toLocaleString(undefined,{maximumFractionDigits:0}); }
 
-// --- Email helpers ---
-function emailForLead(lead){
-  const s = state.settings;
-  const mao = computeMAO(+lead.arv||0, +lead.repairs||0, s.percent, s.fee);
-  const subj = `${s.company} — ${lead.address||''} ${lead.zip||''} — ARV $${Math.round(+lead.arv||0).toLocaleString()} | Ask $${Math.round(+lead.offer||0).toLocaleString()}`;
-  const bodyLines = [];
-  bodyLines.push(`${lead.address||''}${lead.city? ', ' + lead.city : ''} ${lead.zip||''}`);
-  bodyLines.push('');
-  bodyLines.push(`ARV: $${Math.round(+lead.arv||0).toLocaleString()}`);
-  bodyLines.push(`Repairs: $${Math.round(+lead.repairs||0).toLocaleString()}`);
-  bodyLines.push(`MAO (est.): $${Math.round(mao).toLocaleString()} @ ${(s.percent*100).toFixed(0)}% - fee`);
-  bodyLines.push(`Your Price (assign): $${Math.round(+lead.offer||0).toLocaleString()}`);
-  if (lead.notes) { bodyLines.push(''); bodyLines.push('Notes: ' + lead.notes); }
-  bodyLines.push('');
-  bodyLines.push('Close: ≤10 days | As-Is | Cash');
-  bodyLines.push('Access: contact agent ' + (lead.agent||'') + (lead.phone? ' ('+lead.phone+')' : ''));
-  bodyLines.push('');
-  bodyLines.push('—');
-  bodyLines.push(`${s.company}${s.sender? ' | ' + s.sender : ''}`);
-  if (s.phone) bodyLines.push(s.phone);
-  if (s.replyEmail) bodyLines.push(s.replyEmail);
-  const body = bodyLines.join('\n');
-  // Collect buyer emails; if zipFilter on, include buyers whose zips contain lead.zip
-  const emails = state.buyers
-    .filter(b => (b.email||'').includes('@'))
-    .filter(b => !s.zipFilter || !lead.zip || String(b.zips||'').split(/[,\s]+/).filter(Boolean).map(z=>z.trim()).includes(String(lead.zip)))
-    .map(b => b.email.trim());
-  const uniq = Array.from(new Set(emails));
-  const to = encodeURIComponent(s.replyEmail || '');
-  const bcc = encodeURIComponent(uniq.join(','));
-  const url = `mailto:${to}?bcc=${bcc}&subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;
-  return url;
-}
-
-
   $("#leadForm").addEventListener("submit", (e)=>{
     e.preventDefault();
     const id = $("#leadId").value || uid();
@@ -201,6 +163,8 @@ function emailForLead(lead){
       offer: getNum($("#leadOffer")),
       agent: $("#leadAgent").value.trim(),
       phone: $("#leadPhone").value.trim(),
+      photos: $("#leadPhotos").value.trim(),
+      comps: $("#leadComps").value.trim(),
       status: $("#leadStatus").value,
       notes: $("#leadNotes").value.trim(),
       updated: Date.now()
@@ -229,6 +193,8 @@ function emailForLead(lead){
       $("#leadOffer").value = L.offer||"";
       $("#leadAgent").value = L.agent||"";
       $("#leadPhone").value = L.phone||"";
+      $("#leadPhotos").value = L.photos||"";
+      $("#leadComps").value = L.comps||"";
       $("#leadStatus").value = L.status||"New";
       $("#leadNotes").value = L.notes||"";
       document.querySelector('[data-tab="leads"]').click();
@@ -240,7 +206,14 @@ function emailForLead(lead){
     if (emailId){
       const L = state.leads.find(x=>x.id===emailId); if (!L) return;
       const url = emailForLead(L);
-      try { window.location.href = url; } catch { alert('Unable to open email client.'); }
+      const smsObj = smsForLead(L);
+      try {
+        const m = new URL(url);
+        const subject = decodeURIComponent((m.searchParams.get('subject')||''));
+        const body = decodeURIComponent((m.searchParams.get('body')||''));
+        previewSubject.value = subject; previewBody.value = body; previewSMS.value = smsObj.body;
+      } catch { previewSubject.value=''; previewBody.value=''; previewSMS.value = smsObj.body; }
+      modalLeadId = L.id; modal.hidden = false;
     }
   });
 
@@ -301,7 +274,7 @@ function emailForLead(lead){
       $("#buyerZips").value = B.zips||"";
       $("#buyerCriteria").value = B.criteria||"";
       $("#buyerNotes").value = B.notes||"";
-      document.querySelector('[data-tab="buyers"]').click();
+      document.querySelector('[data-tab=\"buyers\"]').click();
     }
     if (did){
       state.buyers = state.buyers.filter(x=>x.id!==did);
@@ -347,28 +320,28 @@ function emailForLead(lead){
   // ------- Settings -------
   function renderSettings(){
     $("#setZips").value = state.settings.zips || "";
+    $("#setPercent").value = state.settings.percent;
+    $("#setFee").value = state.settings.fee;
+    $("#setOffers").value = state.settings.offers;
     $("#setCompany").value = state.settings.company || "MB Property Solutions";
     $("#setSenderName").value = state.settings.sender || "";
     $("#setReplyEmail").value = state.settings.replyEmail || "";
     $("#setPhone").value = state.settings.phone || "";
     $("#setZipFilter").checked = !!state.settings.zipFilter;
-    $("#setPercent").value = state.settings.percent;
-    $("#setFee").value = state.settings.fee;
-    $("#setOffers").value = state.settings.offers;
   }
   renderSettings();
 
   $("#settingsForm").addEventListener("submit",(e)=>{
     e.preventDefault();
     state.settings.zips = $("#setZips").value.trim();
+    state.settings.percent = clamp(parseFloat($("#setPercent").value||0.7), 0, 1) || 0.7;
+    state.settings.fee = parseFloat($("#setFee").value||10000) || 10000;
+    state.settings.offers = parseInt($("#setOffers").value||10) || 10;
     state.settings.company = $("#setCompany").value.trim() || "MB Property Solutions";
     state.settings.sender = $("#setSenderName").value.trim();
     state.settings.replyEmail = $("#setReplyEmail").value.trim();
     state.settings.phone = $("#setPhone").value.trim();
     state.settings.zipFilter = $("#setZipFilter").checked;
-    state.settings.percent = clamp(parseFloat($("#setPercent").value||0.7), 0, 1) || 0.7;
-    state.settings.fee = parseFloat($("#setFee").value||10000) || 10000;
-    state.settings.offers = parseInt($("#setOffers").value||10) || 10;
     save(); fillCalcDefaults(); alert("Settings saved.");
   });
   function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
@@ -393,5 +366,95 @@ function emailForLead(lead){
     a.href = url; a.download = filename; a.click();
     setTimeout(()=>URL.revokeObjectURL(url), 500);
   }
+
+  // ------- Email helpers -------
+  function emailForLead(lead){
+    const s = state.settings;
+    const mao = computeMAO(+lead.arv||0, +lead.repairs||0, s.percent, s.fee);
+    const subj = `${s.company} — ${lead.address||''} ${lead.zip||''} — ARV $${Math.round(+lead.arv||0).toLocaleString()} | Ask $${Math.round(+lead.offer||0).toLocaleString()}`;
+    const bodyLines = [];
+    bodyLines.push(`${lead.address||''}${lead.city? ', ' + lead.city : ''} ${lead.zip||''}`);
+    bodyLines.push('');
+    bodyLines.push(`ARV: $${Math.round(+lead.arv||0).toLocaleString()}`);
+    bodyLines.push(`Repairs: $${Math.round(+lead.repairs||0).toLocaleString()}`);
+    bodyLines.push(`MAO (est.): $${Math.round(mao).toLocaleString()} @ ${(s.percent*100).toFixed(0)}% - fee`);
+    bodyLines.push(`Your Price (assign): $${Math.round(+lead.offer||0).toLocaleString()}`);
+    if (lead.notes) { bodyLines.push(''); bodyLines.push('Notes: ' + lead.notes); }
+    bodyLines.push('');
+    bodyLines.push('Close: ≤10 days | As-Is | Cash');
+    bodyLines.push('Access: contact agent ' + (lead.agent||'') + (lead.phone? ' ('+lead.phone+')' : ''));
+    if (lead.photos){ bodyLines.push(''); bodyLines.push('Photos: ' + lead.photos); }
+    if (lead.comps){ bodyLines.push('Comps: ' + lead.comps); }
+    bodyLines.push('');
+    bodyLines.push('—');
+    bodyLines.push(`${s.company}${s.sender? ' | ' + s.sender : ''}`);
+    if (s.phone) bodyLines.push(s.phone);
+    if (s.replyEmail) bodyLines.push(s.replyEmail);
+    const body = bodyLines.join('\\n');
+    const to = encodeURIComponent(s.replyEmail || '');
+    const url = `mailto:${to}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;
+    return url;
+  }
+
+  function smsForLead(lead){
+    const s = state.settings;
+    const mao = computeMAO(+lead.arv||0, +lead.repairs||0, s.percent, s.fee);
+    const lines = [];
+    lines.push(`${lead.address||''} ${lead.zip||''}`);
+    lines.push(`ARV $${Math.round(+lead.arv||0).toLocaleString()} | Repairs $${Math.round(+lead.repairs||0).toLocaleString()}`);
+    lines.push(`Ask $${Math.round(+lead.offer||0).toLocaleString()} | MAO est. $${Math.round(mao).toLocaleString()}`);
+    if (lead.photos) lines.push(`Photos: ${lead.photos}`);
+    if (lead.comps) lines.push(`Comps: ${lead.comps}`);
+    lines.push(`As-Is | ≤10d close | Agent ${lead.agent||''} ${lead.phone||''}`);
+    lines.push(`${s.company}${s.sender? ' | ' + s.sender : ''}${s.phone? ' | ' + s.phone : ''}`);
+    const body = lines.join('\\n');
+    const url = `sms:?&body=${encodeURIComponent(body)}`;
+    return {url, body};
+  }
+
+  // ------- Preview Modal -------
+  const modal = document.getElementById('previewModal');
+  const modalClose = document.getElementById('modalClose');
+  const previewSubject = document.getElementById('previewSubject');
+  const previewBody = document.getElementById('previewBody');
+  const previewSMS = document.getElementById('previewSMS');
+  const openEmailBtn = document.getElementById('openEmail');
+  const copyEmailBtn = document.getElementById('copyEmail');
+  const openSMSBtn = document.getElementById('openSMS');
+  const copySMSBtn = document.getElementById('copySMS');
+
+  let modalLeadId = null;
+
+  document.querySelectorAll('.modal .tabs button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.modal .tabs button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const tab = btn.getAttribute('data-mtab');
+      document.querySelectorAll('.mtab').forEach(el=>el.classList.remove('active'));
+      document.getElementById('modal'+tab.toUpperCase()).classList.add('active');
+    });
+  });
+
+  modalClose.addEventListener('click', ()=>{ modal.hidden = true; });
+
+  openEmailBtn.addEventListener('click', ()=>{
+    const s = state.settings;
+    const to = encodeURIComponent(s.replyEmail || '');
+    const url = `mailto:${to}?subject=${encodeURIComponent(previewSubject.value)}&body=${encodeURIComponent(previewBody.value)}`;
+    window.location.href = url;
+  });
+
+  copyEmailBtn.addEventListener('click', async ()=>{
+    try { await navigator.clipboard.writeText('Subject: ' + previewSubject.value + '\\n\\n' + previewBody.value); alert('Email copied.'); } catch { alert('Copy failed.'); }
+  });
+
+  openSMSBtn.addEventListener('click', ()=>{
+    const url = `sms:?&body=${encodeURIComponent(previewSMS.value)}`;
+    window.location.href = url;
+  });
+
+  copySMSBtn.addEventListener('click', async ()=>{
+    try { await navigator.clipboard.writeText(previewSMS.value); alert('SMS copied.'); } catch { alert('Copy failed.'); }
+  });
 
 })();
