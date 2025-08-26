@@ -3,346 +3,626 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>MBPS Deal Sprint (PWA)</title>
-
-  <!-- PWA basics -->
+  <title>DealDesk CRM — Wholesale & Sub-To</title>
   <meta name="theme-color" content="#0ea5e9" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="manifest" href="manifest.json" />
-
-  <!-- Icons (update paths/sizes to your real files) -->
-  <link rel="icon" sizes="192x192" href="static/icons/icon-192.png" />
-  <link rel="apple-touch-icon" sizes="180x180" href="static/icons/icon-192.png" />
-
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { theme: { extend: { colors: {
+      brand:{50:'#ecfeff',100:'#cffafe',200:'#a5f3fc',300:'#67e8f9',400:'#22d3ee',500:'#06b6d4',600:'#0891b2',700:'#0e7490',800:'#155e75',900:'#164e63'},
+      accent:{50:'#fdf4ff',100:'#fae8ff',200:'#f5d0fe',300:'#f0abfc',400:'#e879f9',500:'#d946ef',600:'#c026d3',700:'#a21caf',800:'#86198f',900:'#701a75'}
+    }}}}
+  </script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    :root { --brand:#0ea5e9; --brand-700:#0369a1; --bg:#0b1020; --card:#121a34; --text:#e6f1ff; --muted:#a9b3c9; }
-    * { box-sizing: border-box; }
+    :root { --ring: 0 0 0 3px rgb(14 165 233 / .25); }
     html, body { height: 100%; }
-    body {
-      margin: 0; background: linear-gradient(160deg, #0b1020, #101a3b);
-      color: var(--text); font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    .card { background:white; border-radius:1rem; box-shadow:0 10px 30px rgba(2,132,199,.08); padding:1rem; border:1px solid #e2e8f0; }
+    .btn  { display:inline-flex; align-items:center; gap:.5rem; padding:.7rem 1rem; border-radius:.9rem; border:1px solid #e2e8f0; font-size:.95rem; font-weight:600; -webkit-tap-highlight-color: transparent; }
+    .btn:active { transform:scale(.98) }
+    .btn-primary { background:#06b6d4; color:white; border-color:#0e7490; }
+    .btn-outline { background:white; color:#0e7490; border-color:#7dd3fc; }
+    .btn-accent { background:#d946ef; color:white; border-color:#a21caf; }
+    .badge { display:inline-flex; align-items:center; padding:.125rem .6rem; border-radius:999px; font-size:.8rem; font-weight:700; }
+    .badge-lead{background:#e5e7eb;color:#111827}.badge-offer{background:#e0f2fe;color:#075985}.badge-pending{background:#fef9c3;color:#854d0e}
+    .badge-sent{background:#dbeafe;color:#1e40af}.badge-signed{background:#dcfce7;color:#166534}.badge-attorney{background:#efe7ff;color:#6b21a8}.badge-closed{background:#bbf7d0;color:#065f46}
+    .dropzone { display:flex; align-items:center; justify-content:center; min-height:140px; width:100%; border:2px dashed #bae6fd; border-radius:1rem; background:#f0f9ff; color:#0c4a6e; user-select:none; }
+    .dropzone.dragover { outline: 3px solid rgba(14,165,233,.25); }
+    .kanban-col { background:linear-gradient(180deg,#f8fafc,#eef2ff); border-radius:1rem; padding:.75rem; min-height:220px; }
+    .tab { border-bottom:2px solid transparent; padding:.5rem .75rem; border-radius:.5rem .5rem 0 0; }
+    .tab.active { border-color:#06b6d4; background:#cffafe; color:#0e7490; }
+    canvas.sig { touch-action:none; }
+    .draggable { cursor:grab; }
+    .draggable:active { cursor:grabbing; }
+    @media (max-width: 640px){
+      .btn { padding:.9rem 1rem; font-size:1rem; }
+      .mobile-only { display:block !important; }
+      .desktop-only { display:none !important; }
     }
-
-    .container { max-width: 1100px; margin: 0 auto; padding: env(safe-area-inset-top) 16px 24px; }
-    header {
-      position: sticky; top: 0; z-index: 20; backdrop-filter: blur(8px);
-      background: rgba(11,16,32,0.75); border-bottom: 1px solid rgba(255,255,255,0.06);
+    @media (min-width: 641px){
+      .mobile-only { display:none !important; }
+      .desktop-only { display:block !important; }
     }
-    .bar { display:flex; align-items:center; justify-content:space-between; gap:12px; padding: 12px 6px; }
-    .brand { display:flex; align-items:center; gap:10px; }
-    .brand img { width:36px; height:36px; border-radius:10px; }
-    .brand h1 { font-size: 16px; margin:0; letter-spacing: .4px; }
-    .pill { font-size:12px; color:#9cc9ff; background:#0b2a4a; padding:4px 8px; border:1px solid #174a7a; border-radius:999px; }
-
-    main { padding-top: 10px; display:grid; gap:16px; }
-    .card {
-      background: var(--card); border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 16px; padding: 16px;
-    }
-    .row { display:grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
-    .col-4 { grid-column: span 4; }
-    .col-8 { grid-column: span 8; }
-    .col-12 { grid-column: span 12; }
-    @media (max-width: 900px) { .col-4, .col-8 { grid-column: span 12; } }
-
-    .btn {
-      appearance: none; border: 1px solid rgba(255,255,255,.12);
-      background: linear-gradient(180deg, var(--brand), var(--brand-700));
-      color: #fff; padding: 12px 16px; border-radius: 12px; font-weight: 600; cursor: pointer;
-      transition: transform .05s ease, filter .15s ease;
-    }
-    .btn:active { transform: translateY(1px) scale(.99); }
-    .btn.secondary { background: #192240; border-color: rgba(255,255,255,.1); }
-    .btn.block { width: 100%; }
-
-    input, textarea, select {
-      width: 100%; padding: 10px 12px; border-radius: 10px; background: #0c1430; color: var(--text);
-      border: 1px solid rgba(255,255,255,.08); outline: none;
-    }
-    label { font-size: 12px; color: var(--muted); display:block; margin-bottom: 6px; }
-
-    /* ===== Modal (starts hidden!) ===== */
-    .modal {
-      position: fixed; inset: 0; display: none; /* critical: start hidden */
-      align-items: center; justify-content: center; z-index: 50;
-    }
-    .modal.show { display: flex; }
-    .backdrop {
-      position: absolute; inset: 0; background: rgba(0, 8, 24, .65);
-      backdrop-filter: blur(4px);
-    }
-    .modal-card {
-      position: relative; z-index: 1; width: min(720px, 92vw);
-      background: #0f1732; border: 1px solid rgba(255,255,255,.08);
-      border-radius: 16px; padding: 16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,.45);
-      max-height: 85vh; overflow: auto;
-    }
-    .modal-header { display:flex; align-items:center; justify-content:space-between; gap: 10px; margin-bottom: 10px; }
-    .modal-title { margin:0; font-size: 16px; }
-    .close-btn {
-      appearance:none; border:none; background:transparent; color:#b9c6de; font-size:22px; cursor:pointer; line-height:1;
-    }
-
-    /* Utility */
-    .grid-2 { display:grid; gap:12px; grid-template-columns: 1fr 1fr; }
-    @media (max-width:700px){ .grid-2 { grid-template-columns: 1fr; } }
-    .muted { color: var(--muted); font-size: 12px; }
+    /* Make pdf preview canvases responsive */
+    #pdfContainer canvas { width: 100% !important; height: auto !important; }
   </style>
 </head>
-<body>
-  <header>
-    <div class="container bar">
-      <div class="brand">
-        <img src="static/icons/icon-192.png" alt="logo" />
+<body class="bg-gradient-to-br from-brand-50 via-white to-accent-50 text-gray-800 min-h-screen">
+  <div class="max-w-7xl mx-auto p-4 md:p-8">
+    <header class="flex flex-wrap items-center justify-between gap-3 mb-6">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-brand-500 to-accent-500 grid place-content-center text-white font-bold shadow">DD</div>
         <div>
-          <h1>MBPS Deal Sprint</h1>
-          <div class="pill">Installable PWA</div>
+          <h1 class="text-2xl font-semibold">DealDesk CRM — Wholesale & Subject-To</h1>
+          <p class="text-xs text-gray-600">Contracts • Pipeline • Signer • Buyers CRM • PWA</p>
         </div>
       </div>
+      <div class="flex gap-2">
+        <button id="exportCsvBtn" class="btn btn-outline"><i data-lucide="file-down"></i>Export CSV</button>
+        <button id="backupBtn" class="btn btn-outline"><i data-lucide="database"></i>Backup</button>
+        <input id="restoreInput" type="file" accept="application/json" class="hidden" />
+        <button id="restoreBtn" class="btn btn-outline"><i data-lucide="rotate-ccw"></i>Restore</button>
+      </div>
+    </header>
 
-      <!-- Primary action that USED to auto-open; now strictly click-driven -->
-      <button id="openEmailBtn" class="btn">Send Outreach</button>
-    </div>
-  </header>
+    <nav class="flex gap-2 mb-4 sticky top-0 bg-opacity-60 backdrop-blur supports-[backdrop-filter]:bg-white/60 bg-white z-10 rounded-xl p-1">
+      <button class="tab active" data-tab="contracts">Contracts</button>
+      <button class="tab" data-tab="pipeline">Pipeline</button>
+      <button class="tab" data-tab="signer">Sign</button>
+      <button class="tab" data-tab="buyers">Buyers</button>
+    </nav>
 
-  <div class="container">
-    <main>
-      <!-- Example dashboard / filters -->
-      <section class="card">
-        <div class="row">
-          <div class="col-4">
-            <label for="market">Market</label>
-            <select id="market">
-              <option value="">All</option>
-              <option>Greensboro</option>
-              <option>Durham</option>
-              <option>Raleigh</option>
-            </select>
-          </div>
-          <div class="col-4">
-            <label for="status">Deal Status</label>
-            <select id="status">
-              <option value="">Any</option>
-              <option>New</option>
-              <option>Hot</option>
-              <option>Follow-up</option>
-            </select>
-          </div>
-          <div class="col-4" style="display:flex; align-items:end;">
-            <button class="btn secondary block" id="refreshBtn">Refresh</button>
-          </div>
+    <!-- Contracts Tab -->
+    <section id="tab-contracts" class="grid lg:grid-cols-3 gap-6">
+      <section class="lg:col-span-2 card">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold">Create Contract</h2>
+          <div class="text-xs text-gray-500">Data saved locally</div>
         </div>
-      </section>
-
-      <!-- Comps / pipeline -->
-      <section class="row">
-        <div class="col-8">
-          <div class="card">
-            <h3 style="margin-top:0;">Pipeline</h3>
-            <div id="pipelineList" class="muted">Your properties and leads will appear here…</div>
+        <form id="dealForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium mb-1">Business Name</label>
+            <input class="w-full rounded-xl border-gray-200 focus:outline-none focus:ring-[var(--ring)]" id="bizName" placeholder="Your LLC Name" required />
           </div>
-        </div>
-        <div class="col-4">
-          <div class="card">
-            <h3 style="margin-top:0;">Quick Actions</h3>
-            <div style="display:grid; gap:10px;">
-              <button class="btn" id="quickEmail">Compose Email</button>
-              <button class="btn" id="quickSMS">Compose Text</button>
-              <button class="btn secondary" id="quickPreview">Preview Last Message</button>
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium mb-1">Business Address</label>
+            <input class="w-full rounded-xl border-gray-200 focus:outline-none focus:ring-[var(--ring)]" id="bizAddress" placeholder="123 Main St, City, ST 00000" required />
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium mb-1">Property Address</label>
+            <input class="w-full rounded-xl border-gray-200 focus:outline-none focus:ring-[var(--ring)]" id="propertyAddress" placeholder="456 Elm St, City, ST 00000" required />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Seller Name(s)</label>
+            <input class="w-full rounded-xl border-gray-200 focus:outline-none focus:ring-[var(--ring)]" id="sellerNames" placeholder="First Last; First Last" required />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Purchase Price ($)</label>
+            <input type="number" class="w-full rounded-xl border-gray-200 focus:outline-none focus:ring-[var(--ring)]" id="purchasePrice" placeholder="250000" required />
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium mb-1">Deal Specifics / Terms</label>
+            <textarea class="w-full rounded-xl border-gray-200 focus:outline-none focus:ring-[var(--ring)]" id="dealTerms" rows="3" placeholder="Inspection days, earnest money, subject-to details, closing timeline, concessions, etc."></textarea>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1">Property Photo</label>
+            <div id="photoDrop" class="dropzone">Tap to upload (or drop)</div>
+            <input type="file" id="photoInput" accept="image/*" class="hidden" />
+            <div id="photoPreview" class="mt-2 hidden">
+              <img id="photoImg" class="w-full h-36 object-cover rounded-xl border"/>
             </div>
           </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1">Pipeline Status</label>
+            <select id="status" class="w-full rounded-xl border-gray-200">
+              <option value="lead">Lead</option>
+              <option value="offer">Offer Out</option>
+              <option value="pending">Pending Signature</option>
+              <option value="sent">Sent to Seller</option>
+              <option value="signed">Signed</option>
+              <option value="attorney">To Attorney / Title</option>
+              <option value="closed">Closed</option>
+            </select>
+          </div>
+
+          <div class="md:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-3 mt-2">
+            <button type="button" id="genPdfBtn" class="btn btn-outline"><i data-lucide="file-text"></i>PDF</button>
+            <button type="submit" class="btn btn-primary"><i data-lucide="save"></i>Save</button>
+            <button type="button" id="openDealDlg" class="btn btn-accent desktop-only"><i data-lucide="folder-open"></i>Deal Details</button>
+          </div>
+
+          <div class="md:col-span-2">
+            <div class="mt-6 p-3 rounded-xl border">
+              <div class="font-medium mb-2">Email Contract (no server)</div>
+              <div class="grid md:grid-cols-3 gap-3">
+                <input class="rounded-xl border-gray-200" id="emailTo" placeholder="Seller Email" />
+                <input class="rounded-xl border-gray-200" id="emailjsService" placeholder="EmailJS Service ID" />
+                <input class="rounded-xl border-gray-200" id="emailjsTemplate" placeholder="EmailJS Template ID" />
+                <input class="rounded-xl border-gray-200 md:col-span-2" id="emailjsPublic" placeholder="EmailJS Public Key" />
+                <button id="sendEmailBtn" type="button" class="btn btn-outline"><i data-lucide="send"></i>Send Email (Supabase Link)</button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </section>
+
+      <section class="card">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold">Deals</h2>
+          <div class="flex items-center gap-2">
+            <input id="search" class="rounded-xl border-gray-200" placeholder="Search address/seller" />
+            <select id="filterStatus" class="rounded-xl border-gray-200">
+              <option value="">All</option>
+              <option value="lead">Lead</option>
+              <option value="offer">Offer</option>
+              <option value="pending">Pending</option>
+              <option value="sent">Sent</option>
+              <option value="signed">Signed</option>
+              <option value="attorney">Attorney</option>
+              <option value="closed">Closed</option>
+            </select>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-sm">
+            <thead class="text-left text-gray-500">
+              <tr><th class="py-2 pr-4">Property</th><th class="py-2 pr-4">Seller(s)</th><th class="py-2 pr-4">Price</th><th class="py-2 pr-4">Status</th><th class="py-2 pr-4">Actions</th></tr>
+            </thead>
+            <tbody id="dealRows"></tbody>
+          </table>
         </div>
       </section>
-    </main>
-  </div>
+    </section>
 
-  <!-- ===== Outreach Modal ===== -->
-  <div id="emailModal" class="modal" aria-hidden="true" aria-modal="true" role="dialog">
-    <div class="backdrop" data-close="backdrop"></div>
-    <div class="modal-card" role="document">
-      <div class="modal-header">
-        <h2 class="modal-title">Email / Text Outreach</h2>
-        <button id="closeEmailBtn" class="close-btn" aria-label="Close">&times;</button>
-      </div>
-
-      <div class="grid-2">
-        <div>
-          <label for="recipient">To</label>
-          <input id="recipient" type="text" placeholder="name@email.com or (555) 123-4567" />
+    <!-- Pipeline -->
+    <section id="tab-pipeline" class="hidden">
+      <aside class="card">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold">Pipeline Board</h2>
+          <div class="text-sm text-gray-500" id="dealCount"></div>
         </div>
-        <div>
-          <label for="channel">Channel</label>
-          <select id="channel">
-            <option value="email">Email</option>
-            <option value="sms">Text (SMS)</option>
-          </select>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div><div class="text-xs font-semibold mb-2">Lead</div><div id="col-lead" class="kanban-col" data-status="lead"></div></div>
+          <div><div class="text-xs font-semibold mb-2">Offer</div><div id="col-offer" class="kanban-col" data-status="offer"></div></div>
+          <div><div class="text-xs font-semibold mb-2">Pending</div><div id="col-pending" class="kanban-col" data-status="pending"></div></div>
+          <div><div class="text-xs font-semibold mb-2">Sent</div><div id="col-sent" class="kanban-col" data-status="sent"></div></div>
+          <div><div class="text-xs font-semibold mb-2">Signed</div><div id="col-signed" class="kanban-col" data-status="signed"></div></div>
+          <div><div class="text-xs font-semibold mb-2">Attorney</div><div id="col-attorney" class="kanban-col" data-status="attorney"></div></div>
+          <div class="sm:col-span-2 lg:col-span-3"><div class="text-xs font-semibold mb-2">Closed</div><div id="col-closed" class="kanban-col" data-status="closed"></div></div>
+        </div>
+      </aside>
+    </section>
+
+    <!-- Signer -->
+    <section id="tab-signer" class="hidden">
+      <div class="grid lg:grid-cols-3 gap-6">
+        <section class="card lg:col-span-2">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-lg font-semibold">Sign Documents</h2>
+            <div class="text-xs text-gray-500">Upload PDF → place fields → finalize</div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 mb-3">
+            <input id="pdfFile" type="file" accept="application/pdf" class="hidden" />
+            <label for="pdfFile" class="btn btn-outline"><i data-lucide="file-up"></i>Upload PDF</label>
+            <button id="addSigBtn" class="btn btn-accent" disabled><i data-lucide="pen-line"></i>Signature</button>
+            <button id="addInitBtn" class="btn btn-outline" disabled><i data-lucide="signature"></i>Initials</button>
+            <button id="finishBtn" class="btn btn-primary" disabled><i data-lucide="check-circle-2"></i>Finalize</button>
+          </div>
+          <div id="pdfContainer" class="space-y-4 max-h-[70vh] overflow-auto bg-white rounded-xl p-3 border"></div>
+        </section>
+
+        <aside class="card">
+          <h3 class="font-semibold mb-2">Signer</h3>
+          <p class="text-sm text-gray-600 mb-2">Draw once, then tap pages to place.</p>
+          <div class="space-y-3">
+            <div>
+              <label class="text-xs font-semibold">Signature</label>
+              <canvas id="sigPad" class="sig w-full h-40 bg-white border rounded-xl"></canvas>
+              <div class="flex gap-2 mt-2">
+                <button id="sigClear" class="btn btn-outline text-xs">Clear</button>
+                <button id="sigSave" class="btn btn-primary text-xs">Save Signature</button>
+              </div>
+            </div>
+            <div>
+              <label class="text-xs font-semibold">Initials</label>
+              <canvas id="initPad" class="sig w-full h-24 bg-white border rounded-xl"></canvas>
+              <div class="flex gap-2 mt-2">
+                <button id="initClear" class="btn btn-outline text-xs">Clear</button>
+                <button id="initSave" class="btn btn-primary text-xs">Save Initials</button>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- Buyers -->
+    <section id="tab-buyers" class="hidden">
+      <div class="card">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold">Buyers CRM</h2>
+          <button id="addBuyerBtn" class="btn btn-primary"><i data-lucide="user-plus"></i>Add Buyer</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-sm">
+            <thead class="text-left text-gray-500">
+              <tr><th class="py-2 pr-4">Buyer</th><th class="py-2 pr-4">Email</th><th class="py-2 pr-4">Phone</th><th class="py-2 pr-4">Criteria</th><th class="py-2 pr-4">Notes</th><th class="py-2 pr-4">Actions</th></tr>
+            </thead>
+            <tbody id="buyerRows"></tbody>
+          </table>
         </div>
       </div>
-
-      <div style="margin-top:12px;">
-        <label for="subject">Subject (email only)</label>
-        <input id="subject" type="text" placeholder="Quick question about your property on Main St" />
-      </div>
-
-      <div style="margin-top:12px;">
-        <label for="messageBody">Message</label>
-        <textarea id="messageBody" rows="8" placeholder="Hi {owner_name}, I’m interested in your property at {address}…"></textarea>
-      </div>
-
-      <div style="display:flex; gap:10px; margin-top:14px; justify-content:flex-end;">
-        <button class="btn secondary" id="previewBtn">Preview</button>
-        <button class="btn" id="sendBtn">Send</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== Preview Modal ===== -->
-  <div id="previewModal" class="modal" aria-hidden="true" aria-modal="true" role="dialog">
-    <div class="backdrop" data-close="backdrop"></div>
-    <div class="modal-card" role="document">
-      <div class="modal-header">
-        <h2 class="modal-title">Preview</h2>
-        <button id="closePreviewBtn" class="close-btn" aria-label="Close">&times;</button>
-      </div>
-      <div id="previewContent" class="card" style="background:#0c1430; border-color:#14244a;"></div>
-      <div style="display:flex; gap:10px; margin-top:14px; justify-content:flex-end;">
-        <button class="btn secondary" id="previewClose">Close</button>
-      </div>
-    </div>
+    </section>
   </div>
 
   <script>
-    // --- PWA: register SW (safe/no-op if already registered) ---
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('service-worker.js').catch(() => {});
-      });
-    }
+    lucide.createIcons();
+    const pdfjsLib = window['pdfjs-dist/build/pdf'];
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-    // ---- Modal helpers (NO auto-open on load) ----
-    const qs  = sel => document.querySelector(sel);
-    const qsa = sel => Array.from(document.querySelectorAll(sel));
-
-    const emailModal   = () => qs('#emailModal');
-    const previewModal = () => qs('#previewModal');
-
-    function showModal(modalEl) {
-      if (!modalEl) return;
-      modalEl.classList.add('show');
-      modalEl.setAttribute('aria-hidden', 'false');
-      // prevent background scroll
-      document.documentElement.style.overflow = 'hidden';
-      document.body.style.overflow = 'hidden';
-      // focus first field if email modal
-      if (modalEl.id === 'emailModal') {
-        setTimeout(() => qs('#recipient')?.focus(), 10);
+    const state = {
+      deals: JSON.parse(localStorage.getItem('deals') || '[]'),
+      buyers: JSON.parse(localStorage.getItem('buyers') || '[]'),
+      photoDataUrl: null,
+      signer: { pdfBytes: null, pages: [], signatureUrl: null, initialsUrl: null, placements: [] },
+      supabase: {
+        url: localStorage.getItem('SUPABASE_URL') || 'https://YOUR-PROJECT.supabase.co',
+        anon: localStorage.getItem('SUPABASE_ANON') || 'YOUR-ANON-KEY',
+        bucket: localStorage.getItem('SUPABASE_BUCKET') || 'contracts'
       }
+    };
+    const saveDeals = () => localStorage.setItem('deals', JSON.stringify(state.deals));
+    const saveBuyers = () => localStorage.setItem('buyers', JSON.stringify(state.buyers));
+
+    // Tabs
+    const sections = { contracts:'#tab-contracts', pipeline:'#tab-pipeline', signer:'#tab-signer', buyers:'#tab-buyers' };
+    document.querySelectorAll('.tab').forEach(t=>addEvent(t,'click',()=>{
+      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); t.classList.add('active');
+      Object.values(sections).forEach(sel=>document.querySelector(sel).classList.add('hidden'));
+      document.querySelector(sections[t.dataset.tab]).classList.remove('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }));
+
+    const money = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(n||0));
+    const STATUS_MAP = {
+      lead:{label:'Lead',cls:'badge-lead'}, offer:{label:'Offer Out',cls:'badge-offer'},
+      pending:{label:'Pending Signature',cls:'badge-pending'}, sent:{label:'Sent to Seller',cls:'badge-sent'},
+      signed:{label:'Signed',cls:'badge-signed'}, attorney:{label:'To Attorney / Title',cls:'badge-attorney'}, closed:{label:'Closed'}
+    };
+
+    // Helpers
+    function addEvent(el, ev, fn, opts){ el && el.addEventListener(ev, fn, opts||{}); }
+
+    // Contract template & PDF
+    const CONTRACT_TEMPLATE = ({bizName,bizAddress,propertyAddress,sellerNames,purchasePrice,dealTerms,date}) => `
+PURCHASE AGREEMENT
+
+Date: ${date}
+
+Buyer: ${bizName}, located at ${bizAddress}.
+Seller(s): ${sellerNames}.
+Property: ${propertyAddress}.
+
+Purchase Price: ${money(purchasePrice)}.
+Earnest Money: $1,000 (refundable within inspection period unless otherwise stated).
+Closing: On or before 30 days from execution, or as mutually agreed.
+Condition: Property sold AS-IS. Buyer may access property for inspections.
+Title & Taxes: Seller to provide clear, marketable title. Taxes prorated at closing.
+Assignments: Buyer may assign this agreement.
+Subject-To (if applicable): Buyer may take title subject-to existing financing per addendum.
+Additional Terms: ${dealTerms || 'N/A'}.
+
+Signatures:
+
+Buyer: ____________________________   Date: ____________
+Seller: ____________________________   Date: ____________
+Seller: ____________________________   Date: ____________
+`;
+    async function generatePdf(deal, includePhoto = true) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+      const margin = 40; const lineHeight = 16; const maxWidth = 515;
+      doc.setFont('Helvetica','bold'); doc.setFontSize(16);
+      doc.text('PURCHASE AGREEMENT', margin, 60);
+      let y = 90;
+      if (includePhoto && deal.photoDataUrl) { try { doc.addImage(deal.photoDataUrl, 'JPEG', margin, y, 140, 100); } catch {} y += 120; }
+      doc.setFont('Helvetica','normal'); doc.setFontSize(11);
+      const text = CONTRACT_TEMPLATE({ ...deal, date: new Date().toLocaleDateString() });
+      const lines = doc.splitTextToSize(text, maxWidth);
+      lines.forEach((ln, idx) => doc.text(ln, margin, y + idx*lineHeight));
+      doc.setFontSize(9); doc.text('Generated by DealDesk — For attorney review. Not legal advice.', margin, 760);
+      return doc;
     }
 
-    function hideModal(modalEl) {
-      if (!modalEl) return;
-      modalEl.classList.remove('show');
-      modalEl.setAttribute('aria-hidden', 'true');
-      // restore scroll if no other modal is open
-      const anyOpen = qsa('.modal').some(m => m.classList.contains('show'));
-      if (!anyOpen) {
-        document.documentElement.style.overflow = '';
-        document.body.style.overflow = '';
-      }
+    // Render Deals table & pipeline
+    function renderTable(){
+      const tbody = document.getElementById('dealRows'); const q=(document.getElementById('search').value||'').toLowerCase(); const fs=document.getElementById('filterStatus').value;
+      tbody.innerHTML='';
+      state.deals.filter(d=>(!fs||d.status===fs)).filter(d=>d.propertyAddress.toLowerCase().includes(q)||d.sellerNames.toLowerCase().includes(q)).forEach((d,idx)=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td class="py-2 pr-4">${d.propertyAddress}</td>
+                        <td class="py-2 pr-4">${d.sellerNames}</td>
+                        <td class="py-2 pr-4">${money(d.purchasePrice)}</td>
+                        <td class="py-2 pr-4"><span class="badge ${STATUS_MAP[d.status].cls}">${STATUS_MAP[d.status].label}</span></td>
+                        <td class="py-2 pr-4 flex gap-2">
+                          <button class="btn btn-outline text-xs px-2 py-1 gen">PDF</button>
+                          <button class="btn btn-outline text-xs px-2 py-1 edit">Edit</button>
+                          <button class="btn btn-outline text-xs px-2 py-1 del">Delete</button>
+                        </td>`;
+        addEvent(tr.querySelector('.gen'),'click',async ()=>{ (await generatePdf(d)).save(`Contract_${d.propertyAddress.replaceAll(' ','_')}.pdf`); });
+        addEvent(tr.querySelector('.edit'),'click',()=> loadDealIntoForm(idx));
+        addEvent(tr.querySelector('.del'),'click',()=>{ if(confirm('Delete this deal?')){ state.deals.splice(idx,1); saveDeals(); renderTable(); renderPipeline(); } });
+        tbody.appendChild(tr);
+      });
     }
-
-    // Guard to ensure nothing auto-opens:
-    // Do NOT call showModal(...) here on load. Only attach handlers.
-    document.addEventListener('DOMContentLoaded', () => {
-      // Open controls
-      qs('#openEmailBtn')?.addEventListener('click', () => showModal(emailModal()));
-      qs('#quickEmail')?.addEventListener('click', () => {
-        qs('#channel').value = 'email';
-        showModal(emailModal());
-      });
-      qs('#quickSMS')?.addEventListener('click', () => {
-        qs('#channel').value = 'sms';
-        showModal(emailModal());
-      });
-      qs('#quickPreview')?.addEventListener('click', () => {
-        // open preview of last message if you store it; for now, show placeholder
-        qs('#previewContent').innerHTML = `<p class="muted">No recent message to preview.</p>`;
-        showModal(previewModal());
-      });
-
-      // Close controls (X buttons)
-      qs('#closeEmailBtn')?.addEventListener('click', () => hideModal(emailModal()));
-      qs('#closePreviewBtn')?.addEventListener('click', () => hideModal(previewModal()));
-      qs('#previewClose')?.addEventListener('click', () => hideModal(previewModal()));
-
-      // Backdrop click to close
-      qsa('.modal .backdrop').forEach(bd => {
-        bd.addEventListener('click', (e) => {
-          const m = e.currentTarget.closest('.modal');
-          hideModal(m);
+    function renderPipeline(){
+      document.getElementById('dealCount').textContent = `${state.deals.length} total deals`;
+      ['lead','offer','pending','sent','signed','attorney','closed'].forEach(st=>{
+        const col = document.getElementById('col-'+st); if(!col) return; col.innerHTML='';
+        state.deals.filter(d=>d.status===st).forEach((deal,i)=>{
+          const card = document.createElement('div'); card.className='bg-white rounded-xl border p-3 text-sm space-y-1';
+          card.innerHTML = `<div class="font-medium">${deal.propertyAddress}</div>
+                            <div class="text-xs text-gray-500">${deal.sellerNames} • ${money(deal.purchasePrice)}</div>
+                            <div class="flex items-center justify-between pt-1 gap-2">
+                              <span class="badge ${STATUS_MAP[deal.status].cls}">${STATUS_MAP[deal.status].label}</span>
+                              <div class="flex items-center gap-2">
+                                <select class="mobile-only border rounded-lg px-2 py-1 text-xs">
+                                  ${Object.keys(STATUS_MAP).map(k=>`<option value="${k}" ${k===deal.status?'selected':''}>${STATUS_MAP[k].label}</option>`).join('')}
+                                </select>
+                                <button class="btn btn-outline text-xs px-2 py-1 desktop-only">PDF</button>
+                              </div>
+                            </div>`;
+          const sel = card.querySelector('select');
+          sel && (sel.onchange = ()=>{ deal.status = sel.value; saveDeals(); renderPipeline(); renderTable(); });
+          const pdfBtn = card.querySelector('button');
+          pdfBtn && (pdfBtn.onclick = async ()=>{ (await generatePdf(deal)).save(`Contract_${deal.propertyAddress.replaceAll(' ','_')}.pdf`); });
+          col.appendChild(card);
         });
       });
+    }
 
-      // ESC to close topmost open modal
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-          const open = qsa('.modal.show');
-          const top = open[open.length - 1];
-          if (top) hideModal(top);
-        }
-      });
+    function loadDealIntoForm(idx){
+      const d = state.deals[idx];
+      document.getElementById('bizName').value = d.bizName;
+      document.getElementById('bizAddress').value = d.bizAddress;
+      document.getElementById('propertyAddress').value = d.propertyAddress;
+      document.getElementById('sellerNames').value = d.sellerNames;
+      document.getElementById('purchasePrice').value = d.purchasePrice;
+      document.getElementById('dealTerms').value = d.dealTerms || '';
+      document.getElementById('status').value = d.status;
+      state.photoDataUrl = d.photoDataUrl || null;
+      if (state.photoDataUrl) { document.getElementById('photoPreview').classList.remove('hidden'); document.getElementById('photoImg').src = state.photoDataUrl; }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 
-      // Preview flow
-      qs('#previewBtn')?.addEventListener('click', () => {
-        const channel = qs('#channel').value;
-        const to = (qs('#recipient').value || '').trim();
-        const subject = (qs('#subject').value || '').trim();
-        const body = (qs('#messageBody').value || '').trim();
-
-        const html = `
-          <div style="display:grid; gap:8px;">
-            <div><strong>Channel:</strong> ${channel.toUpperCase()}</div>
-            <div><strong>To:</strong> ${to || '<span class="muted">[missing]</span>'}</div>
-            ${channel === 'email' ? `<div><strong>Subject:</strong> ${subject || '<span class="muted">[none]</span>'}</div>` : ''}
-            <div><strong>Message:</strong><br/><pre style="white-space:pre-wrap;margin:0">${body || '[empty message]'}</pre></div>
-          </div>`;
-        qs('#previewContent').innerHTML = html;
-        showModal(previewModal());
-      });
-
-      // Send (stub – wire to EmailJS/Twilio/etc.)
-      qs('#sendBtn')?.addEventListener('click', async () => {
-        const channel = qs('#channel').value;
-        const to = (qs('#recipient').value || '').trim();
-        const subject = (qs('#subject').value || '').trim();
-        const body = (qs('#messageBody').value || '').trim();
-
-        if (!to) { alert('Please enter a recipient.'); qs('#recipient').focus(); return; }
-        if (channel === 'email' && !subject) { if(!confirm('Send without a subject?')) return; }
-        if (!body) { if(!confirm('Send an empty message?')) return; }
-
-        try {
-          // TODO: replace this with your actual integration
-          // await sendOutreach({ channel, to, subject, body });
-          hideModal(emailModal());
-          alert('Message queued (demo). Hook up your provider to actually send.');
-        } catch (err) {
-          console.error(err);
-          alert('Failed to send. Check your provider config.');
-        }
-      });
-
-      // Example refresh button
-      qs('#refreshBtn')?.addEventListener('click', () => {
-        // re-fetch your pipeline; placeholder:
-        qs('#pipelineList').textContent = 'Refreshing…';
-        setTimeout(() => qs('#pipelineList').textContent = 'No new items found (demo).', 700);
-      });
+    // Form & photo
+    addEvent(document.getElementById('dealForm'),'submit',(e)=>{
+      e.preventDefault();
+      const deal = {
+        bizName: document.getElementById('bizName').value.trim(),
+        bizAddress: document.getElementById('bizAddress').value.trim(),
+        propertyAddress: document.getElementById('propertyAddress').value.trim(),
+        sellerNames: document.getElementById('sellerNames').value.trim(),
+        purchasePrice: parseFloat(document.getElementById('purchasePrice').value||'0'),
+        dealTerms: document.getElementById('dealTerms').value.trim(),
+        status: document.getElementById('status').value,
+        photoDataUrl: state.photoDataUrl || null,
+        createdAt: Date.now()
+      };
+      state.deals.unshift(deal); saveDeals(); renderTable(); renderPipeline(); e.target.reset(); state.photoDataUrl=null; document.getElementById('photoPreview').classList.add('hidden');
     });
+
+    addEvent(document.getElementById('photoInput'),'change',(e)=>{
+      const file = e.target.files[0]; if(!file) return;
+      const rdr = new FileReader();
+      rdr.onload = ()=>{ state.photoDataUrl = rdr.result; document.getElementById('photoPreview').classList.remove('hidden'); document.getElementById('photoImg').src = rdr.result; }
+      rdr.readAsDataURL(file);
+    });
+    const photoDrop = document.getElementById('photoDrop');
+    const photoInputEl = document.getElementById('photoInput');
+    addEvent(photoDrop,'click',()=>photoInputEl.click());
+    addEvent(photoDrop,'dragover',(e)=>{ e.preventDefault(); photoDrop.classList.add('dragover'); });
+    addEvent(photoDrop,'dragleave',()=>photoDrop.classList.remove('dragover'));
+    addEvent(photoDrop,'drop',(e)=>{
+      e.preventDefault(); photoDrop.classList.remove('dragover');
+      const file = e.dataTransfer.files && e.dataTransfer.files[0]; if(!file) return;
+      const rdr = new FileReader();
+      rdr.onload = ()=>{ state.photoDataUrl = rdr.result; document.getElementById('photoPreview').classList.remove('hidden'); document.getElementById('photoImg').src = rdr.result; }
+      rdr.readAsDataURL(file);
+    });
+
+    // Supabase helpers
+    function sb() { return window.supabase.createClient(state.supabase.url, state.supabase.anon); }
+    async function uploadPdfAndGetUrl(fileBlob, fileNameHint="Contract"){
+      const client = sb();
+      const safe = (fileNameHint || "Contract").replace(/[^a-z0-9-_]/gi, "_");
+      const path = `${safe}_${Date.now()}.pdf`;
+      const { error } = await client.storage.from(state.supabase.bucket).upload(path, fileBlob, { contentType:'application/pdf', upsert:false });
+      if (error) throw error;
+      const { data } = client.storage.from(state.supabase.bucket).getPublicUrl(path);
+      return data.publicUrl;
+    }
+
+    // EmailJS: send with Supabase link
+    addEvent(document.getElementById('sendEmailBtn'),'click', sendEmailWithLinkFromSupabase);
+    async function sendEmailWithLinkFromSupabase(){
+      const service = document.getElementById('emailjsService').value.trim();
+      const template = document.getElementById('emailjsTemplate').value.trim();
+      const pub = document.getElementById('emailjsPublic').value.trim();
+      const to = document.getElementById('emailTo').value.trim();
+      if(!(service && template && pub && to)){ alert('Fill Email, Service ID, Template ID, and Public Key'); return; }
+
+      const deal = state.deals[0];
+      if(!deal){ alert('Save a deal first.'); return; }
+      const pdf = await generatePdf(deal);
+      const blob = pdf.output('blob');
+
+      let publicUrl;
+      try { publicUrl = await uploadPdfAndGetUrl(blob, deal.propertyAddress); }
+      catch(e){ alert('Upload failed — set Supabase URL & anon key (localStorage or in code).'); return; }
+
+      if (!window.emailjs) {
+        await new Promise(res=>{ const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js'; s.onload=res; document.body.appendChild(s); });
+      }
+      window.emailjs.init({ publicKey: pub });
+      try {
+        await window.emailjs.send(service, template, {
+          to_email: to,
+          bizName: deal.bizName || '',
+          sellerNames: deal.sellerNames || '',
+          propertyAddress: deal.propertyAddress || '',
+          link: publicUrl
+        });
+        alert('Email sent with public link!');
+      } catch (e) {
+        alert('Email failed: ' + e.message);
+      }
+    }
+
+    // PDF Signer
+    const pdfFile = document.getElementById('pdfFile');
+    const pdfContainer = document.getElementById('pdfContainer');
+    const addSigBtn = document.getElementById('addSigBtn');
+    const addInitBtn = document.getElementById('addInitBtn');
+    const finishBtn = document.getElementById('finishBtn');
+    let currentTool = null;
+    addEvent(pdfFile,'change', async (e) => {
+      const file = e.target.files[0]; if (!file) return;
+      state.signer.pdfBytes = await file.arrayBuffer();
+      await loadPdfForPreview(state.signer.pdfBytes);
+      addSigBtn.disabled = false; addInitBtn.disabled = false; finishBtn.disabled = false;
+    });
+    async function loadPdfForPreview(pdfBytes) {
+      pdfContainer.innerHTML = ''; state.signer.placements = [];
+      const loadingTask = pdfjsLib.getDocument({ data: pdfBytes }); const pdf = await loadingTask.promise; state.signer.pages = [];
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i); const viewport = page.getViewport({ scale: 1.1 });
+        const canvas = document.createElement('canvas'); canvas.width = viewport.width; canvas.height = viewport.height;
+        const ctx = canvas.getContext('2d'); await page.render({ canvasContext: ctx, viewport }).promise;
+        canvas.className = 'mx-auto border rounded-lg bg-white'; canvas.dataset.page = i; pdfContainer.appendChild(canvas);
+        state.signer.pages.push({ canvas, viewport });
+        const tap = (evt) => {
+          if (!currentTool) return;
+          const rect = canvas.getBoundingClientRect();
+          const x = (evt.touches ? evt.touches[0].clientX : evt.clientX) - rect.left;
+          const y = (evt.touches ? evt.touches[0].clientY : evt.clientY) - rect.top;
+          placeFieldOnCanvas(canvas, x, y, currentTool === 'sig' ? 'Signature' : 'Initials');
+        };
+        addEvent(canvas,'click', tap, { passive: true });
+        addEvent(canvas,'touchstart', tap, { passive: true });
+      }
+    }
+    function placeFieldOnCanvas(canvas, x, y, label) {
+      const ctx = canvas.getContext('2d');
+      ctx.save(); ctx.strokeStyle = '#06b6d4'; ctx.setLineDash([4,3]); ctx.strokeRect(x-60, y-18, 120, 36);
+      ctx.fillStyle = '#06b6d4'; ctx.font = '12px sans-serif'; ctx.fillText(label, x-55, y-24); ctx.restore();
+      state.signer.placements.push({ page: Number(canvas.dataset.page), x, y, type: label.toLowerCase() });
+    }
+    function makePad(canvas) {
+      function resizeCanvas() {
+        const ratio = Math.max(1, Math.floor(window.devicePixelRatio || 1));
+        const displayWidth = canvas.clientWidth || 300;
+        const displayHeight = canvas.classList.contains('h-24') ? 96 : 160;
+        canvas.width = displayWidth * ratio;
+        canvas.height = displayHeight * ratio;
+        const ctx = canvas.getContext('2d'); ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      }
+      resizeCanvas(); addEvent(window,'resize', resizeCanvas);
+      const ctx = canvas.getContext('2d'); let drawing = false, last = null;
+      function draw(e){
+        const rect = canvas.getBoundingClientRect();
+        const x = (e.touches? e.touches[0].clientX : e.clientX) - rect.left;
+        const y = (e.touches? e.touches[0].clientY : e.clientY) - rect.top;
+        if(!drawing) return;
+        ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.strokeStyle = '#111827';
+        ctx.beginPath(); ctx.moveTo(last.x,last.y); ctx.lineTo(x,y); ctx.stroke();
+        last = {x,y};
+      }
+      addEvent(canvas,'mousedown', e=>{drawing=true; last={x:e.offsetX,y:e.offsetY}});
+      addEvent(canvas,'mousemove', draw);
+      addEvent(canvas,'mouseup', ()=> drawing=false);
+      addEvent(canvas,'mouseleave', ()=> drawing=false);
+      addEvent(canvas,'touchstart', e=>{drawing=true; const r=canvas.getBoundingClientRect(); last={x:e.touches[0].clientX-r.left,y:e.touches[0].clientY-r.top}}, {passive:true});
+      addEvent(canvas,'touchmove', draw, {passive:true});
+      addEvent(canvas,'touchend', ()=> drawing=false);
+      return { clear(){ ctx.clearRect(0,0,canvas.width,canvas.height) }, toDataURL(){ return canvas.toDataURL('image/png') } }
+    }
+    const sigPad = makePad(document.getElementById('sigPad'));
+    const initPad = makePad(document.getElementById('initPad'));
+    addEvent(document.getElementById('sigClear'),'click', ()=> sigPad.clear());
+    addEvent(document.getElementById('initClear'),'click', ()=> initPad.clear());
+    addEvent(document.getElementById('sigSave'),'click', ()=> { state.signer.signatureUrl = sigPad.toDataURL(); alert('Signature saved. Tap page to place.'); });
+    addEvent(document.getElementById('initSave'),'click', ()=> { state.signer.initialsUrl = initPad.toDataURL(); alert('Initials saved. Tap page to place.'); });
+    addEvent(document.getElementById('addSigBtn'),'click', ()=> currentTool = 'sig');
+    addEvent(document.getElementById('addInitBtn'),'click', ()=> currentTool = 'init');
+    addEvent(document.getElementById('finishBtn'),'click', async ()=>{
+      if (!state.signer.pdfBytes) return;
+      const pdfDoc = await PDFLib.PDFDocument.load(state.signer.pdfBytes);
+      const sigImg = state.signer.signatureUrl ? await pdfDoc.embedPng(state.signer.signatureUrl) : null;
+      const initImg = state.signer.initialsUrl ? await pdfDoc.embedPng(state.signer.initialsUrl) : null;
+      state.signer.placements.forEach(p => {
+        const page = pdfDoc.getPage(p.page - 1);
+        const { width, height } = page.getSize();
+        const canvasInfo = state.signer.pages[p.page - 1];
+        const scaleX = width / canvasInfo.canvas.width;
+        const scaleY = height / canvasInfo.canvas.height;
+        const img = p.type === 'signature' ? sigImg : initImg; if (!img) return;
+        const drawW = p.type === 'signature' ? 180 : 100; const drawH = p.type === 'signature' ? 50 : 40;
+        const pdfX = p.x * scaleX - (drawW/2); const pdfY = height - (p.y * scaleY) - (drawH/2);
+        page.drawImage(img, { x: pdfX, y: pdfY, width: drawW, height: drawH });
+      });
+      const bytes = await pdfDoc.save(); const blob = new Blob([bytes], {type:'application/pdf'});
+      const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='Signed_Document.pdf'; a.click();
+    });
+
+    // Buyers CRUD (very simple)
+    addEvent(document.getElementById('addBuyerBtn'),'click', ()=>{
+      const name = prompt('Buyer name'); if(!name) return;
+      const email = prompt('Email')||''; const phone = prompt('Phone')||'';
+      const criteria = prompt('Criteria (zip/price/type)')||''; const notes = prompt('Notes')||'';
+      state.buyers.unshift({ name,email,phone,criteria,notes, createdAt:Date.now() }); saveBuyers(); renderBuyers();
+    });
+    function renderBuyers(){
+      const tbody = document.getElementById('buyerRows'); if(!tbody) return; tbody.innerHTML='';
+      state.buyers.forEach((b,idx)=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td class="py-2 pr-4">${b.name}</td>
+                        <td class="py-2 pr-4">${b.email}</td>
+                        <td class="py-2 pr-4">${b.phone}</td>
+                        <td class="py-2 pr-4">${b.criteria}</td>
+                        <td class="py-2 pr-4">${b.notes}</td>
+                        <td class="py-2 pr-4"><button class="btn btn-outline text-xs px-2 py-1 del">Delete</button></td>`;
+        addEvent(tr.querySelector('.del'),'click',()=>{ if(confirm('Delete this buyer?')){ state.buyers.splice(idx,1); saveBuyers(); renderBuyers(); } });
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Export/backup/restore
+    addEvent(document.getElementById('exportCsvBtn'),'click', ()=>{
+      const rows = [['Property','Sellers','Price','Status','Created']];
+      state.deals.forEach(d=> rows.push([d.propertyAddress,d.sellerNames,d.purchasePrice,d.status,new Date(d.createdAt).toLocaleString()]));
+      const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], {type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='deals.csv'; a.click();
+    });
+    addEvent(document.getElementById('backupBtn'),'click', ()=>{
+      const payload = JSON.stringify({ deals:state.deals, buyers:state.buyers }, null, 2);
+      const blob = new Blob([payload], {type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='dealdesk-backup.json'; a.click();
+    });
+    addEvent(document.getElementById('restoreBtn'),'click', ()=> document.getElementById('restoreInput').click());
+    addEvent(document.getElementById('restoreInput'),'change', async (e)=>{
+      const f = e.target.files[0]; if(!f) return; const text = await f.text();
+      try { const data = JSON.parse(text); if(data.deals) state.deals = data.deals; if(data.buyers) state.buyers = data.buyers; saveDeals(); saveBuyers(); renderTable(); renderPipeline(); renderBuyers(); alert('Restored!'); }
+      catch { alert('Invalid backup file'); }
+    });
+
+    // Init
+    renderTable(); renderPipeline(); renderBuyers();
   </script>
 </body>
 </html>
