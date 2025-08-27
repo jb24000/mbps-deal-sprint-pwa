@@ -12,10 +12,14 @@
   <script>
     tailwind.config = {
       darkMode: 'class',
-      theme: { extend: { colors: {
-        brand:{50:'#ecfeff',100:'#cffafe',200:'#a5f3fc',300:'#67e8f9',400:'#22d3ee',500:'#06b6d4',600:'#0891b2',700:'#0e7490',800:'#155e75',900:'#164e63'},
-        accent:{50:'#fdf4ff',100:'#fae8ff',200:'#f5d0fe',300:'#f0abfc',400:'#e879f9',500:'#d946ef',600:'#c026d3',700:'#a21caf',800:'#86198f',900:'#701a75'}
-      }}}
+      theme: {
+        extend: {
+          colors: {
+            brand:{50:'#ecfeff',100:'#cffafe',200:'#a5f3fc',300:'#67e8f9',400:'#22d3ee',500:'#06b6d4',600:'#0891b2',700:'#0e7490',800:'#155e75',900:'#164e63'},
+            accent:{50:'#fdf4ff',100:'#fae8ff',200:'#f5d0fe',300:'#f0abfc',400:'#e879f9',500:'#d946ef',600:'#c026d3',700:'#a21caf',800:'#86198f',900:'#701a75'}
+          }
+        }
+      }
     }
   </script>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
@@ -30,7 +34,7 @@
     :root { --ring: 0 0 0 3px rgb(14 165 233 / .25); }
     html, body { height: 100%; }
     .card { background:white; border-radius:1rem; box-shadow:0 10px 30px rgba(2,132,199,.08); padding:1rem; border:1px solid #e2e8f0; }
-    .btn  { display:inline-flex; align-items:center; gap:.5rem; padding:.75rem 1rem; border-radius:.9rem; border:1px solid #e2e8f0; font-size:.95rem; font-weight:600; -webkit-tap-highlight-color: transparent; }
+    .btn { display:inline-flex; align-items:center; gap:.5rem; padding:.75rem 1rem; border-radius:.9rem; border:1px solid #e2e8f0; font-size:.95rem; font-weight:600; -webkit-tap-highlight-color: transparent; }
     .btn:active { transform:scale(.98) }
     .btn-primary { background:#06b6d4; color:white; border-color:#0e7490; }
     .btn-outline { background:white; color:#0e7490; border-color:#7dd3fc; }
@@ -49,7 +53,6 @@
     .meter { height:10px; border-radius:999px; background:#e5e7eb; overflow:hidden; }
     .meter > i { display:block; height:100%; background:#06b6d4; }
     .sticky-topbar { position: sticky; top: 0; z-index: 40; }
-
     @media (max-width: 640px){
       .btn { padding:.95rem 1.05rem; font-size:1rem; }
       .mobile-only { display:block !important; }
@@ -62,7 +65,6 @@
       .desktop-only { display:block !important; }
     }
     #pdfContainer canvas { width: 100% !important; height: auto !important; }
-
     /* Dark theme */
     .dark body { background: linear-gradient(135deg,#0b1220,#111827 40%,#0a1224); color:#e5e7eb; }
     .dark .card { background:#0f172a; border-color:#1f2937; box-shadow:none; }
@@ -122,21 +124,7 @@
         <button id="themeToggle" class="btn btn-outline" title="Toggle dark mode"><i data-lucide="moon"></i><span class="hidden sm:inline">Dark</span></button>
       </div>
     </header>
-    <!-- ONE-METRIC BAR -->
-    <div class="sticky-topbar w-full bg-white/90 dark:bg-[#0b1322]/70 backdrop-blur rounded-xl mb-4">
-      <div class="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between gap-3">
-        <div class="flex items-center gap-2 text-sm">
-          <span class="font-semibold">One Metric:</span>
-          <span class="text-gray-600 dark:text-gray-300">Conversations this week</span>
-        </div>
-        <div class="flex items-center gap-3 min-w-[180px]">
-          <div id="omValue" class="text-lg font-bold">0</div>
-          <div class="meter w-40 rounded-full"><i id="omMeter" style="width:0%"></i></div>
-          <div id="omTarget" class="text-xs text-gray-500">Goal 50</div>
-        </div>
-      </div>
-    </div>
-    
+
     <!-- NAV TABS -->
     <nav class="sticky-tabs flex flex-wrap gap-2 mb-4 rounded-xl p-1 bg-white/80 dark:bg-[#0b1322]/70">
       <button class="tab active" data-tab="sprint">Sprint</button>
@@ -215,7 +203,7 @@
       <!-- Sprint queue -->
       <section class="lg:col-span-1 card">
         <div class="flex items-center justify-between mb-3">
-          <h2 class="text-lg font-semibold">Today’s Sprint (Top 20 by Score & Due)</h2>
+          <h2 class="text-lg font-semibold">Today's Sprint (Top 20 by Score & Due)</h2>
           <div class="text-sm text-gray-500" id="sprintCount"></div>
         </div>
         <div class="flex flex-wrap gap-2 mb-2">
@@ -236,17 +224,17 @@
         <div class="space-y-3 text-sm">
           <details class="border rounded-xl p-3 bg-white dark:bg-[#0b1322]" open>
             <summary class="font-semibold cursor-pointer">Expired Listing (Agent)</summary>
-            <p class="mt-2" id="scriptExpiredAgent">Hey {{agent}}, this is {{me}}. I saw {{address}} came off the market. I buy a few homes a month in {{city}} — quick and hassle-free. Two options: clean cash close or we keep the existing financing in place and pay on time. Which nets your seller more if speed isn’t the only goal?</p>
+            <p class="mt-2" id="scriptExpiredAgent">Hey {{agent}}, this is {{me}}. I saw {{address}} came off the market. I buy a few homes a month in {{city}} — quick and hassle-free. Two options: clean cash close or we keep the existing financing in place and pay on time. Which nets your seller more if speed isn't the only goal?</p>
             <div class="flex gap-2 mt-2"><button class="btn btn-outline text-xs" data-script-copy>Copy</button></div>
           </details>
           <details class="border rounded-xl p-3 bg-white dark:bg-[#0b1322]">
             <summary class="font-semibold cursor-pointer">Seller — Subject-To Opener</summary>
-            <p class="mt-2" id="scriptSubjectTo">If I cover your payments — taxes, insurance, maintenance — so you can move on with no stress, what would you need to feel good today? I’ll show exact numbers & timing in writing.</p>
+            <p class="mt-2" id="scriptSubjectTo">If I cover your payments — taxes, insurance, maintenance — so you can move on with no stress, what would you need to feel good today? I'll show exact numbers & timing in writing.</p>
             <div class="flex gap-2 mt-2"><button class="btn btn-outline text-xs" data-script-copy>Copy</button></div>
           </details>
           <details class="border rounded-xl p-3 bg-white dark:bg-[#0b1322]">
             <summary class="font-semibold cursor-pointer">Follow-Up Text</summary>
-            <p class="mt-2" id="scriptFollowUp">Hey {{name}}, it’s {{me}} about {{address}} — still open to a quick offer? I can make the process easy. Want a simple cash number or a terms option that could net you more?</p>
+            <p class="mt-2" id="scriptFollowUp">Hey {{name}}, it's {{me}} about {{address}} — still open to a quick offer? I can make the process easy. Want a simple cash number or a terms option that could net you more?</p>
             <div class="flex gap-2 mt-2"><button class="btn btn-outline text-xs" data-script-copy>Copy</button></div>
           </details>
 
@@ -311,7 +299,6 @@
             <label class="block text-sm font-medium mb-1">Deal Specifics / Terms</label>
             <textarea class="w-full rounded-xl border-gray-200" id="dealTerms" rows="3" placeholder="Inspection days, earnest money, subject-to details, closing timeline, concessions, etc."></textarea>
           </div>
-
           <div>
             <label class="block text-sm font-medium mb-1">Contract Template</label>
             <select id="contractTemplate" class="w-full rounded-xl border-gray-200">
@@ -322,7 +309,6 @@
               <option value="authorization">Authorization to Release</option>
             </select>
           </div>
-
           <div>
             <label class="block text-sm font-medium mb-1">Pipeline Status</label>
             <select id="status" class="w-full rounded-xl border-gray-200">
@@ -330,21 +316,18 @@
               <option value="sent">Sent to Seller</option><option value="signed">Signed</option><option value="attorney">To Attorney / Title</option><option value="closed">Closed</option>
             </select>
           </div>
-
           <div>
             <label class="block text-sm font-medium mb-1">Property Photo</label>
             <div id="photoDrop" class="dropzone">Tap to upload (or drop)</div>
             <input type="file" id="photoInput" accept="image/*" class="hidden" />
             <div id="photoPreview" class="mt-2 hidden"><img id="photoImg" class="w-full h-36 object-cover rounded-xl border"/></div>
           </div>
-
           <div class="md:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-3 mt-2">
             <button type="button" id="genPdfBtn" class="btn btn-outline"><i data-lucide="file-text"></i>PDF</button>
             <button type="submit" class="btn btn-primary"><i data-lucide="save"></i>Save</button>
             <button type="button" id="dealFromLeadBtn" class="btn btn-accent"><i data-lucide="arrow-right"></i>Pre-fill from Selected Lead</button>
             <button type="button" id="openAttachBtn" class="btn btn-outline"><i data-lucide="paperclip"></i>Attachments</button>
           </div>
-
           <div class="md:col-span-2">
             <div class="mt-6 p-3 rounded-xl border">
               <div class="font-medium mb-2">Email Contract (Supabase Link)</div>
@@ -381,7 +364,6 @@
             <tbody id="dealRows"></tbody>
           </table>
         </div>
-
         <div class="mt-6 border-t pt-4">
           <h3 class="font-semibold mb-2">Dispo Blast</h3>
           <div class="grid gap-2">
@@ -421,14 +403,13 @@
             <h2 class="text-lg font-semibold">Sign Documents</h2>
             <div class="text-xs text-gray-500">Upload PDF → place fields → finalize</div>
           </div>
-
           <div class="flex flex-wrap items-center gap-2 mb-3">
             <input id="pdfFile" type="file" accept="application/pdf" class="hidden" />
             <label for="pdfFile" class="btn btn-outline"><i data-lucide="file-up"></i>Upload PDF</label>
             <button id="addSigBtn" class="btn btn-accent" disabled><i data-lucide="pen-line"></i>Signature</button>
             <button id="addInitBtn" class="btn btn-outline" disabled><i data-lucide="signature"></i>Initials</button>
             <button id="finishBtn" class="btn btn-primary" disabled><i data-lucide="check-circle-2"></i>Finalize</button>
-          </div>   
+          </div>
 
           <!-- Typed signature/initials controls -->
           <div class="grid md:grid-cols-2 gap-3 mb-3">
@@ -459,10 +440,8 @@
               <button id="typedInitGenerate" class="btn btn-outline text-xs"><i data-lucide="wand-2"></i>Generate Initials</button>
             </div>
           </div>
-
           <div id="pdfContainer" class="pdf-pages space-y-4 max-h-[70vh] overflow-auto bg-white dark:bg-[#0b1322] rounded-xl p-3 border"></div>
         </section>
-
         <aside class="card">
           <h3 class="font-semibold mb-2">Signer (Draw if you prefer)</h3>
           <p class="text-sm text-gray-600 dark:text-gray-300 mb-2">Draw once, then tap pages to place. Or use the typed options on the left.</p>
@@ -582,6 +561,43 @@
     const pdfjsLib = window['pdfjs-dist/build/pdf'];
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
+    // ========= ONE METRIC (Conversations) =========
+    const state = {
+      calls: JSON.parse(localStorage.getItem('calls') || '[]'),
+      goals: JSON.parse(localStorage.getItem('goals') || '{"convos":50,"offers":10,"contracts":5}')
+    };
+
+    function saveCalls(){
+      localStorage.setItem('calls', JSON.stringify(state.calls));
+    }
+
+    function weekStartMs(){
+      const d=new Date();
+      const day=d.getDay();
+      const diff=d.getDate()-day+(day===0?-6:1);
+      const ws=new Date(d.setDate(diff));
+      return new Date(ws.getFullYear(),ws.getMonth(),ws.getDate()).getTime();
+    }
+
+    function renderOneMetric(){
+      const start=weekStartMs();
+      const convos=state.calls.filter(c=>c.ts>=start).length;
+      const goal=Number(state.goals.convos||50);
+      document.getElementById('omValue').textContent = convos;
+      document.getElementById('omTarget').textContent = `Goal ${goal}`;
+      document.getElementById('omMeter').style.width = Math.min(100, Math.round((convos/goal)*100))+'%';
+    }
+
+    // Auto-log when user clicks call/text/email links
+    function logConvo(type, meta = {}) {
+      state.calls.push({ type, ts: Date.now(), ...meta });
+      saveCalls();
+      renderOneMetric(); // update the sticky bar
+      updateKPI(); // keep KPI in sync
+    }
+
+    renderOneMetric();
+
     // THEME
     (function themeInit(){
       const root = document.documentElement;
@@ -590,6 +606,7 @@
         root.classList.add('dark');
       }
     })();
+
     document.getElementById('themeToggle').addEventListener('click', ()=>{
       const root = document.documentElement;
       const isDark = root.classList.toggle('dark');
@@ -598,34 +615,48 @@
     });
 
     // ========= STATE =========
-    const state = {
-      settings: {
-        sbUrl: localStorage.getItem('SUPABASE_URL') || '',
-        sbAnon: localStorage.getItem('SUPABASE_ANON') || '',
-        sbBucket: localStorage.getItem('SUPABASE_BUCKET') || 'contracts',
-        ejService: localStorage.getItem('EJ_SERVICE') || '',
-        ejTemplate: localStorage.getItem('EJ_TEMPLATE') || '',
-        ejPublic: localStorage.getItem('EJ_PUBLIC') || ''
-      },
-      leads: JSON.parse(localStorage.getItem('leads') || '[]'),
-      deals: JSON.parse(localStorage.getItem('deals') || '[]'),
-      buyers: JSON.parse(localStorage.getItem('buyers') || '[]'),
-      calls: JSON.parse(localStorage.getItem('calls') || '[]'),
-      signer: { pdfBytes: null, pages: [], signatureUrl: null, initialsUrl: null, placements: [] },
-      goals: JSON.parse(localStorage.getItem('goals') || '{"convos":50,"offers":10,"contracts":5}'),
-      selectedLeadId: null
+    state.settings = {
+      sbUrl: localStorage.getItem('SUPABASE_URL') || '',
+      sbAnon: localStorage.getItem('SUPABASE_ANON') || '',
+      sbBucket: localStorage.getItem('SUPABASE_BUCKET') || 'contracts',
+      ejService: localStorage.getItem('EJ_SERVICE') || '',
+      ejTemplate: localStorage.getItem('EJ_TEMPLATE') || '',
+      ejPublic: localStorage.getItem('EJ_PUBLIC') || ''
     };
+    state.leads = JSON.parse(localStorage.getItem('leads') || '[]');
+    state.deals = JSON.parse(localStorage.getItem('deals') || '[]');
+    state.buyers = JSON.parse(localStorage.getItem('buyers') || '[]');
+    state.signer = { 
+      pdfBytes: null, 
+      pages: [], 
+      signatureUrl: null, 
+      initialsUrl: null, 
+      placements: [] 
+    };
+    state.selectedLeadId = null;
+
     const save = (k,v)=>localStorage.setItem(k,JSON.stringify(v));
     const money = (n)=> new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(n||0));
 
     // ========= NAV =========
-    const sections = { sprint:'#tab-sprint', contracts:'#tab-contracts', pipeline:'#tab-pipeline', signer:'#tab-signer', buyers:'#tab-buyers', kpi:'#tab-kpi', settings:'#tab-settings' };
-    document.querySelectorAll('.tab').forEach(t=> t.addEventListener('click',()=>{
-      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); t.classList.add('active');
-      Object.values(sections).forEach(sel=>document.querySelector(sel).classList.add('hidden'));
-      document.querySelector(sections[t.dataset.tab]).classList.remove('hidden');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }));
+    const sections = {
+      sprint:'#tab-sprint',
+      contracts:'#tab-contracts',
+      pipeline:'#tab-pipeline',
+      signer:'#tab-signer',
+      buyers:'#tab-buyers',
+      kpi:'#tab-kpi',
+      settings:'#tab-settings'
+    };
+
+    document.querySelectorAll('.tab').forEach(t=>
+      t.addEventListener('click',()=>{
+        document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+        t.classList.add('active');
+        Object.values(sections).forEach(sel=>document.querySelector(sel).classList.add('hidden'));
+        document.querySelector(sections[t.dataset.tab]).classList.remove('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }));
 
     // ========= Lead Scoring =========
     function scoreLead(l){
@@ -654,7 +685,11 @@
       maoVal.textContent = money(mao);
       anchorVal.textContent = money(mao*0.9);
     }
-    ['input','change'].forEach(ev=>{ leadARV.addEventListener(ev,recalcMAO); leadRepairs.addEventListener(ev,recalcMAO); });
+
+    ['input','change'].forEach(ev=>{
+      leadARV.addEventListener(ev,recalcMAO);
+      leadRepairs.addEventListener(ev,recalcMAO);
+    });
 
     leadForm.addEventListener('submit',(e)=>{
       e.preventDefault();
@@ -674,13 +709,22 @@
         createdAt: Date.now(),
         nextAction: Date.now() + 24*3600*1000 // D+1 auto follow-up
       };
-      state.leads.unshift(lead); save('leads',state.leads); leadForm.reset(); recalcMAO(); renderLeads(); alert('Lead added');
+      state.leads.unshift(lead);
+      save('leads',state.leads);
+      leadForm.reset();
+      recalcMAO();
+      renderLeads();
+      alert('Lead added');
     });
 
     // Import CSV
-    document.getElementById('importLeadsBtn').addEventListener('click',()=> document.getElementById('importLeadsInput').click());
+    document.getElementById('importLeadsBtn').addEventListener('click',()=>
+      document.getElementById('importLeadsInput').click());
+
     document.getElementById('importLeadsInput').addEventListener('change', async (e)=>{
-      const f = e.target.files[0]; if(!f) return; const text = await f.text();
+      const f = e.target.files[0];
+      if(!f) return;
+      const text = await f.text();
       const rows = text.split(/\r?\n/).map(r=>r.split(',').map(c=>c.replace(/^"|"$/g,'')) ).filter(r=>r.some(c=>c.trim()!==''));
       const header = rows.shift().map(h=>h.trim().toLowerCase());
       const idx = (name)=> header.indexOf(name);
@@ -688,14 +732,24 @@
         const lead = {
           id: 'L'+Date.now()+Math.random().toString(36).slice(2,6),
           source: r[idx('source')]||'Expired',
-          address: r[idx('address')]||'', seller: r[idx('seller')]||'', agent: r[idx('agent')]||'',
-          phone: r[idx('phone')]||'', email: r[idx('email')]||'',
-          arv: Number(r[idx('arv')]||0), repairs: Number(r[idx('repairs')]||0), ask: Number(r[idx('ask')]||0),
-          notes: r[idx('notes')]||'', status: 'New', createdAt: Date.now(), nextAction: Date.now()+86400000
+          address: r[idx('address')]||'',
+          seller: r[idx('seller')]||'',
+          agent: r[idx('agent')]||'',
+          phone: r[idx('phone')]||'',
+          email: r[idx('email')]||'',
+          arv: Number(r[idx('arv')]||0),
+          repairs: Number(r[idx('repairs')]||0),
+          ask: Number(r[idx('ask')]||0),
+          notes: r[idx('notes')]||'',
+          status: 'New',
+          createdAt: Date.now(),
+          nextAction: Date.now()+86400000
         };
         if (lead.address) state.leads.push(lead);
       });
-      save('leads',state.leads); renderLeads(); alert('Leads imported');
+      save('leads',state.leads);
+      renderLeads();
+      alert('Leads imported');
     });
 
     // Cadence Engine helpers
@@ -718,12 +772,13 @@
         .map(l=> ({ l, score: scoreLead(l), due: (l.nextAction||0) <= today }))
         .sort((a,b)=> (b.due - a.due) || (b.score - a.score) || ((b.l.createdAt||0) - (a.l.createdAt||0)))
         .slice(0,20);
+
       document.getElementById('sprintCount').textContent = `${arr.length} in queue`;
       list.innerHTML='';
       arr.forEach(({l,score})=>{
         const div = document.createElement('div');
         div.className='border rounded-xl p-3 bg-white dark:bg-[#0b1322]';
-        const dueBadge = (l.nextAction && l.nextAction<=today) ? `<span class="badge badge-pending ml-2">Due</span>`:'';
+        const dueBadge = (l.nextAction && l.nextAction<=today) ? '<span class="badge badge-pending ml-2">Due</span>':'';
         div.innerHTML = `
           <div class="flex items-center justify-between">
             <div class="font-medium">${l.address}</div>
@@ -748,14 +803,26 @@
         `;
         div.querySelector('.emailLead').addEventListener('click',()=> openOfferEmail(l));
         div.querySelector('.offerLead').addEventListener('click',()=> leadToContract(l));
-        div.querySelector('.followLead').addEventListener('click',()=> { scheduleCadence(l, (l.cadenceStep||0)); save('leads',state.leads); renderLeads(); alert('Follow-up scheduled'); });
+        div.querySelector('.followLead').addEventListener('click',()=> {
+          scheduleCadence(l, (l.cadenceStep||0));
+          save('leads',state.leads);
+          renderLeads();
+          alert('Follow-up scheduled');
+        });
         div.querySelector('.toDeal').addEventListener('click',()=> leadToDeal(l));
-        div.querySelector('.delLead').addEventListener('click',()=>{ if(confirm('Delete lead?')){ state.leads = state.leads.filter(x=>x.id!==l.id); save('leads',state.leads); renderLeads(); } });
+        div.querySelector('.delLead').addEventListener('click',()=>{
+          if(confirm('Delete lead?')){
+            state.leads = state.leads.filter(x=>x.id!==l.id);
+            save('leads',state.leads);
+            renderLeads();
+          }
+        });
         div.addEventListener('click', ()=> state.selectedLeadId = l.id);
         list.appendChild(div);
       });
       lucide.createIcons();
     }
+
     document.getElementById('leadSearch').addEventListener('input',renderLeads);
     document.getElementById('leadFilter').addEventListener('change',renderLeads);
 
@@ -767,10 +834,17 @@
         sellerNames: l.seller || '',
         purchasePrice: Math.max(0, (l.arv||0)*0.7 - (l.repairs||0)),
         dealTerms: `Generated from lead. Source: ${l.source}. Notes: ${l.notes||''}`,
-        status: 'lead', photoDataUrl: null, createdAt: Date.now(), fee: 0, id: 'D'+Date.now()
+        status: 'lead',
+        photoDataUrl: null,
+        createdAt: Date.now(),
+        fee: 0,
+        id: 'D'+Date.now()
       };
-      state.deals.unshift(deal); save('deals',state.deals); alert('Moved to Deals. Open Contracts tab to edit.');
+      state.deals.unshift(deal);
+      save('deals',state.deals);
+      alert('Moved to Deals. Open Contracts tab to edit.');
     }
+
     function leadToContract(l){
       document.querySelector('.tab[data-tab="contracts"]').click();
       document.getElementById('propertyAddress').value = l.address;
@@ -780,46 +854,44 @@
       window.scrollTo({ top: 0, behavior:'smooth' });
       state.selectedLeadId = l.id;
     }
+
     function openOfferEmail(l){
       document.getElementById('offerEmailTo').value = l.email || '';
     }
 
-    // Copy script buttons (FIXED)
-    document.querySelectorAll('[data-script-copy]').forEach(btn=> btn.addEventListener('click',()=>{
-      const p = btn.closest('details').querySelector('p');
-      navigator.clipboard.writeText(p.textContent.replace(/\s+/g,' ').trim()).then(()=>{
-        btn.textContent = 'Copied!';
-        setTimeout(()=>{ btn.textContent = 'Copy'; }, 1200);
-      });
-    }));
+    // Copy script buttons
+    document.querySelectorAll('[data-script-copy]').forEach(btn=>
+      btn.addEventListener('click',()=>{
+        const p = btn.closest('details').querySelector('p');
+        navigator.clipboard.writeText(p.textContent.replace(/\s+/g,' ').trim()).then(()=>{
+          btn.textContent = 'Copied!';
+          setTimeout(()=>btn.textContent='Copy', 2000);
+        });
+      }));
 
     // ========= Contracts / Templates =========
     const STATUS_MAP = {
-      lead:{label:'Lead',cls:'badge-lead'}, 
+      lead:{label:'Lead',cls:'badge-lead'},
       offer:{label:'Offer Out',cls:'badge-offer'},
-      pending:{label:'Pending Signature',cls:'badge-pending'}, 
+      pending:{label:'Pending Signature',cls:'badge-pending'},
       sent:{label:'Sent to Seller',cls:'badge-sent'},
-      signed:{label:'Signed',cls:'badge-signed'}, 
-      attorney:{label:'To Attorney / Title',cls:'badge-attorney'}, 
+      signed:{label:'Signed',cls:'badge-signed'},
+      attorney:{label:'To Attorney / Title',cls:'badge-attorney'},
       closed:{label:'Closed',cls:'badge-closed'}
     };
 
     function CONTRACT_TEXT(template, d){
       const baseHeader = `PURCHASE AGREEMENT
-
 Date: ${new Date().toLocaleDateString()}
-
 Buyer: ${d.bizName}, located at ${d.bizAddress}.
 Seller(s): ${d.sellerNames}.
 Property: ${d.propertyAddress}.`;
-      const baseBody = `
-Purchase Price: ${money(d.purchasePrice)}.
+      const baseBody = `Purchase Price: ${money(d.purchasePrice)}.
 Earnest Money: $1,000 (refundable within inspection period unless otherwise stated).
 Closing: On or before 30 days from execution, or as mutually agreed.
 Condition: Property sold AS-IS. Buyer may access property for inspections.
 Title & Taxes: Seller to provide clear, marketable title. Taxes prorated at closing.
 Assignments: Buyer may assign this agreement.`;
-
       let extra = '';
       if (template==='standard'){
         extra = `Additional Terms: ${d.dealTerms || 'N/A'}.`;
@@ -849,17 +921,15 @@ Additional Terms: ${d.dealTerms || 'N/A'}.`;
       } else if (template==='authorization'){
         extra = `AUTHORIZATION TO RELEASE:
 Seller authorizes ${d.bizName} to obtain mortgage payoff, reinstatement, and escrow details on ${d.propertyAddress}.
-Lender: __________________  Loan #: ______________  Phone: ______________
+Lender: __________________
+Loan #: ______________
+Phone: ______________
 Additional Terms: ${d.dealTerms || 'N/A'}.`;
       }
-
-      const footer = `
-Signatures:
-
-Buyer: ____________________________   Date: ____________
-Seller: ____________________________   Date: ____________
-Seller: ____________________________   Date: ____________`;
-
+      const footer = `Signatures:
+Buyer: ____________________________ Date: ____________
+Seller: ____________________________ Date: ____________
+Seller: ____________________________ Date: ____________`;
       return `${baseHeader}\n${baseBody}\n${extra}\n${footer}`;
     }
 
@@ -867,27 +937,29 @@ Seller: ____________________________   Date: ____________`;
       const { jsPDF } = window.jspdf;
       const { includePhoto=true, templateKey='standard' } = opts;
       const doc = new jsPDF({ unit:'pt', format:'letter' });
-      const margin=40, lineHeight=16, maxWidth=515; let y=60;
-
-      doc.setFont('Helvetica','bold'); doc.setFontSize(16);
-      const title = templateKey==='assignment' ? 'ASSIGNMENT AGREEMENT'
-                    : templateKey==='jv' ? 'JOINT VENTURE AGREEMENT'
-                    : templateKey==='authorization' ? 'AUTHORIZATION TO RELEASE'
-                    : templateKey==='subject_to' ? 'PURCHASE + SUBJECT-TO ADDENDUM'
-                    : 'PURCHASE AGREEMENT';
-      doc.text(title, margin, y); y+=30;
-
+      const margin=40, lineHeight=16, maxWidth=515;
+      let y=60;
+      doc.setFont('Helvetica','bold');
+      doc.setFontSize(16);
+      const title = templateKey==='assignment' ? 'ASSIGNMENT AGREEMENT' :
+                   templateKey==='jv' ? 'JOINT VENTURE AGREEMENT' :
+                   templateKey==='authorization' ? 'AUTHORIZATION TO RELEASE' :
+                   templateKey==='subject_to' ? 'PURCHASE + SUBJECT-TO ADDENDUM' : 'PURCHASE AGREEMENT';
+      doc.text(title, margin, y);
+      y+=30;
       if (includePhoto && deal.photoDataUrl){
-        try { doc.addImage(deal.photoDataUrl,'JPEG', margin, y, 140, 100); } catch {}
+        try {
+          doc.addImage(deal.photoDataUrl,'JPEG', margin, y, 140, 100);
+        } catch {}
         y+=120;
       }
-
-      doc.setFont('Helvetica','normal'); doc.setFontSize(11);
+      doc.setFont('Helvetica','normal');
+      doc.setFontSize(11);
       const text = CONTRACT_TEXT(templateKey, deal);
       const lines = doc.splitTextToSize(text, maxWidth);
       lines.forEach((ln,i)=> doc.text(ln, margin, y + i*lineHeight));
-
-      doc.setFontSize(9); doc.text('Generated by REI Stack — For attorney review. Not legal advice.', margin, 760);
+      doc.setFontSize(9);
+      doc.text('Generated by REI Stack — For attorney review. Not legal advice.', margin, 760);
       return doc;
     }
 
@@ -896,18 +968,29 @@ Seller: ____________________________   Date: ____________`;
       const photoInput = document.getElementById('photoInput');
       const photoDrop = document.getElementById('photoDrop');
       if (!photoInput || !photoDrop) return;
-      const show = (dataUrl)=>{ state.photoDataUrl = dataUrl; document.getElementById('photoPreview').classList.remove('hidden'); document.getElementById('photoImg').src = dataUrl; };
+      const show = (dataUrl)=>{
+        state.photoDataUrl = dataUrl;
+        document.getElementById('photoPreview').classList.remove('hidden');
+        document.getElementById('photoImg').src = dataUrl;
+      };
       photoDrop.addEventListener('click',()=> photoInput.click());
       photoDrop.addEventListener('dragover', e=>{e.preventDefault(); photoDrop.classList.add('dragover');});
       photoDrop.addEventListener('dragleave', ()=> photoDrop.classList.remove('dragover'));
       photoDrop.addEventListener('drop', e=>{
-        e.preventDefault(); photoDrop.classList.remove('dragover');
-        const f = e.dataTransfer.files && e.dataTransfer.files[0]; if(!f) return;
-        const r = new FileReader(); r.onload = ()=> show(r.result); r.readAsDataURL(f);
+        e.preventDefault();
+        photoDrop.classList.remove('dragover');
+        const f = e.dataTransfer.files && e.dataTransfer.files[0];
+        if(!f) return;
+        const r = new FileReader();
+        r.onload = ()=> show(r.result);
+        r.readAsDataURL(f);
       });
       photoInput.addEventListener('change', e=>{
-        const f = e.target.files[0]; if(!f) return;
-        const r = new FileReader(); r.onload = ()=> show(r.result); r.readAsDataURL(f);
+        const f = e.target.files[0];
+        if(!f) return;
+        const r = new FileReader();
+        r.onload = ()=> show(r.result);
+        r.readAsDataURL(f);
       });
     })();
 
@@ -928,21 +1011,34 @@ Seller: ____________________________   Date: ____________`;
         createdAt: Date.now(),
         id: 'D'+Date.now()
       };
-      state.deals.unshift(deal); save('deals',state.deals); renderDealsTable(); renderPipeline(); e.target.reset();
-      state.photoDataUrl=null; const prev=document.getElementById('photoPreview'); if(prev) prev.classList.add('hidden');
+      state.deals.unshift(deal);
+      save('deals',state.deals);
+      renderDealsTable();
+      renderPipeline();
+      e.target.reset();
+      state.photoDataUrl=null;
+      const prev=document.getElementById('photoPreview');
+      if(prev) prev.classList.add('hidden');
       alert('Deal saved');
     });
 
     // Generate PDF from latest deal
     document.getElementById('genPdfBtn').addEventListener('click', async ()=>{
-      const d = state.deals[0]; if(!d){ alert('Save a deal first.'); return; }
+      const d = state.deals[0];
+      if(!d){
+        alert('Save a deal first.');
+        return;
+      }
       (await generatePdf(d, { templateKey: d.template||'standard' })).save(`Contract_${d.propertyAddress.replaceAll(' ','_')}.pdf`);
     });
 
     // Prefill from selected lead
     document.getElementById('dealFromLeadBtn').addEventListener('click',()=>{
       const l = state.leads.find(x=>x.id===state.selectedLeadId) || state.leads[0];
-      if(!l){ alert('No lead selected'); return; }
+      if(!l){
+        alert('No lead selected');
+        return;
+      }
       document.getElementById('propertyAddress').value = l.address;
       document.getElementById('sellerNames').value = l.seller||'';
       document.getElementById('purchasePrice').value = Math.max(0, (l.arv||0)*0.7 - (l.repairs||0));
@@ -952,8 +1048,9 @@ Seller: ____________________________   Date: ____________`;
 
     // Deals table
     function renderDealsTable(){
-      const tbody = document.getElementById('dealRows'); if(!tbody) return;
-      const q=(document.getElementById('search').value||'').toLowerCase(); 
+      const tbody = document.getElementById('dealRows');
+      if(!tbody) return;
+      const q=(document.getElementById('search').value||'').toLowerCase();
       const fs=document.getElementById('filterStatus').value;
       tbody.innerHTML='';
       state.deals
@@ -971,15 +1068,27 @@ Seller: ____________________________   Date: ____________`;
               <button class="btn btn-outline text-xs px-2 py-1 gen">PDF</button>
               <button class="btn btn-outline text-xs px-2 py-1 edit">Edit</button>
               <button class="btn btn-outline text-xs px-2 py-1 del">Delete</button>
-            </td>`;
-          tr.querySelector('.gen').onclick = async ()=>{ (await generatePdf(d, { templateKey: d.template||'standard' })).save(`Contract_${d.propertyAddress.replaceAll(' ','_')}.pdf`); };
+            </td>
+          `;
+          tr.querySelector('.gen').onclick = async ()=>{
+            (await generatePdf(d, { templateKey: d.template||'standard' })).save(`Contract_${d.propertyAddress.replaceAll(' ','_')}.pdf`);
+          };
           tr.querySelector('.edit').onclick = ()=> loadDealIntoForm(idx);
-          tr.querySelector('.del').onclick = ()=>{ if(confirm('Delete this deal?')){ state.deals.splice(idx,1); save('deals',state.deals); renderDealsTable(); renderPipeline(); } };
+          tr.querySelector('.del').onclick = ()=>{
+            if(confirm('Delete this deal?')){
+              state.deals.splice(idx,1);
+              save('deals',state.deals);
+              renderDealsTable();
+              renderPipeline();
+            }
+          };
           tbody.appendChild(tr);
         });
     }
+
     function loadDealIntoForm(idx){
-      const d = state.deals[idx]; if(!d) return;
+      const d = state.deals[idx];
+      if(!d) return;
       document.getElementById('bizName').value = d.bizName;
       document.getElementById('bizAddress').value = d.bizAddress;
       document.getElementById('propertyAddress').value = d.propertyAddress;
@@ -989,10 +1098,14 @@ Seller: ____________________________   Date: ____________`;
       document.getElementById('dealTerms').value = d.dealTerms||'';
       document.getElementById('contractTemplate').value = d.template||'standard';
       document.getElementById('status').value = d.status;
-      state.photoDataUrl = d.photoDataUrl||null; 
-      if(state.photoDataUrl){ document.getElementById('photoPreview').classList.remove('hidden'); document.getElementById('photoImg').src = state.photoDataUrl; }
+      state.photoDataUrl = d.photoDataUrl||null;
+      if(state.photoDataUrl){
+        document.getElementById('photoPreview').classList.remove('hidden');
+        document.getElementById('photoImg').src = state.photoDataUrl;
+      }
       document.querySelector('.tab[data-tab="contracts"]').click();
     }
+
     document.getElementById('search').addEventListener('input', renderDealsTable);
     document.getElementById('filterStatus').addEventListener('change', renderDealsTable);
 
@@ -1000,9 +1113,12 @@ Seller: ____________________________   Date: ____________`;
     function renderPipeline(){
       document.getElementById('dealCount').textContent = `${state.deals.length} total deals`;
       ['lead','offer','pending','sent','signed','attorney','closed'].forEach(st=>{
-        const col = document.getElementById('col-'+st); if(!col) return; col.innerHTML='';
+        const col = document.getElementById('col-'+st);
+        if(!col) return;
+        col.innerHTML='';
         state.deals.filter(d=>d.status===st).forEach(deal=>{
-          const card = document.createElement('div'); card.className='bg-white dark:bg-[#0b1322] rounded-xl border p-3 text-sm space-y-1';
+          const card = document.createElement('div');
+          card.className='bg-white dark:bg-[#0b1322] rounded-xl border p-3 text-sm space-y-1';
           card.innerHTML = `
             <div class="font-medium">${deal.propertyAddress}</div>
             <div class="text-xs text-gray-500">${deal.sellerNames||''} • ${money(deal.purchasePrice)}</div>
@@ -1012,154 +1128,589 @@ Seller: ____________________________   Date: ____________`;
                 <select class="mobile-only border rounded-lg px-2 py-1 text-xs">
                   ${Object.keys(STATUS_MAP).map(k=>`<option value="${k}" ${k===deal.status?'selected':''}>${STATUS_MAP[k].label}</option>`).join('')}
                 </select>
+                <button class="btn btn-outline text-xs px-2 py-1 desktop-only">PDF</button>
               </div>
             </div>
           `;
-          // Status dropdown handler (mobile)
-          const select = card.querySelector('select');
-          if (select) {
-            select.addEventListener('change', e => {
-              deal.status = e.target.value;
-              save('deals', state.deals);
-              renderPipeline();
-              renderDealsTable();
-            });
-          }
+          const sel = card.querySelector('select');
+          sel && (sel.onchange = ()=>{
+            deal.status = sel.value;
+            save('deals',state.deals);
+            renderPipeline();
+            renderDealsTable();
+          });
+          const pdfBtn = card.querySelector('button');
+          pdfBtn && (pdfBtn.onclick = async ()=>{
+            (await generatePdf(deal, { templateKey: deal.template||'standard' })).save(`Contract_${deal.propertyAddress.replaceAll(' ','_')}.pdf`);
+          });
           col.appendChild(card);
         });
       });
-      lucide.createIcons();
     }
-    renderDealsTable();
-    renderPipeline();
 
-    // Buyers
-    function renderBuyers() {
-      const tbody = document.getElementById('buyerRows');
-      if (!tbody) return;
-      tbody.innerHTML = '';
-      state.buyers.forEach((b, idx) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td class="py-2 pr-4">${b.name}</td>
-          <td class="py-2 pr-4">${b.email}</td>
-          <td class="py-2 pr-4">${b.phone}</td>
-          <td class="py-2 pr-4">${b.tags}</td>
-          <td class="py-2 pr-4">${b.notes || ''}</td>
-          <td class="py-2 pr-4 flex gap-2">
-            <button class="btn btn-outline text-xs px-2 py-1 edit">Edit</button>
-            <button class="btn btn-outline text-xs px-2 py-1 del">Delete</button>
-          </td>
-        `;
-        tr.querySelector('.edit').onclick = () => {
-          const name = prompt('Name', b.name);
-          if (name === null) return;
-          b.name = name;
-          b.email = prompt('Email', b.email);
-          b.phone = prompt('Phone', b.phone);
-          b.tags = prompt('Tags', b.tags);
-          b.notes = prompt('Notes', b.notes);
-          save('buyers', state.buyers);
-          renderBuyers();
+    // ========= EmailJS + Supabase =========
+    function sb(){
+      return window.supabase.createClient(state.settings.sbUrl, state.settings.sbAnon);
+    }
+
+    async function uploadPdfAndGetUrl(fileBlob, fileNameHint='Contract'){
+      if (!state.settings.sbUrl || !state.settings.sbAnon){
+        throw new Error('Supabase not configured');
+      }
+      const client = sb();
+      const safe=(fileNameHint||'Contract').replace(/[^a-z0-9-_]/gi,'_');
+      const path = `${safe}_${Date.now()}.pdf`;
+      const { error } = await client.storage.from(state.settings.sbBucket||'contracts').upload(path, fileBlob, { contentType:'application/pdf', upsert:false });
+      if (error) throw error;
+      const { data } = client.storage.from(state.settings.sbBucket||'contracts').getPublicUrl(path);
+      return data.publicUrl;
+    }
+
+    async function ensureEmailJs(){
+      if (!window.emailjs){
+        await new Promise(res=>{
+          const s=document.createElement('script');
+          s.src='https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js';
+          s.onload=res;
+          document.body.appendChild(s);
+        });
+      }
+      const pub = state.settings.ejPublic;
+      if(!pub) throw new Error('EmailJS public key missing');
+      window.emailjs.init({ publicKey: pub });
+    }
+
+    async function sendEmail({to, subject, body, vars={}}){
+      const svc=state.settings.ejService, tpl=state.settings.ejTemplate;
+      if(!(svc&&tpl)) throw new Error('EmailJS service or template missing');
+      await ensureEmailJs();
+      return window.emailjs.send(svc, tpl, { to_email: to, subject, message: body, ...vars });
+    }
+
+    // Contracts tab email button
+    document.getElementById('sendEmailBtn').addEventListener('click', async ()=>{
+      try{
+        const to = document.getElementById('emailTo').value.trim();
+        if(!to) return alert('Seller email required');
+        const svc = document.getElementById('emailjsService').value.trim();
+        if(svc){
+          state.settings.ejService=svc;
+          localStorage.setItem('EJ_SERVICE', svc);
+        }
+        const tpl = document.getElementById('emailjsTemplate').value.trim();
+        if(tpl){
+          state.settings.ejTemplate=tpl;
+          localStorage.setItem('EJ_TEMPLATE', tpl);
+        }
+        const pub = document.getElementById('emailjsPublic').value.trim();
+        if(pub){
+          state.settings.ejPublic=pub;
+          localStorage.setItem('EJ_PUBLIC', pub);
+        }
+        const deal = state.deals[0];
+        if(!deal) return alert('Save a deal first');
+        const pdf = await generatePdf(deal, { templateKey: deal.template||'standard' });
+        const blob = pdf.output('blob');
+        const link = await uploadPdfAndGetUrl(blob, deal.propertyAddress);
+        await sendEmail({ to, subject:`Contract for ${deal.propertyAddress} — ${deal.bizName}`, body:`Here is the agreement link: ${link}`, vars:{ bizName:deal.bizName, sellerNames:deal.sellerNames, propertyAddress:deal.propertyAddress, link } });
+        alert('Email sent with public link!');
+      }catch(e){
+        alert('Send failed: '+e.message);
+      }
+    });
+
+    // Offer versioning (Cash / Terms / Both)
+    function computeMAOFromLeadOrForm(){
+      const arv = Number(document.getElementById('leadARV').value||0);
+      const rep = Number(document.getElementById('leadRepairs').value||0);
+      return Math.max(0, arv*0.7 - rep);
+    }
+
+    async function sendOfferVariant(kind){
+      try{
+        const to = (document.getElementById('offerEmailTo').value||'').trim();
+        if(!to) return alert('Recipient required');
+        const address = document.getElementById('leadAddress').value || (state.leads[0]?.address||'Property');
+        const biz = document.getElementById('bizName').value || 'Your LLC';
+        const mao = computeMAOFromLeadOrForm();
+        let price = mao;
+        let templateKey='standard';
+        let terms = 'Cash offer';
+        if (kind==='cash'){
+          const pct = Number(document.getElementById('offerCashPct').value||100)/100;
+          price = Math.round(mao*pct);
+          terms = `Cash offer at ~${Math.round(pct*100)}% of MAO.`;
+        } else if(kind==='terms'){
+          const arv = Number(document.getElementById('leadARV').value||0);
+          const downPct = Number(document.getElementById('offerTermsDownPct').value||5)/100;
+          const rate = Number(document.getElementById('offerTermsRate').value||4.5);
+          const yrs = Number(document.getElementById('offerTermsAmort').value||30);
+          const down = Math.round(arv*downPct);
+          // Rough P&I for visibility
+          const princ = Math.max(0, (price||arv) - down);
+          const mRate = rate/100/12;
+          const n = yrs*12;
+          const pmt = mRate>0 ? Math.round(princ * (mRate*Math.pow(1+mRate,n))/(Math.pow(1+mRate,n)-1)) : Math.round(princ/n);
+          templateKey='subject_to';
+          terms = `Subject-to terms: ~${money(down)} down, ~${rate}% ${yrs}yr, est P&I ≈ ${money(pmt)}/mo (taxes/ins extra).`;
+          price = arv || mao; // terms price often nearer ARV
+        }
+        const tempDeal = {
+          bizName: biz,
+          bizAddress: document.getElementById('bizAddress').value||'',
+          propertyAddress: address,
+          sellerNames: '',
+          purchasePrice: price,
+          dealTerms: terms,
+          status: 'offer',
+          photoDataUrl: null,
+          template: templateKey
         };
-        tr.querySelector('.del').onclick = () => {
-          if (confirm('Delete buyer?')) {
-            state.buyers.splice(idx, 1);
-            save('buyers', state.buyers);
+        const pdf = await generatePdf(tempDeal, { templateKey });
+        const blob = pdf.output('blob');
+        const link = await uploadPdfAndGetUrl(blob, tempDeal.propertyAddress);
+        const body = `${terms}\n\nView agreement: ${link}`;
+        await sendEmail({ to, subject:`Offer for ${address} — ${biz} (${kind.toUpperCase()})`, body, vars:{ bizName:biz, sellerNames:'', propertyAddress:address, link } });
+        alert(`${kind==='cash'?'Cash':'Terms'} offer sent!`);
+      }catch(e){
+        alert('Offer send failed: '+e.message);
+      }
+    }
+
+    document.getElementById('sendCashOfferBtn').addEventListener('click', e=>{
+      e.preventDefault();
+      sendOfferVariant('cash');
+    });
+
+    document.getElementById('sendTermsOfferBtn').addEventListener('click', e=>{
+      e.preventDefault();
+      sendOfferVariant('terms');
+    });
+
+    document.getElementById('sendBothOffersBtn').addEventListener('click', async e=>{
+      e.preventDefault();
+      await sendOfferVariant('cash');
+      await sendOfferVariant('terms');
+    });
+
+    // Dispo blast (simple tag match on buyers.criteria)
+    document.getElementById('dispoSendBtn').addEventListener('click', async ()=>{
+      try{
+        const tags = (document.getElementById('dispoTags').value||'').toLowerCase().split(/[,;]+/).map(s=>s.trim()).filter(Boolean);
+        const body = document.getElementById('dispoBody').value||'New deal available.';
+        if (!tags.length) return alert('Enter at least one tag');
+        const matches = state.buyers.filter(b=>
+          (b.criteria||'').toLowerCase().split(/[,;]+/).some(c=> tags.includes(c.trim())));
+        if (!matches.length) return alert('No matching buyers yet.');
+        await ensureEmailJs();
+        for (const b of matches){
+          await sendEmail({ to:b.email, subject:'Deal Opportunity', body, vars:{} });
+        }
+        alert('Blast sent to matching buyers!');
+      }catch(e){
+        alert('Blast failed: '+e.message);
+      }
+    });
+
+    // ========= Signer (PDF preview + typed/drawn placement) =========
+    const pdfjsLibLocal = window['pdfjs-dist/build/pdf'];
+    pdfjsLibLocal.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    const pdfFile = document.getElementById('pdfFile');
+    const pdfContainer = document.getElementById('pdfContainer');
+    const addSigBtn = document.getElementById('addSigBtn');
+    const addInitBtn = document.getElementById('addInitBtn');
+    const finishBtn = document.getElementById('finishBtn');
+    let currentTool = null;
+
+    pdfFile && pdfFile.addEventListener('change', async (e)=>{
+      const file = e.target.files[0];
+      if(!file) return;
+      state.signer.pdfBytes = await file.arrayBuffer();
+      await loadPdfForPreview(state.signer.pdfBytes);
+      if(addSigBtn) addSigBtn.disabled=false;
+      if(addInitBtn) addInitBtn.disabled=false;
+      if(finishBtn) finishBtn.disabled=false;
+    });
+
+    async function loadPdfForPreview(pdfBytes){
+      if (!pdfContainer) return;
+      pdfContainer.innerHTML='';
+      state.signer.placements = [];
+      const loadingTask = pdfjsLibLocal.getDocument({ data: pdfBytes });
+      const pdf = await loadingTask.promise;
+      state.signer.pages=[];
+      for(let i=1;i<=pdf.numPages;i++){
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({ scale: 1.1 });
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const ctx = canvas.getContext('2d');
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        canvas.className='mx-auto border rounded-lg bg-white';
+        canvas.dataset.page=i;
+        pdfContainer.appendChild(canvas);
+        state.signer.pages.push({canvas,viewport});
+        const tap = (evt)=>{
+          if(!currentTool) return;
+          const rect=canvas.getBoundingClientRect();
+          const x=(evt.touches?evt.touches[0].clientX:evt.clientX)-rect.left;
+          const y=(evt.touches?evt.touches[0].clientY:evt.clientY)-rect.top;
+          placeFieldOnCanvas(canvas,x,y,currentTool==='sig'?'Signature':'Initials');
+        };
+        canvas.addEventListener('click', tap, {passive:true});
+        canvas.addEventListener('touchstart', tap, {passive:true});
+      }
+    }
+
+    function placeFieldOnCanvas(canvas,x,y,label){
+      const ctx=canvas.getContext('2d');
+      ctx.save();
+      ctx.strokeStyle='#06b6d4';
+      ctx.setLineDash([4,3]);
+      ctx.strokeRect(x-60,y-18,120,36);
+      ctx.fillStyle='#06b6d4';
+      ctx.font='12px sans-serif';
+      ctx.fillText(label,x-55,y-24);
+      ctx.restore();
+      state.signer.placements.push({ page:Number(canvas.dataset.page), x, y, type: label.toLowerCase() });
+    }
+
+    addSigBtn && addSigBtn.addEventListener('click',()=> currentTool='sig');
+    addInitBtn && addInitBtn.addEventListener('click',()=> currentTool='init');
+
+    // Draw pads
+    function makePad(canvas){
+      if(!canvas) return null;
+      function resize(){
+        const ratio = Math.max(1, Math.floor(window.devicePixelRatio||1));
+        const dw = canvas.clientWidth||300;
+        const dh = canvas.classList.contains('h-24')?96:160;
+        canvas.width=dw*ratio;
+        canvas.height=dh*ratio;
+        const ctx = canvas.getContext('2d');
+        ctx.setTransform(ratio,0,0,ratio,0,0);
+      }
+      resize();
+      window.addEventListener('resize', resize);
+      const ctx=canvas.getContext('2d');
+      let drawing=false, last=null;
+      function draw(e){
+        const r=canvas.getBoundingClientRect();
+        const x=(e.touches?e.touches[0].clientX:e.clientX)-r.left;
+        const y=(e.touches?e.touches[0].clientY:e.clientY)-r.top;
+        if(!drawing) return;
+        ctx.lineWidth=2;
+        ctx.lineCap='round';
+        ctx.strokeStyle='#111827';
+        ctx.beginPath();
+        ctx.moveTo(last.x,last.y);
+        ctx.lineTo(x,y);
+        ctx.stroke();
+        last={x,y};
+      }
+      canvas.addEventListener('mousedown', e=>{drawing=true; last={x:e.offsetX,y:e.offsetY}});
+      canvas.addEventListener('mousemove', draw);
+      canvas.addEventListener('mouseup', ()=>drawing=false);
+      canvas.addEventListener('mouseleave', ()=>drawing=false);
+      canvas.addEventListener('touchstart', e=>{drawing=true; const r=canvas.getBoundingClientRect(); last={x:e.touches[0].clientX-r.left,y:e.touches[0].clientY-r.top}}, {passive:true});
+      canvas.addEventListener('touchmove', draw, {passive:true});
+      canvas.addEventListener('touchend', ()=>drawing=false);
+      return {
+        clear(){ ctx.clearRect(0,0,canvas.width,canvas.height); },
+        toDataURL(){ return canvas.toDataURL('image/png'); }
+      };
+    }
+
+    const sigPad = makePad(document.getElementById('sigPad'));
+    const initPad = makePad(document.getElementById('initPad'));
+    const sigClear = document.getElementById('sigClear');
+    const initClear = document.getElementById('initClear');
+    sigClear && sigClear.addEventListener('click',()=> sigPad && sigPad.clear());
+    initClear && initClear.addEventListener('click',()=> initPad && initPad.clear());
+
+    document.getElementById('sigSave') && document.getElementById('sigSave').addEventListener('click',()=>{
+      state.signer.signatureUrl = sigPad && sigPad.toDataURL();
+      alert('Signature (drawn) saved. Tap to place.');
+    });
+
+    document.getElementById('initSave') && document.getElementById('initSave').addEventListener('click',()=>{
+      state.signer.initialsUrl = initPad && initPad.toDataURL();
+      alert('Initials (drawn) saved. Tap to place.');
+    });
+
+    // Typed signature/initials (from your inputs & font selectors)
+    const typedSigInput = document.getElementById('typedSigInput') || document.getElementById('typedSignatureInput');
+    const typedSigFont = document.getElementById('typedSigFont');
+    const typedInitInput = document.getElementById('typedInitInput') || document.getElementById('typedInitialsInput');
+    const typedInitFont = document.getElementById('typedInitFont');
+
+    function renderTypedToDataURL(text, fontCss, px){
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = Math.max(400, text.length*24);
+      canvas.height = px+40;
+      ctx.fillStyle='#111827';
+      ctx.font = `${px}px ${fontCss||'cursive'}`;
+      ctx.textBaseline='alphabetic';
+      ctx.fillText(text, 20, px+10);
+      return canvas.toDataURL('image/png');
+    }
+
+    document.getElementById('typedSigGenerate') && document.getElementById('typedSigGenerate').addEventListener('click',()=>{
+      const text = (typedSigInput && typedSigInput.value.trim()) || '';
+      if(!text) return alert('Type your name for the signature');
+      const font = (typedSigFont && typedSigFont.value) || "'Great Vibes', cursive";
+      state.signer.signatureUrl = renderTypedToDataURL(text, font, 48);
+      alert('Typed signature saved. Tap page to place.');
+    });
+
+    document.getElementById('typedInitGenerate') && document.getElementById('typedInitGenerate').addEventListener('click',()=>{
+      const text = (typedInitInput && typedInitInput.value.trim()) || '';
+      if(!text) return alert('Type your initials');
+      const font = (typedInitFont && typedInitFont.value) || "'Dancing Script', cursive";
+      state.signer.initialsUrl = renderTypedToDataURL(text, font, 36);
+      alert('Typed initials saved. Tap page to place.');
+    });
+
+    // Finalize: burn signatures/initials into PDF
+    finishBtn && finishBtn.addEventListener('click', async ()=>{
+      if (!state.signer.pdfBytes) return alert('Upload a PDF first');
+      const pdfDoc = await PDFLib.PDFDocument.load(state.signer.pdfBytes);
+      const sigImg = state.signer.signatureUrl? await pdfDoc.embedPng(state.signer.signatureUrl):null;
+      const initImg = state.signer.initialsUrl? await pdfDoc.embedPng(state.signer.initialsUrl):null;
+      state.signer.placements.forEach(p=>{
+        const page = pdfDoc.getPage(p.page-1);
+        const {width,height}=page.getSize();
+        const cv=state.signer.pages[p.page-1];
+        const sx=width/cv.canvas.width, sy=height/cv.canvas.height;
+        const img=p.type==='signature'?sigImg:initImg;
+        if(!img) return;
+        const w=p.type==='signature'?180:100, h=p.type==='signature'?50:40;
+        const x=p.x*sx - w/2, y=height - (p.y*sy) - h/2;
+        page.drawImage(img,{x,y,width:w,height:h});
+      });
+      const bytes = await pdfDoc.save();
+      const blob = new Blob([bytes],{type:'application/pdf'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url;
+      a.download='Signed_Document.pdf';
+      a.click();
+    });
+
+    // ========= Buyers =========
+    document.getElementById('addBuyerBtn').addEventListener('click',()=>{
+      const name=prompt('Buyer name');
+      if(!name) return;
+      const email=prompt('Email')||'';
+      const phone=prompt('Phone')||'';
+      const criteria=prompt('Criteria/Tags (zip;price;rehab)')||'';
+      const notes=prompt('Notes')||'';
+      state.buyers.unshift({name,email,phone,criteria,notes,createdAt:Date.now()});
+      save('buyers',state.buyers);
+      renderBuyers();
+    });
+
+    function renderBuyers(){
+      const tbody=document.getElementById('buyerRows');
+      if(!tbody) return;
+      tbody.innerHTML='';
+      state.buyers.forEach((b,idx)=>{
+        const tr=document.createElement('tr');
+        tr.innerHTML=`<td class='py-2 pr-4'>${b.name}</td><td class='py-2 pr-4'>${b.email}</td><td class='py-2 pr-4'>${b.phone}</td><td class='py-2 pr-4'>${b.criteria}</td><td class='py-2 pr-4'>${b.notes}</td><td class='py-2 pr-4'><button class='btn btn-outline text-xs px-2 py-1 del'>Delete</button></td>`;
+        tr.querySelector('.del').onclick=()=>{
+          if(confirm('Delete buyer?')){
+            state.buyers.splice(idx,1);
+            save('buyers',state.buyers);
             renderBuyers();
           }
         };
         tbody.appendChild(tr);
       });
     }
-    document.getElementById('addBuyerBtn').addEventListener('click', () => {
-      const name = prompt('Buyer name');
-      if (!name) return;
-      const buyer = {
-        id: 'B' + Date.now(),
-        name,
-        email: prompt('Email') || '',
-        phone: prompt('Phone') || '',
-        tags: prompt('Tags / Criteria') || '',
-        notes: prompt('Notes') || ''
+
+    // ========= KPI & One Metric =========
+    function updateKPI(){
+      const weekStart = (()=>{
+        const d=new Date();
+        const day=d.getDay();
+        const diff=d.getDate()-day+(day===0?-6:1);
+        return new Date(d.setDate(diff));
+      })();
+      const weekStartMs = new Date(weekStart.getFullYear(),weekStart.getMonth(),weekStart.getDate()).getTime();
+      const thisMonth = new Date();
+      const monthStartMs = new Date(thisMonth.getFullYear(), thisMonth.getMonth(), 1).getTime();
+      const convos = state.calls.filter(c=>c.type==='convo' && c.ts>=weekStartMs).length;
+      const offers = state.deals.filter(d=>d.createdAt>=weekStartMs && (d.status==='offer' || d.status==='pending' || d.status==='sent')).length;
+      const contracts = state.deals.filter(d=>d.createdAt>=monthStartMs && (d.status==='pending'||d.status==='signed'||d.status==='attorney'||d.status==='closed')).length;
+      const fees = state.deals.filter(d=>d.createdAt>=monthStartMs && d.fee).reduce((a,b)=>a+Number(b.fee||0),0);
+
+      const set = (id,val)=>{
+        const el=document.getElementById(id);
+        if(el) el.textContent = val;
       };
-      state.buyers.push(buyer);
-      save('buyers', state.buyers);
-      renderBuyers();
-    });
-    renderBuyers();
+      set('kpiConvos', convos);
+      set('kpiOffers', offers);
+      set('kpiContracts', contracts);
+      set('kpiFees', money(fees));
 
-    // KPI
-    function renderKpi() {
-      const convos = state.calls.length;
-      const offers = state.deals.filter(d => d.status === 'offer' || d.status === 'sent').length;
-      const contracts = state.deals.filter(d => d.status === 'signed').length;
-      const fees = state.deals.reduce((sum, d) => sum + (d.fee || 0), 0);
+      const g = state.goals;
+      set('kpiConvosTarget', `Goal ${g.convos}`);
+      set('kpiOffersTarget', `Goal ${g.offers}`);
+      set('kpiContractsTarget', `Goal ${g.contracts}`);
 
-      document.getElementById('kpiConvos').textContent = convos;
-      document.getElementById('kpiOffers').textContent = offers;
-      document.getElementById('kpiContracts').textContent = contracts;
-      document.getElementById('kpiFees').textContent = money(fees);
-
-      document.getElementById('kpiConvosMeter').style.width = Math.min(100, (convos / state.goals.convos) * 100) + '%';
-      document.getElementById('kpiOffersMeter').style.width = Math.min(100, (offers / state.goals.offers) * 100) + '%';
-      document.getElementById('kpiContractsMeter').style.width = Math.min(100, (contracts / state.goals.contracts) * 100) + '%';
-      document.getElementById('kpiFeesMeter').style.width = Math.min(100, (fees / 35000) * 100) + '%';
-
-      document.getElementById('kpiConvosTarget').textContent = 'Goal ' + state.goals.convos;
-      document.getElementById('kpiOffersTarget').textContent = 'Goal ' + state.goals.offers;
-      document.getElementById('kpiContractsTarget').textContent = 'Goal ' + state.goals.contracts;
-      document.getElementById('omValue').textContent = convos;
-      document.getElementById('omMeter').style.width = Math.min(100, (convos / state.goals.convos) * 100) + '%';
+      const w = (num,den)=> Math.min(100, ((num/den)*100)||0)+'%';
+      const wset = (id, val)=>{
+        const el=document.getElementById(id);
+        if(el) el.style.width = val;
+      };
+      wset('kpiConvosMeter', w(convos,g.convos));
+      wset('kpiOffersMeter', w(offers,g.offers));
+      wset('kpiContractsMeter', w(contracts,g.contracts));
+      wset('kpiFeesMeter', w(fees,35000));
+      renderOneMetric();
     }
-    document.getElementById('saveGoalsBtn').addEventListener('click', () => {
+
+    document.getElementById('saveGoalsBtn').addEventListener('click',()=>{
       state.goals = {
-        convos: Number(document.getElementById('goalConvos').value || 50),
-        offers: Number(document.getElementById('goalOffers').value || 10),
-        contracts: Number(document.getElementById('goalContracts').value || 5)
+        convos:Number(document.getElementById('goalConvos').value||50),
+        offers:Number(document.getElementById('goalOffers').value||10),
+        contracts:Number(document.getElementById('goalContracts').value||5)
       };
-      save('goals', state.goals);
-      renderKpi();
+      save('goals',state.goals);
+      updateKPI();
       alert('Goals saved');
     });
-    renderKpi();
 
-    // Settings save
-    document.getElementById('saveSbBtn').addEventListener('click', () => {
-      state.settings.sbUrl = document.getElementById('sbUrl').value.trim();
-      state.settings.sbAnon = document.getElementById('sbAnon').value.trim();
-      state.settings.sbBucket = document.getElementById('sbBucket').value.trim();
-      save('SUPABASE_URL', state.settings.sbUrl);
-      save('SUPABASE_ANON', state.settings.sbAnon);
-      save('SUPABASE_BUCKET', state.settings.sbBucket);
+    // ========= Settings =========
+    // Prefill
+    (function prefillSettings(){
+      const S = state.settings;
+      const id = s=>document.getElementById(s);
+      id('sbUrl').value = S.sbUrl;
+      id('sbAnon').value = S.sbAnon;
+      id('sbBucket').value = S.sbBucket;
+      id('ejService').value = S.ejService;
+      id('ejTemplate').value = S.ejTemplate;
+      id('ejPublic').value = S.ejPublic;
+    })();
+
+    document.getElementById('saveSbBtn').addEventListener('click',()=>{
+      state.settings.sbUrl=document.getElementById('sbUrl').value.trim();
+      state.settings.sbAnon=document.getElementById('sbAnon').value.trim();
+      state.settings.sbBucket=document.getElementById('sbBucket').value.trim()||'contracts';
+      localStorage.setItem('SUPABASE_URL',state.settings.sbUrl);
+      localStorage.setItem('SUPABASE_ANON',state.settings.sbAnon);
+      localStorage.setItem('SUPABASE_BUCKET',state.settings.sbBucket);
       alert('Supabase saved');
     });
-    document.getElementById('saveEjBtn').addEventListener('click', () => {
-      state.settings.ejService = document.getElementById('ejService').value.trim();
-      state.settings.ejTemplate = document.getElementById('ejTemplate').value.trim();
-      state.settings.ejPublic = document.getElementById('ejPublic').value.trim();
-      save('EJ_SERVICE', state.settings.ejService);
-      save('EJ_TEMPLATE', state.settings.ejTemplate);
-      save('EJ_PUBLIC', state.settings.ejPublic);
+
+    document.getElementById('saveEjBtn').addEventListener('click',()=>{
+      state.settings.ejService=document.getElementById('ejService').value.trim();
+      state.settings.ejTemplate=document.getElementById('ejTemplate').value.trim();
+      state.settings.ejPublic=document.getElementById('ejPublic').value.trim();
+      localStorage.setItem('EJ_SERVICE',state.settings.ejService);
+      localStorage.setItem('EJ_TEMPLATE',state.settings.ejTemplate);
+      localStorage.setItem('EJ_PUBLIC',state.settings.ejPublic);
       alert('EmailJS saved');
     });
 
-    // Restore settings into inputs
-    document.getElementById('sbUrl').value = state.settings.sbUrl;
-    document.getElementById('sbAnon').value = state.settings.sbAnon;
-    document.getElementById('sbBucket').value = state.settings.sbBucket;
-    document.getElementById('ejService').value = state.settings.ejService;
-    document.getElementById('ejTemplate').value = state.settings.ejTemplate;
-    document.getElementById('ejPublic').value = state.settings.ejPublic;
+    // ========= Export / Backup / Restore =========
+    document.getElementById('exportCsvBtn').addEventListener('click',()=>{
+      const rows = [['Type','Address','Name','Phone','Email','ARV','Repairs','Ask','Status','Notes','Created','Fee']];
+      state.leads.forEach(l=> rows.push(['Lead',l.address,l.seller,l.phone,l.email,l.arv,l.repairs,l.ask,l.status,(l.notes||'').replace(/\n/g,' '), new Date(l.createdAt).toLocaleString(),'']));
+      state.deals.forEach(d=> rows.push(['Deal',d.propertyAddress,d.sellerNames,'','', '', '', d.purchasePrice,d.status,(d.dealTerms||'').replace(/\n/g,' '), new Date(d.createdAt).toLocaleString(), d.fee||0]));
+      const csv = rows.map(r=> r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv],{type:'text/csv'});
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);
+      a.download='rei-export.csv';
+      a.click();
+    });
 
-    // Init
-    renderLeads();
-    renderDealsTable();
-    renderPipeline();
-    renderBuyers();
-    renderKpi();
+    document.getElementById('backupBtn').addEventListener('click',()=>{
+      const payload=JSON.stringify({
+        settings:state.settings,
+        leads:state.leads,
+        deals:state.deals,
+        buyers:state.buyers,
+        calls:state.calls,
+        goals:state.goals
+      }, null, 2);
+      const blob=new Blob([payload],{type:'application/json'});
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);
+      a.download='rei-backup.json';
+      a.click();
+    });
+
+    document.getElementById('restoreBtn').addEventListener('click',()=> document.getElementById('restoreInput').click());
+
+    document.getElementById('restoreInput').addEventListener('change', async (e)=>{
+      const f=e.target.files[0];
+      if(!f) return;
+      const txt=await f.text();
+      try{
+        const data=JSON.parse(txt);
+        if(data.settings) state.settings=data.settings;
+        if(data.leads) state.leads=data.leads;
+        if(data.deals) state.deals=data.deals;
+        if(data.buyers) state.buyers=data.buyers;
+        if(data.calls) state.calls=data.calls;
+        if(data.goals) state.goals=data.goals;
+        save('leads',state.leads);
+        save('deals',state.deals);
+        save('buyers',state.buyers);
+        save('calls',state.calls);
+        localStorage.setItem('SUPABASE_URL',state.settings.sbUrl||'');
+        localStorage.setItem('SUPABASE_ANON',state.settings.sbAnon||'');
+        localStorage.setItem('SUPABASE_BUCKET',state.settings.sbBucket||'contracts');
+        localStorage.setItem('EJ_SERVICE',state.settings.ejService||'');
+        localStorage.setItem('EJ_TEMPLATE',state.settings.ejTemplate||'');
+        localStorage.setItem('EJ_PUBLIC',state.settings.ejPublic||'');
+        renderLeads();
+        renderDealsTable();
+        renderPipeline();
+        renderBuyers();
+        updateKPI();
+        alert('Restored!');
+      }catch{
+        alert('Invalid backup file');
+      }
+    });
+
+    // ========= Init =========
+    function init(){
+      renderLeads();
+      renderDealsTable();
+      renderPipeline();
+      renderBuyers();
+      updateKPI();
+    }
+    init();
+
+    // ========= Minimal PWA (optional) =========
+    (function setupPWA(){
+      const manifest = {
+        name:'REI Stack',
+        short_name:'REI',
+        start_url:'./',
+        display:'standalone',
+        background_color:'#0ea5e9',
+        theme_color:'#0ea5e9',
+        icons:[{src:'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><rect width=%2264%22 height=%2264%22 rx=%2210%22 fill=%22%2306b6d4%22/><text x=%2232%22 y=%2239%22 font-size=%2230%22 text-anchor=%22middle%22 fill=%22white%22 font-family=%22Arial%22>REI</text></svg>', sizes:'64x64', type:'image/svg+xml'}]
+      };
+      const blob = new Blob([JSON.stringify(manifest)],{type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const link=document.createElement('link');
+      link.rel='manifest';
+      link.href=url;
+      document.head.appendChild(link);
+      const swCode = `self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{self.clients.claim();});`;
+      const swUrl = URL.createObjectURL(new Blob([swCode],{type:'text/javascript'}));
+      navigator.serviceWorker && navigator.serviceWorker.register(swUrl).catch(()=>{});
+    })();
   </script>
 </body>
 </html>
-
-                
