@@ -5,11 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>REI Stack — MBPS Deal Sprint + DealDesk CRM</title>
   <meta name="theme-color" content="#0ea5e9" />
-  <!-- Add favicon to prevent 404 error -->
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><rect width=%2264%22 height=%2264%22 rx=%2210%22 fill=%22%2306b6d4%22/><text x=%2232%22 y=%2239%22 font-size=%2230%22 text-anchor=%22middle%22 fill=%22white%22 font-family=%22Arial%22>REI</text></svg>">
-  <!-- Fonts for typed signature styles -->
   <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Dancing+Script:wght@600&family=Pacifico&family=Satisfy&display=swap" rel="stylesheet">
-  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -30,7 +27,6 @@
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css"/>
-  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root { --ring: 0 0 0 3px rgb(14 165 233 / .25); }
@@ -55,19 +51,66 @@
     .meter { height:10px; border-radius:999px; background:#e5e7eb; overflow:hidden; }
     .meter > i { display:block; height:100%; background:#06b6d4; }
     .sticky-topbar { position: sticky; top: 0; z-index: 40; }
+    
+    .sprint-day { 
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); 
+      border-radius: 1rem; 
+      padding: 1rem; 
+      margin-bottom: 1rem; 
+      border: 2px solid #e2e8f0;
+      transition: all 0.3s ease;
+    }
+    .sprint-day.day-1 { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-color: #f59e0b; }
+    .sprint-day.day-2 { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-color: #f59e0b; }
+    .sprint-day.day-3 { background: linear-gradient(135deg, #dbeafe 0%, #93c5fd 100%); border-color: #3b82f6; }
+    .sprint-day.day-4 { background: linear-gradient(135deg, #dbeafe 0%, #93c5fd 100%); border-color: #3b82f6; }
+    .sprint-day.day-5 { background: linear-gradient(135deg, #dcfce7 0%, #86efac 100%); border-color: #22c55e; }
+    .sprint-day.day-6 { background: linear-gradient(135deg, #dcfce7 0%, #86efac 100%); border-color: #22c55e; }
+    .sprint-day.day-7 { background: linear-gradient(135deg, #fce7f3 0%, #f9a8d4 100%); border-color: #ec4899; }
+
+    .sprint-task { 
+      display: flex; 
+      align-items: center; 
+      padding: 0.5rem; 
+      margin: 0.25rem 0; 
+      background: rgba(255, 255, 255, 0.7); 
+      border-radius: 0.5rem; 
+      font-size: 0.9rem;
+      transition: all 0.2s ease;
+    }
+    .sprint-task:hover { background: rgba(255, 255, 255, 0.9); }
+    .sprint-task input[type="checkbox"] { margin-right: 0.5rem; accent-color: #06b6d4; }
+    .sprint-task.completed { opacity: 0.6; text-decoration: line-through; }
+    
+    .progress-bar { 
+      width: 100%; 
+      height: 1rem; 
+      background: #e5e7eb; 
+      border-radius: 999px; 
+      overflow: hidden; 
+      margin: 0.5rem 0;
+    }
+    .progress-fill { 
+      height: 100%; 
+      background: linear-gradient(90deg, #06b6d4, #0891b2); 
+      transition: width 0.3s ease; 
+      border-radius: 999px;
+    }
+    
     @media (max-width: 640px){
       .btn { padding:.95rem 1.05rem; font-size:1rem; }
       .mobile-only { display:block !important; }
       .desktop-only { display:none !important; }
       input, select, textarea { font-size:16px; }
       .sticky-tabs { position: sticky; top: 56px; z-index: 30; background: rgba(255,255,255,.9); backdrop-filter: blur(6px); }
+      .sprint-day { padding: 0.75rem; margin-bottom: 0.75rem; }
+      .sprint-task { padding: 0.4rem; font-size: 0.85rem; }
     }
     @media (min-width: 641px){
       .mobile-only { display:none !important; }
       .desktop-only { display:block !important; }
     }
     #pdfContainer canvas { width: 100% !important; height: auto !important; }
-    /* Dark theme */
     .dark body { background: linear-gradient(135deg,#0b1220,#111827 40%,#0a1224); color:#e5e7eb; }
     .dark .card { background:#0f172a; border-color:#1f2937; box-shadow:none; }
     .dark .btn { border-color:#334155; color:#e5e7eb; background:#0b1322; }
@@ -86,10 +129,8 @@
     .dark table thead { color:#93a3b8; }
     .dark #pdfContainer { background:#0b1322; border-color:#1f2937; }
     .dark .sticky-tabs { background: rgba(3,8,23,.7); backdrop-filter: blur(6px); }
-    /* One Metric bar */
-    .meter { height:10px; border-radius:999px; background:#e5e7eb; overflow:hidden; }
-    .meter > i { display:block; height:100%; background:#06b6d4; }
-    .sticky-topbar { position: sticky; top: 0; z-index: 40; }
+    .dark .sprint-day { background: linear-gradient(135deg, #1f2937 0%, #374151 100%); border-color: #4b5563; }
+    .dark .sprint-task { background: rgba(15, 23, 42, 0.8); color: #e5e7eb; }
   </style>
 </head>
 <body class="bg-gradient-to-br from-brand-50 via-white to-accent-50 text-gray-800 min-h-screen">
@@ -129,7 +170,8 @@
 
     <!-- NAV TABS -->
     <nav class="sticky-tabs flex flex-wrap gap-2 mb-4 rounded-xl p-1 bg-white/80 dark:bg-[#0b1322]/70">
-      <button class="tab active" data-tab="sprint">Sprint</button>
+      <button class="tab" data-tab="sprint">Sprint</button>
+      <button class="tab active" data-tab="seven-day-sprint">7-Day Sprint</button>
       <button class="tab" data-tab="contracts">Contracts</button>
       <button class="tab" data-tab="pipeline">Pipeline</button>
       <button class="tab" data-tab="signer">Sign</button>
@@ -138,8 +180,71 @@
       <button class="tab" data-tab="settings">Settings</button>
     </nav>
 
-    <!-- SPRINT -->
-    <section id="tab-sprint" class="grid lg:grid-cols-3 gap-6">
+    <!-- 7-DAY SPRINT TAB -->
+    <section id="tab-seven-day-sprint" class="">
+      <div class="grid lg:grid-cols-4 gap-6">
+        <!-- Sprint Overview Card -->
+        <div class="lg:col-span-1 card">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-bold text-brand-700">7-Day Sprint</h2>
+            <button id="resetSprintBtn" class="btn btn-outline text-sm">
+              <i data-lucide="refresh-cw"></i>Reset
+            </button>
+          </div>
+          
+          <!-- Progress Overview -->
+          <div class="space-y-4">
+            <div class="text-center">
+              <div id="sprintProgress" class="text-4xl font-bold text-brand-600 mb-1">0%</div>
+              <div class="text-sm text-gray-600">Complete</div>
+            </div>
+            
+            <div class="progress-bar">
+              <div id="sprintProgressFill" class="progress-fill" style="width: 0%"></div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-3 text-sm">
+              <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 text-center">
+                <div id="tasksCompleted" class="font-bold text-lg">0</div>
+                <div class="text-xs text-gray-600">Tasks Done</div>
+              </div>
+              <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 text-center">
+                <div id="activeDays" class="font-bold text-lg">0</div>
+                <div class="text-xs text-gray-600">Active Days</div>
+              </div>
+            </div>
+            
+            <!-- Sprint Dates -->
+            <div class="pt-3 border-t text-xs text-gray-600 space-y-1">
+              <div><strong>Started:</strong> <span id="sprintStartDate">Not started</span></div>
+              <div><strong>Est. Complete:</strong> <span id="sprintEndDate">—</span></div>
+            </div>
+          </div>
+          
+          <!-- Pro Tips -->
+          <div class="mt-6 p-3 bg-accent-50 dark:bg-accent-900/20 rounded-lg">
+            <h3 class="font-semibold text-sm mb-2">Pro Tips</h3>
+            <ul class="text-xs space-y-1 text-gray-600 dark:text-gray-300">
+              <li>• Use Privy's Investor Activity filter for hot leads</li>
+              <li>• Set up Saved Searches for automation</li>
+              <li>• Use Comparative Search to find similar deals</li>
+              <li>• Focus on distressed properties for higher margins</li>
+              <li>• Track your conversion rates weekly</li>
+            </ul>
+          </div>
+        </div>
+        
+        <!-- Sprint Days -->
+        <div class="lg:col-span-3">
+          <div id="sprintDays" class="space-y-4 max-h-[80vh] overflow-auto">
+            <!-- Days will be dynamically generated here -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SPRINT (Original) -->
+    <section id="tab-sprint" class="hidden grid lg:grid-cols-3 gap-6">
       <!-- Lead intake + calculators -->
       <section class="lg:col-span-1 card">
         <div class="flex items-center justify-between mb-3">
@@ -540,7 +645,7 @@
               <div class="meter mt-2"><i id="kpiFeesMeter" style="width:0%"></i></div>
             </div>
           </div>
-          
+
           <!-- Daily Activity Tracker -->
           <div class="mt-6 p-4 rounded-xl border bg-white dark:bg-[#0b1322]">
             <h3 class="font-semibold mb-3">Daily Activity Tracker</h3>
@@ -562,7 +667,7 @@
                 <div id="responseRate" class="text-lg font-semibold">0%</div>
               </div>
             </div>
-            
+
             <!-- Weekly Conversion Funnel -->
             <div class="mt-4">
               <h4 class="font-medium text-sm mb-2">Weekly Conversion Funnel</h4>
@@ -579,7 +684,7 @@
                 <div class="meter"><i id="offerToContractMeter" style="width:0%"></i></div>
               </div>
             </div>
-            
+
             <!-- Pace to Goal -->
             <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
               <div class="text-sm font-medium">Monthly Pace</div>
@@ -600,7 +705,7 @@
             <button id="saveGoalsBtn" class="btn btn-primary">Save Goals</button>
             <p class="text-xs text-gray-500">Rule: 50 quality convos → 10 offers → 3–5 contracts.</p>
           </div>
-          
+
           <!-- Quick Actions -->
           <div class="mt-6 pt-6 border-t">
             <h3 class="font-semibold mb-3">Quick Actions</h3>
@@ -648,14 +753,14 @@
         <h2 class="text-xl font-semibold">Bulk Import from Privy</h2>
         <button id="closeBulkImport" class="btn btn-outline text-sm"><i data-lucide="x"></i></button>
       </div>
-      
+
       <div class="mb-4">
         <label class="block text-sm font-medium mb-2">Step 1: Upload Privy Export</label>
         <input id="privyFileInput" type="file" accept=".csv" class="hidden" />
         <button id="selectPrivyFile" class="btn btn-outline"><i data-lucide="file-up"></i>Select CSV File</button>
         <span id="privyFileName" class="ml-3 text-sm text-gray-500"></span>
       </div>
-      
+
       <div id="fieldMappingSection" class="hidden mb-4">
         <label class="block text-sm font-medium mb-2">Step 2: Map Fields</label>
         <p class="text-xs text-gray-500 mb-3">Match your Privy columns to the system fields</p>
@@ -709,7 +814,7 @@
             <select id="mapStatus" class="rounded-lg border-gray-200 text-xs"></select>
           </div>
         </div>
-        
+
         <div class="mt-4">
           <label class="block text-sm font-medium mb-2">Import Settings</label>
           <div class="space-y-2">
@@ -735,7 +840,7 @@
           </div>
         </div>
       </div>
-      
+
       <div id="previewSection" class="hidden mb-4">
         <label class="block text-sm font-medium mb-2">Step 3: Preview Import</label>
         <div class="border rounded-lg p-3 bg-gray-50 dark:bg-gray-900 max-h-60 overflow-auto">
@@ -747,12 +852,12 @@
           <span class="ml-4">Duplicates: <span id="duplicateCount" class="font-semibold text-yellow-600">0</span></span>
         </div>
       </div>
-      
+
       <div class="flex gap-3 justify-end mt-6">
         <button id="cancelImport" class="btn btn-outline">Cancel</button>
         <button id="processImport" class="btn btn-primary hidden"><i data-lucide="upload"></i>Import Leads</button>
       </div>
-      
+
       <div id="importProgress" class="hidden mt-4">
         <div class="text-sm mb-2">Importing... <span id="progressCount">0</span> / <span id="progressTotal">0</span></div>
         <div class="meter"><i id="progressBar" style="width:0%"></i></div>
@@ -765,15 +870,73 @@
     const pdfjsLib = window['pdfjs-dist/build/pdf'];
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-    // ========= ONE METRIC (Conversations) =========
+    // ========= 7-Day Sprint Data =========
+    const sprintTasks = [
+      { day: 1, task: "Log into Privy and run 3 different search filters (distressed, high equity, pre-foreclosure)" },
+      { day: 1, task: "Export and organize leads from Privy into your lead management system" },
+      { day: 1, task: "Research comparable sales (comps) for top 10 leads to validate ARV estimates" },
+      { day: 2, task: "Make initial contact calls to top 10 highest-scored leads" },
+      { day: 2, task: "Send follow-up texts to leads who didn't answer the phone" },
+      { day: 2, task: "Email property information requests to listing agents for agent-listed properties" },
+      { day: 3, task: "Follow up with leads who showed interest from Day 2 outreach" },
+      { day: 3, task: "Calculate and present both cash and terms offers to qualified leads" },
+      { day: 3, task: "Schedule property walkthrough appointments for serious prospects" },
+      { day: 4, task: "Visit scheduled properties and conduct thorough inspections" },
+      { day: 4, task: "Update repair estimates based on physical property inspections" },
+      { day: 4, task: "Submit formal written offers (cash and/or subject-to) to qualified properties" },
+      { day: 5, task: "Follow up on submitted offers and negotiate terms with sellers/agents" },
+      { day: 5, task: "Execute purchase agreements for accepted offers" },
+      { day: 5, task: "Begin buyer outreach for contracted properties (dispo blast)" },
+      { day: 6, task: "Schedule and conduct property showings with qualified cash buyers" },
+      { day: 6, task: "Negotiate assignment fees with interested buyers" },
+      { day: 6, task: "Prepare assignment agreements for ready-to-close buyers" },
+      { day: 7, task: "Coordinate with title companies/attorneys for closing logistics" },
+      { day: 7, task: "Confirm all closing documents are prepared and signed" },
+      { day: 7, task: "Plan next week's lead generation strategy based on this week's results" }
+    ];
+
+    // ========= STATE & ONE METRIC =========
     const state = {
       calls: JSON.parse(localStorage.getItem('calls') || '[]'),
-      goals: JSON.parse(localStorage.getItem('goals') || '{"convos":50,"offers":10,"contracts":5}')
+      goals: JSON.parse(localStorage.getItem('goals') || '{"convos":50,"offers":10,"contracts":5}'),
+      sprintTasks: JSON.parse(localStorage.getItem('sprintTasks') || 'null'),
+      sprintStartDate: localStorage.getItem('sprintStartDate') || null,
+      settings: {
+        sbUrl: localStorage.getItem('SUPABASE_URL') || '',
+        sbAnon: localStorage.getItem('SUPABASE_ANON') || '',
+        sbBucket: localStorage.getItem('SUPABASE_BUCKET') || 'contracts',
+        ejService: localStorage.getItem('EJ_SERVICE') || '',
+        ejTemplate: localStorage.getItem('EJ_TEMPLATE') || '',
+        ejPublic: localStorage.getItem('EJ_PUBLIC') || ''
+      },
+      leads: JSON.parse(localStorage.getItem('leads') || '[]'),
+      deals: JSON.parse(localStorage.getItem('deals') || '[]'),
+      buyers: JSON.parse(localStorage.getItem('buyers') || '[]'),
+      signer: { 
+        pdfBytes: null, 
+        pages: [], 
+        signatureUrl: null, 
+        initialsUrl: null, 
+        placements: [] 
+      },
+      selectedLeadId: null
     };
 
-    function saveCalls(){
-      localStorage.setItem('calls', JSON.stringify(state.calls));
+    if (!state.sprintTasks) {
+      state.sprintTasks = sprintTasks.map((task, index) => ({
+        ...task,
+        id: `task-${index}`,
+        completed: false,
+        completedAt: null
+      }));
+      localStorage.setItem('sprintTasks', JSON.stringify(state.sprintTasks));
     }
+
+    const save = (k,v)=>localStorage.setItem(k,JSON.stringify(v));
+    const money = (n)=> new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(n||0));
+
+    function saveCalls(){ localStorage.setItem('calls', JSON.stringify(state.calls)); }
+    function saveSprintTasks(){ localStorage.setItem('sprintTasks', JSON.stringify(state.sprintTasks)); }
 
     function weekStartMs(){
       const d=new Date();
@@ -792,13 +955,122 @@
       document.getElementById('omMeter').style.width = Math.min(100, Math.round((convos/goal)*100))+'%';
     }
 
-    // Auto-log when user clicks call/text/email links
     function logConvo(type, meta = {}) {
       state.calls.push({ type, ts: Date.now(), ...meta });
       saveCalls();
-      renderOneMetric(); // update the sticky bar
-      updateKPI(); // keep KPI in sync
+      renderOneMetric();
+      updateKPI();
     }
+
+    // ========= 7-Day Sprint Functions =========
+    function renderSevenDaySprint() {
+      const container = document.getElementById('sprintDays');
+      if (!container) return;
+
+      const completedTasks = state.sprintTasks.filter(t => t.completed).length;
+      const totalTasks = state.sprintTasks.length;
+      const progressPercent = Math.round((completedTasks / totalTasks) * 100);
+      
+      document.getElementById('sprintProgress').textContent = progressPercent + '%';
+      document.getElementById('sprintProgressFill').style.width = progressPercent + '%';
+      document.getElementById('tasksCompleted').textContent = `${completedTasks}/${totalTasks}`;
+      
+      const activeDays = new Set(state.sprintTasks.filter(t => t.completed).map(t => t.day)).size;
+      document.getElementById('activeDays').textContent = activeDays;
+
+      if (state.sprintStartDate) {
+        const startDate = new Date(state.sprintStartDate);
+        const endDate = new Date(startDate.getTime() + (6 * 24 * 60 * 60 * 1000));
+        document.getElementById('sprintStartDate').textContent = startDate.toLocaleDateString();
+        document.getElementById('sprintEndDate').textContent = endDate.toLocaleDateString();
+      } else {
+        document.getElementById('sprintStartDate').textContent = 'Not started';
+        document.getElementById('sprintEndDate').textContent = '—';
+      }
+
+      const tasksByDay = {};
+      for (let day = 1; day <= 7; day++) {
+        tasksByDay[day] = state.sprintTasks.filter(t => t.day === day);
+      }
+
+      container.innerHTML = '';
+
+      for (let day = 1; day <= 7; day++) {
+        const dayTasks = tasksByDay[day];
+        const dayCompletedTasks = dayTasks.filter(t => t.completed).length;
+        const dayProgress = dayTasks.length > 0 ? Math.round((dayCompletedTasks / dayTasks.length) * 100) : 0;
+        
+        const dayNames = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        
+        const dayDiv = document.createElement('div');
+        dayDiv.className = `sprint-day day-${day}`;
+        
+        dayDiv.innerHTML = `
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-bold text-lg">Day ${day} - ${dayNames[day]}</h3>
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-semibold">${dayCompletedTasks}/${dayTasks.length}</span>
+              <div class="w-12 h-2 bg-white/50 rounded-full overflow-hidden">
+                <div class="h-full bg-white transition-all duration-300" style="width: ${dayProgress}%"></div>
+              </div>
+            </div>
+          </div>
+          <div class="space-y-2">
+            ${dayTasks.map(task => `
+              <div class="sprint-task ${task.completed ? 'completed' : ''}">
+                <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleSprintTask('${task.id}')" />
+                <span>${task.task}</span>
+              </div>
+            `).join('')}
+          </div>
+        `;
+        
+        container.appendChild(dayDiv);
+      }
+    }
+
+    function toggleSprintTask(taskId) {
+      const task = state.sprintTasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      task.completed = !task.completed;
+      task.completedAt = task.completed ? Date.now() : null;
+
+      if (task.completed && !state.sprintStartDate) {
+        state.sprintStartDate = Date.now();
+        localStorage.setItem('sprintStartDate', state.sprintStartDate);
+      }
+
+      saveSprintTasks();
+      renderSevenDaySprint();
+
+      const completedCount = state.sprintTasks.filter(t => t.completed).length;
+      if (completedCount === 7) {
+        setTimeout(() => alert("First day complete! You're building momentum!"), 100);
+      } else if (completedCount === 14) {
+        setTimeout(() => alert("Halfway there! Keep pushing forward!"), 100);  
+      } else if (completedCount === 21) {
+        setTimeout(() => alert("Sprint complete! You're a wholesaling machine! Time to start a new sprint."), 100);
+      }
+    }
+
+    function resetSprint() {
+      if (confirm('Reset your 7-Day Sprint? This will clear all progress.')) {
+        state.sprintTasks = sprintTasks.map((task, index) => ({
+          ...task,
+          id: `task-${index}`,
+          completed: false,
+          completedAt: null
+        }));
+        state.sprintStartDate = null;
+        saveSprintTasks();
+        localStorage.removeItem('sprintStartDate');
+        renderSevenDaySprint();
+        alert('Sprint reset! Ready for a fresh week!');
+      }
+    }
+
+    document.getElementById('resetSprintBtn').addEventListener('click', resetSprint);
 
     renderOneMetric();
 
@@ -818,33 +1090,10 @@
       lucide.createIcons();
     });
 
-    // ========= STATE =========
-    state.settings = {
-      sbUrl: localStorage.getItem('SUPABASE_URL') || '',
-      sbAnon: localStorage.getItem('SUPABASE_ANON') || '',
-      sbBucket: localStorage.getItem('SUPABASE_BUCKET') || 'contracts',
-      ejService: localStorage.getItem('EJ_SERVICE') || '',
-      ejTemplate: localStorage.getItem('EJ_TEMPLATE') || '',
-      ejPublic: localStorage.getItem('EJ_PUBLIC') || ''
-    };
-    state.leads = JSON.parse(localStorage.getItem('leads') || '[]');
-    state.deals = JSON.parse(localStorage.getItem('deals') || '[]');
-    state.buyers = JSON.parse(localStorage.getItem('buyers') || '[]');
-    state.signer = { 
-      pdfBytes: null, 
-      pages: [], 
-      signatureUrl: null, 
-      initialsUrl: null, 
-      placements: [] 
-    };
-    state.selectedLeadId = null;
-
-    const save = (k,v)=>localStorage.setItem(k,JSON.stringify(v));
-    const money = (n)=> new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(n||0));
-
     // ========= NAV =========
     const sections = {
       sprint:'#tab-sprint',
+      'seven-day-sprint':'#tab-seven-day-sprint',
       contracts:'#tab-contracts',
       pipeline:'#tab-pipeline',
       signer:'#tab-signer',
@@ -860,51 +1109,35 @@
         Object.values(sections).forEach(sel=>document.querySelector(sel).classList.add('hidden'));
         document.querySelector(sections[t.dataset.tab]).classList.remove('hidden');
         window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        if (t.dataset.tab === 'seven-day-sprint') {
+          renderSevenDaySprint();
+        }
       }));
 
-    // ========= Lead Scoring =========
+    // ========= Lead Scoring & Management =========
     function scoreLead(l){
-      // Enhanced scoring with Privy indicators
       const sourceW = { 
-        'Privy-Distressed': 35,
-        'Privy-HighEquity': 30,
-        'Privy-Absentee': 28,
-        'Privy-PreForeclosure': 40,
-        'Privy-Probate': 35,
-        'Privy-TaxLien': 38,
-        'Expired': 25, 
-        'Agent': 20, 
-        'FSBO': 15, 
-        'Referral': 30, 
-        'Other': 10 
+        'Privy-Distressed': 35, 'Privy-HighEquity': 30, 'Privy-Absentee': 28, 'Privy-PreForeclosure': 40,
+        'Privy-Probate': 35, 'Privy-TaxLien': 38, 'Expired': 25, 'Agent': 20, 'FSBO': 15, 'Referral': 30, 'Other': 10 
       }[l.source] || 10;
-      
+
       const spread = Math.max(0, (l.arv||0)*0.7 - (l.repairs||0) - (l.ask||0));
       const spreadW = Math.min(30, spread / 10000);
-      
-      // Equity calculation for subject-to potential
       const equity = (l.arv||0) - (l.mortgageBalance||0);
       const equityW = equity > 50000 ? 15 : equity > 20000 ? 10 : 0;
-      
       const ageDays = (Date.now() - (l.createdAt||Date.now())) / 86400000;
       const recencyW = Math.max(0, 15 - ageDays);
       const dueW = l.nextAction && l.nextAction <= Date.now() ? 20 : 0;
-      
-      // Enhanced keywords for distress signals
       const kw = ((l.notes||'') + ' ' + (l.agent||'')).toLowerCase();
       const distressKw = /(pre-foreclosure|foreclosure|tax lien|probate|divorce|behind|vacant|tired|relocating|job loss|inheritance|code violation|expired)/.test(kw);
       const kwW = distressKw ? 15 : 0;
-      
-      // Days on market bonus (stale listings)
       const domW = l.dom > 90 ? 10 : l.dom > 60 ? 5 : 0;
-      
-      // Contact attempts - prioritize uncontacted leads
       const contactW = l.attempts === 0 ? 10 : l.attempts < 3 ? 5 : 0;
-      
+
       return Math.round(sourceW + spreadW + equityW + recencyW + dueW + kwW + domW + contactW);
     }
 
-    // ========= MBPS: Lead Intake =========
     const leadForm = document.getElementById('leadForm');
     const leadARV = document.getElementById('leadARV');
     const leadRepairs = document.getElementById('leadRepairs');
@@ -919,11 +1152,11 @@
     }
 
     ['input','change'].forEach(ev=>{
-      leadARV.addEventListener(ev,recalcMAO);
-      leadRepairs.addEventListener(ev,recalcMAO);
+      leadARV && leadARV.addEventListener(ev,recalcMAO);
+      leadRepairs && leadRepairs.addEventListener(ev,recalcMAO);
     });
 
-    leadForm.addEventListener('submit',(e)=>{
+    leadForm && leadForm.addEventListener('submit',(e)=>{
       e.preventDefault();
       const lead = {
         id: 'L'+Date.now(),
@@ -945,10 +1178,9 @@
         offerSent: false,
         offerResponse: null,
         createdAt: Date.now(),
-        nextAction: Date.now() + 24*3600*1000  // D+1 auto follow-up
+        nextAction: Date.now() + 24*3600*1000
       };
-      
-      // Track Privy searches
+
       if (lead.source.startsWith('Privy')) {
         const searches = JSON.parse(localStorage.getItem('privySearches') || '[]');
         const today = new Date().toDateString();
@@ -960,7 +1192,7 @@
         }
         localStorage.setItem('privySearches', JSON.stringify(searches));
       }
-      
+
       state.leads.unshift(lead);
       save('leads',state.leads);
       leadForm.reset();
@@ -970,357 +1202,7 @@
       alert('Lead added');
     });
 
-    // ========= Privy Bulk Import =========
-    let privyImportData = null;
-    let privyHeaders = [];
-    
-    document.getElementById('privyBulkImportBtn').addEventListener('click', ()=>{
-      document.getElementById('bulkImportModal').classList.remove('hidden');
-    });
-    
-    document.getElementById('closeBulkImport').addEventListener('click', ()=>{
-      document.getElementById('bulkImportModal').classList.add('hidden');
-      privyImportData = null;
-      privyHeaders = [];
-    });
-    
-    document.getElementById('cancelImport').addEventListener('click', ()=>{
-      document.getElementById('bulkImportModal').classList.add('hidden');
-      privyImportData = null;
-      privyHeaders = [];
-    });
-    
-    document.getElementById('selectPrivyFile').addEventListener('click', ()=>{
-      document.getElementById('privyFileInput').click();
-    });
-    
-    document.getElementById('privyFileInput').addEventListener('change', async (e)=>{
-      const file = e.target.files[0];
-      if (!file) return;
-      
-      document.getElementById('privyFileName').textContent = file.name;
-      
-      try {
-        const text = await file.text();
-        const lines = text.split(/\r?\n/).filter(l => l.trim());
-        const rows = lines.map(line => {
-          // Handle both comma and tab delimited files
-          const delimiter = line.includes('\t') ? '\t' : ',';
-          // Parse CSV properly handling quoted fields
-          const regex = new RegExp(`(?:^|${delimiter})("(?:[^"]|"")*"|[^${delimiter}]*)`, 'g');
-          const fields = [];
-          let match;
-          while ((match = regex.exec(line)) !== null) {
-            let field = match[1];
-            if (field.startsWith('"') && field.endsWith('"')) {
-              field = field.slice(1, -1).replace(/""/g, '"');
-            }
-            fields.push(field);
-          }
-          return fields;
-        });
-        
-        privyHeaders = rows[0].map(h => h.trim());
-        privyImportData = rows.slice(1).map(row => {
-          const obj = {};
-          privyHeaders.forEach((header, idx) => {
-            obj[header] = row[idx] ? row[idx].trim() : '';
-          });
-          return obj;
-        });
-        
-        // Show field mapping section
-        document.getElementById('fieldMappingSection').classList.remove('hidden');
-        
-        // Populate mapping dropdowns
-        const mappingSelects = [
-          'mapAddress', 'mapOwner', 'mapMailing', 'mapPhone', 'mapEmail',
-          'mapARV', 'mapMortgage', 'mapEquity', 'mapType', 'mapDOM', 
-          'mapListPrice', 'mapStatus'
-        ];
-        
-        mappingSelects.forEach(selectId => {
-          const select = document.getElementById(selectId);
-          select.innerHTML = '<option value="">-- Not Mapped --</option>';
-          privyHeaders.forEach(header => {
-            select.innerHTML += `<option value="${header}">${header}</option>`;
-          });
-        });
-        
-        // Auto-detect common field names
-        autoDetectFields();
-        
-        // Preview data
-        previewImportData();
-        
-      } catch(err) {
-        alert('Error reading file: ' + err.message);
-      }
-    });
-    
-    function autoDetectFields() {
-      const mappings = {
-        'mapAddress': ['Property Address', 'Address', 'Property', 'Site Address'],
-        'mapOwner': ['Owner Name', 'Owner', 'Name', 'Seller', 'Owner 1 Name'],
-        'mapMailing': ['Mailing Address', 'Mail Address', 'Owner Address'],
-        'mapPhone': ['Phone', 'Phone Number', 'Mobile', 'Cell'],
-        'mapEmail': ['Email', 'Email Address', 'Owner Email'],
-        'mapARV': ['Estimated Value', 'Est Value', 'ARV', 'Value', 'Zestimate'],
-        'mapMortgage': ['Mortgage Balance', 'Loan Balance', 'Mortgage', 'Total Loan Amount'],
-        'mapEquity': ['Equity', 'Est Equity', 'Estimated Equity'],
-        'mapType': ['Property Type', 'Type', 'Property Use'],
-        'mapDOM': ['Days on Market', 'DOM', 'Days Listed'],
-        'mapListPrice': ['List Price', 'Listing Price', 'Ask Price', 'Price'],
-        'mapStatus': ['Status', 'Property Status', 'Notes', 'Listing Status']
-      };
-      
-      Object.entries(mappings).forEach(([selectId, possibleHeaders]) => {
-        const select = document.getElementById(selectId);
-        const match = privyHeaders.find(h => 
-          possibleHeaders.some(ph => h.toLowerCase().includes(ph.toLowerCase()))
-        );
-        if (match) {
-          select.value = match;
-        }
-      });
-    }
-    
-    function previewImportData() {
-      if (!privyImportData) return;
-      
-      const preview = document.getElementById('importPreview');
-      const skipDupes = document.getElementById('skipDuplicates').checked;
-      const addressField = document.getElementById('mapAddress').value;
-      
-      if (!addressField) {
-        preview.innerHTML = '<div class="text-red-500">Please map the Property Address field</div>';
-        return;
-      }
-      
-      // Check for duplicates
-      const existingAddresses = state.leads.map(l => l.address.toLowerCase());
-      let validCount = 0;
-      let dupeCount = 0;
-      const previewHTML = [];
-      
-      privyImportData.slice(0, 5).forEach(row => {
-        const address = row[addressField];
-        if (!address) return;
-        
-        const isDupe = existingAddresses.includes(address.toLowerCase());
-        if (isDupe && skipDupes) {
-          dupeCount++;
-          previewHTML.push(`<div class="text-yellow-600">⚠️ Duplicate: ${address}</div>`);
-        } else {
-          validCount++;
-          const owner = row[document.getElementById('mapOwner').value] || 'Unknown';
-          const arv = row[document.getElementById('mapARV').value] || '0';
-          previewHTML.push(`<div class="text-green-600">✓ ${address} - ${owner} - ARV: $${arv}</div>`);
-        }
-      });
-      
-      preview.innerHTML = previewHTML.join('') + 
-        (privyImportData.length > 5 ? `<div class="text-gray-500">...and ${privyImportData.length - 5} more</div>` : '');
-      
-      // Count totals
-      let totalValid = 0;
-      let totalDupes = 0;
-      
-      privyImportData.forEach(row => {
-        const address = row[addressField];
-        if (!address) return;
-        const isDupe = existingAddresses.includes(address.toLowerCase());
-        if (isDupe && skipDupes) {
-          totalDupes++;
-        } else {
-          totalValid++;
-        }
-      });
-      
-      document.getElementById('totalRows').textContent = privyImportData.length;
-      document.getElementById('validLeads').textContent = totalValid;
-      document.getElementById('duplicateCount').textContent = totalDupes;
-      
-      document.getElementById('previewSection').classList.remove('hidden');
-      document.getElementById('processImport').classList.remove('hidden');
-    }
-    
-    // Re-preview when settings change
-    ['mapAddress', 'skipDuplicates', 'autoCalcRepairs', 'defaultSource'].forEach(id => {
-      document.getElementById(id).addEventListener('change', previewImportData);
-    });
-    
-    document.getElementById('processImport').addEventListener('click', async ()=>{
-      const addressField = document.getElementById('mapAddress').value;
-      if (!addressField) {
-        alert('Please map the Property Address field');
-        return;
-      }
-      
-      const skipDupes = document.getElementById('skipDuplicates').checked;
-      const autoRepairs = document.getElementById('autoCalcRepairs').checked;
-      const defaultSource = document.getElementById('defaultSource').value;
-      
-      // Field mappings
-      const ownerField = document.getElementById('mapOwner').value;
-      const mailingField = document.getElementById('mapMailing').value;
-      const phoneField = document.getElementById('mapPhone').value;
-      const emailField = document.getElementById('mapEmail').value;
-      const arvField = document.getElementById('mapARV').value;
-      const mortgageField = document.getElementById('mapMortgage').value;
-      const equityField = document.getElementById('mapEquity').value;
-      const typeField = document.getElementById('mapType').value;
-      const domField = document.getElementById('mapDOM').value;
-      const listPriceField = document.getElementById('mapListPrice').value;
-      const statusField = document.getElementById('mapStatus').value;
-      
-      const existingAddresses = state.leads.map(l => l.address.toLowerCase());
-      
-      // Show progress
-      document.getElementById('importProgress').classList.remove('hidden');
-      document.getElementById('processImport').disabled = true;
-      
-      let imported = 0;
-      let skipped = 0;
-      const totalToProcess = privyImportData.length;
-      
-      document.getElementById('progressTotal').textContent = totalToProcess;
-      
-      for (let i = 0; i < privyImportData.length; i++) {
-        const row = privyImportData[i];
-        const address = row[addressField];
-        
-        if (!address) {
-          skipped++;
-          continue;
-        }
-        
-        if (skipDupes && existingAddresses.includes(address.toLowerCase())) {
-          skipped++;
-          continue;
-        }
-        
-        // Parse numeric values
-        const parseNumber = (val) => {
-          if (!val) return 0;
-          return Number(val.toString().replace(/[$,]/g, '')) || 0;
-        };
-        
-        const arv = parseNumber(row[arvField]);
-        const mortgage = parseNumber(row[mortgageField]);
-        const listPrice = parseNumber(row[listPriceField]);
-        const equity = equityField ? parseNumber(row[equityField]) : (arv - mortgage);
-        
-        // Calculate repairs if needed
-        let repairs = 0;
-        if (autoRepairs) {
-          if (defaultSource.includes('Distressed') || defaultSource.includes('PreForeclosure')) {
-            repairs = Math.round(arv * 0.25); // 25% for distressed
-          } else {
-            repairs = Math.round(arv * 0.15); // 15% for others
-          }
-        }
-        
-        const lead = {
-          id: 'L' + Date.now() + '_' + i,
-          source: defaultSource,
-          address: address,
-          seller: row[ownerField] || '',
-          agent: '', // Usually not in Privy data
-          phone: row[phoneField] || '',
-          email: row[emailField] || '',
-          arv: arv,
-          repairs: repairs,
-          ask: listPrice || arv,
-          mortgageBalance: mortgage,
-          dom: parseNumber(row[domField]),
-          propertyType: row[typeField] || 'SFH',
-          notes: `Imported from Privy. ${row[statusField] || ''} ${row[mailingField] ? 'Mail: ' + row[mailingField] : ''} Equity: ${money(equity)}`.trim(),
-          status: 'New',
-          attempts: 0,
-          offerSent: false,
-          offerResponse: null,
-          createdAt: Date.now(),
-          nextAction: Date.now() + 24*3600*1000
-        };
-        
-        state.leads.unshift(lead);
-        imported++;
-        
-        // Update progress
-        document.getElementById('progressCount').textContent = i + 1;
-        document.getElementById('progressBar').style.width = Math.round(((i + 1) / totalToProcess) * 100) + '%';
-        
-        // Allow UI to update
-        if (i % 10 === 0) {
-          await new Promise(resolve => setTimeout(resolve, 10));
-        }
-      }
-      
-      // Save and update
-      save('leads', state.leads);
-      renderLeads();
-      updateKPI();
-      
-      // Track the import
-      const searches = JSON.parse(localStorage.getItem('privySearches') || '[]');
-      const today = new Date().toDateString();
-      const todaySearch = searches.find(s => s.date === today);
-      if (todaySearch) {
-        todaySearch.count += imported;
-      } else {
-        searches.push({ date: today, count: imported });
-      }
-      localStorage.setItem('privySearches', JSON.stringify(searches));
-      
-      alert(`Import complete!\n\nImported: ${imported} leads\nSkipped: ${skipped} (duplicates or invalid)`);
-      
-      // Reset modal
-      document.getElementById('bulkImportModal').classList.add('hidden');
-      privyImportData = null;
-      privyHeaders = [];
-      document.getElementById('importProgress').classList.add('hidden');
-      document.getElementById('processImport').disabled = false;
-    });
-
-    // Import CSV (original simple import)
-    document.getElementById('importLeadsBtn').addEventListener('click',()=>
-      document.getElementById('importLeadsInput').click());
-
-    document.getElementById('importLeadsInput').addEventListener('change', async (e)=>{
-      const f = e.target.files[0];
-      if(!f) return;
-      const text = await f.text();
-      const rows = text.split(/\r?\n/).map(r=>r.split(',').map(c=>c.replace(/^"|"$/g,'')) ).filter(r=>r.some(c=>c.trim()!==''));
-      const header = rows.shift().map(h=>h.trim().toLowerCase());
-      const idx = (name)=> header.indexOf(name);
-      rows.forEach(r=>{
-        const lead = {
-          id: 'L'+Date.now()+Math.random().toString(36).slice(2,6),
-          source: r[idx('source')]||'Expired',
-          address: r[idx('address')]||'',
-          seller: r[idx('seller')]||'',
-          agent: r[idx('agent')]||'',
-          phone: r[idx('phone')]||'',
-          email: r[idx('email')]||'',
-          arv: Number(r[idx('arv')]||0),
-          repairs: Number(r[idx('repairs')]||0),
-          ask: Number(r[idx('ask')]||0),
-          notes: r[idx('notes')]||'',
-          status: 'New',
-          createdAt: Date.now(),
-          nextAction: Date.now()+86400000
-        };
-        if (lead.address) state.leads.push(lead);
-      });
-      save('leads',state.leads);
-      renderLeads();
-      alert('Leads imported');
-    });
-
-    // Cadence Engine helpers
     function scheduleCadence(l, step=0){
-      // D0 call+text, D2 text, D4 call+email, D7 terms, D10 last call
       const offsets = [0,2,4,7,10];
       const nextIndex = Math.min(offsets.length-1, step);
       l.nextAction = Date.now() + offsets[nextIndex]*86400000;
@@ -1329,9 +1211,9 @@
 
     function renderLeads(){
       const list = document.getElementById('leadList');
-      const q=(document.getElementById('leadSearch').value||'').toLowerCase();
-      const flt=document.getElementById('leadFilter').value;
-      // Top 20 by: due today first, then score
+      if (!list) return;
+      const q=(document.getElementById('leadSearch')?.value||'').toLowerCase();
+      const flt=document.getElementById('leadFilter')?.value;
       const today = Date.now();
       const arr = state.leads
         .filter(l=> (!flt || l.status===flt) && (l.address.toLowerCase().includes(q) || (l.seller||'').toLowerCase().includes(q) || (l.agent||'').toLowerCase().includes(q)))
@@ -1339,7 +1221,8 @@
         .sort((a,b)=> (b.due - a.due) || (b.score - a.score) || ((b.l.createdAt||0) - (a.l.createdAt||0)))
         .slice(0,20);
 
-      document.getElementById('sprintCount').textContent = `${arr.length} in queue`;
+      const countElem = document.getElementById('sprintCount');
+      if (countElem) countElem.textContent = `${arr.length} in queue`;
       list.innerHTML='';
       arr.forEach(({l,score})=>{
         const div = document.createElement('div');
@@ -1348,7 +1231,7 @@
         const offerBadge = l.offerSent ? '<span class="badge badge-offer ml-1">Offer Sent</span>' : '';
         const equity = (l.arv||0) - (l.mortgageBalance||0);
         const equityDisplay = l.mortgageBalance ? `Equity: ${money(equity)}` : '';
-        
+
         div.innerHTML = `
           <div class="flex items-center justify-between">
             <div class="font-medium">${l.address}</div>
@@ -1379,41 +1262,41 @@
           </div>
           <div class="text-xs text-gray-600 mt-1">${l.notes||''}</div>
         `;
-        
-        // Track call attempts
+
         div.querySelector('.callBtn').addEventListener('click', ()=>{
           l.attempts = (l.attempts || 0) + 1;
           l.lastContact = Date.now();
           logConvo('call', {leadId: l.id});
           save('leads', state.leads);
         });
-        
-        // Track text attempts
+
         div.querySelector('.textBtn').addEventListener('click', ()=>{
           l.attempts = (l.attempts || 0) + 1;
           l.lastContact = Date.now();
           logConvo('text', {leadId: l.id});
           save('leads', state.leads);
         });
-        
-        div.querySelector('.emailLead').addEventListener('click',()=> openOfferEmail(l));
-        
+
+        div.querySelector('.emailLead').addEventListener('click',()=> {
+          document.getElementById('offerEmailTo').value = l.email || '';
+        });
+
         div.querySelector('.offerLead').addEventListener('click',()=> {
           leadToContract(l);
           l.offerSent = true;
           l.offerSentDate = Date.now();
           save('leads', state.leads);
         });
-        
+
         div.querySelector('.followLead').addEventListener('click',()=> {
           scheduleCadence(l, (l.cadenceStep||0));
           save('leads',state.leads);
           renderLeads();
           alert('Follow-up scheduled');
         });
-        
+
         div.querySelector('.toDeal').addEventListener('click',()=> leadToDeal(l));
-        
+
         div.querySelector('.delLead').addEventListener('click',()=>{
           if(confirm('Delete lead?')){
             state.leads = state.leads.filter(x=>x.id!==l.id);
@@ -1421,20 +1304,17 @@
             renderLeads();
           }
         });
-        
+
         div.addEventListener('click', ()=> state.selectedLeadId = l.id);
         list.appendChild(div);
       });
       lucide.createIcons();
     }
 
-    document.getElementById('leadSearch').addEventListener('input',renderLeads);
-    document.getElementById('leadFilter').addEventListener('change',renderLeads);
-
     function leadToDeal(l){
       const deal = {
-        bizName: document.getElementById('bizName').value.trim() || 'Your LLC',
-        bizAddress: document.getElementById('bizAddress').value.trim() || '',
+        bizName: document.getElementById('bizName')?.value.trim() || 'Your LLC',
+        bizAddress: document.getElementById('bizAddress')?.value.trim() || '',
         propertyAddress: l.address,
         sellerNames: l.seller || '',
         purchasePrice: Math.max(0, (l.arv||0)*0.7 - (l.repairs||0)),
@@ -1451,18 +1331,23 @@
     }
 
     function leadToContract(l){
-      document.querySelector('.tab[data-tab="contracts"]').click();
-      document.getElementById('propertyAddress').value = l.address;
-      document.getElementById('sellerNames').value = l.seller||'';
-      document.getElementById('purchasePrice').value = Math.max(0, (l.arv||0)*0.7 - (l.repairs||0));
-      document.getElementById('dealTerms').value = `Offer auto-generated from lead. Source: ${l.source}.`;
+      document.querySelector('.tab[data-tab="contracts"]')?.click();
+      const addr = document.getElementById('propertyAddress');
+      const seller = document.getElementById('sellerNames'); 
+      const price = document.getElementById('purchasePrice');
+      const terms = document.getElementById('dealTerms');
+      if (addr) addr.value = l.address;
+      if (seller) seller.value = l.seller||'';
+      if (price) price.value = Math.max(0, (l.arv||0)*0.7 - (l.repairs||0));
+      if (terms) terms.value = `Offer auto-generated from lead. Source: ${l.source}.`;
       window.scrollTo({ top: 0, behavior:'smooth' });
       state.selectedLeadId = l.id;
     }
 
-    function openOfferEmail(l){
-      document.getElementById('offerEmailTo').value = l.email || '';
-    }
+    const leadSearchElem = document.getElementById('leadSearch');
+    const leadFilterElem = document.getElementById('leadFilter');
+    leadSearchElem && leadSearchElem.addEventListener('input',renderLeads);
+    leadFilterElem && leadFilterElem.addEventListener('change',renderLeads);
 
     // Copy script buttons
     document.querySelectorAll('[data-script-copy]').forEach(btn=>
@@ -1491,14 +1376,14 @@ Date: ${new Date().toLocaleDateString()}
 Buyer: ${d.bizName}, located at ${d.bizAddress}.
 Seller(s): ${d.sellerNames}.
 Property: ${d.propertyAddress}.`;
-      
+
       const baseBody = `Purchase Price: ${money(d.purchasePrice)}.
 Earnest Money: $1,000 (refundable within inspection period unless otherwise stated).
 Closing: On or before 30 days from execution, or as mutually agreed.
 Condition: Property sold AS-IS. Buyer may access property for inspections.
 Title & Taxes: Seller to provide clear, marketable title. Taxes prorated at closing.
 Assignments: Buyer may assign this agreement.`;
-      
+
       let extra = '';
       if (template==='standard'){
         extra = `Additional Terms: ${d.dealTerms || 'N/A'}.`;
@@ -1533,13 +1418,13 @@ Loan #: ______________
 Phone: ______________
 Additional Terms: ${d.dealTerms || 'N/A'}.`;
       }
-      
+
       const footer = `
 Signatures:
 Buyer: ____________________________ Date: ____________
 Seller: ____________________________ Date: ____________
 Seller: ____________________________ Date: ____________`;
-      
+
       return `${baseHeader}\n${baseBody}\n${extra}\n${footer}`;
     }
 
@@ -1605,7 +1490,7 @@ Seller: ____________________________ Date: ____________`;
     })();
 
     // Save Deal
-    document.getElementById('dealForm').addEventListener('submit',(e)=>{
+    document.getElementById('dealForm') && document.getElementById('dealForm').addEventListener('submit',(e)=>{
       e.preventDefault();
       const deal = {
         bizName: document.getElementById('bizName').value.trim(),
@@ -1632,8 +1517,7 @@ Seller: ____________________________ Date: ____________`;
       alert('Deal saved');
     });
 
-    // Generate PDF from latest deal
-    document.getElementById('genPdfBtn').addEventListener('click', async ()=>{
+    document.getElementById('genPdfBtn') && document.getElementById('genPdfBtn').addEventListener('click', async ()=>{
       const d = state.deals[0];
       if(!d){
         alert('Save a deal first.');
@@ -1642,8 +1526,7 @@ Seller: ____________________________ Date: ____________`;
       (await generatePdf(d, { templateKey: d.template||'standard' })).save(`Contract_${d.propertyAddress.replaceAll(' ','_')}.pdf`);
     });
 
-    // Prefill from selected lead
-    document.getElementById('dealFromLeadBtn').addEventListener('click',()=>{
+    document.getElementById('dealFromLeadBtn') && document.getElementById('dealFromLeadBtn').addEventListener('click',()=>{
       const l = state.leads.find(x=>x.id===state.selectedLeadId) || state.leads[0];
       if(!l){
         alert('No lead selected');
@@ -1653,15 +1536,14 @@ Seller: ____________________________ Date: ____________`;
       document.getElementById('sellerNames').value = l.seller||'';
       document.getElementById('purchasePrice').value = Math.max(0, (l.arv||0)*0.7 - (l.repairs||0));
       document.getElementById('dealTerms').value = `Offer auto-generated from lead. Source: ${l.source}.`;
-      document.querySelector('.tab[data-tab="contracts"]').click();
+      document.querySelector('.tab[data-tab="contracts"]')?.click();
     });
 
-    // Deals table
     function renderDealsTable(){
       const tbody = document.getElementById('dealRows');
       if(!tbody) return;
-      const q=(document.getElementById('search').value||'').toLowerCase();
-      const fs=document.getElementById('filterStatus').value;
+      const q=(document.getElementById('search')?.value||'').toLowerCase();
+      const fs=document.getElementById('filterStatus')?.value;
       tbody.innerHTML='';
       state.deals
         .filter(d=>!fs||d.status===fs)
@@ -1713,15 +1595,17 @@ Seller: ____________________________ Date: ____________`;
         document.getElementById('photoPreview').classList.remove('hidden');
         document.getElementById('photoImg').src = state.photoDataUrl;
       }
-      document.querySelector('.tab[data-tab="contracts"]').click();
+      document.querySelector('.tab[data-tab="contracts"]')?.click();
     }
 
-    document.getElementById('search').addEventListener('input', renderDealsTable);
-    document.getElementById('filterStatus').addEventListener('change', renderDealsTable);
+    const searchElem = document.getElementById('search');
+    const filterStatusElem = document.getElementById('filterStatus');
+    searchElem && searchElem.addEventListener('input', renderDealsTable);
+    filterStatusElem && filterStatusElem.addEventListener('change', renderDealsTable);
 
-    // Pipeline render
     function renderPipeline(){
-      document.getElementById('dealCount').textContent = `${state.deals.length} total deals`;
+      const dealCountElem = document.getElementById('dealCount');
+      if (dealCountElem) dealCountElem.textContent = `${state.deals.length} total deals`;
       ['lead','offer','pending','sent','signed','attorney','closed'].forEach(st=>{
         const col = document.getElementById('col-'+st);
         if(!col) return;
@@ -1797,8 +1681,7 @@ Seller: ____________________________ Date: ____________`;
       return window.emailjs.send(svc, tpl, { to_email: to, subject, message: body, ...vars });
     }
 
-    // Contracts tab email button
-    document.getElementById('sendEmailBtn').addEventListener('click', async ()=>{
+    document.getElementById('sendEmailBtn') && document.getElementById('sendEmailBtn').addEventListener('click', async ()=>{
       try{
         const to = document.getElementById('emailTo').value.trim();
         if(!to) return alert('Seller email required');
@@ -1829,45 +1712,43 @@ Seller: ____________________________ Date: ____________`;
       }
     });
 
-    // Offer versioning (Cash / Terms / Both)
     function computeMAOFromLeadOrForm(){
-      const arv = Number(document.getElementById('leadARV').value||0);
-      const rep = Number(document.getElementById('leadRepairs').value||0);
+      const arv = Number(document.getElementById('leadARV')?.value||0);
+      const rep = Number(document.getElementById('leadRepairs')?.value||0);
       return Math.max(0, arv*0.7 - rep);
     }
 
     async function sendOfferVariant(kind){
       try{
-        const to = (document.getElementById('offerEmailTo').value||'').trim();
+        const to = (document.getElementById('offerEmailTo')?.value||'').trim();
         if(!to) return alert('Recipient required');
-        const address = document.getElementById('leadAddress').value || (state.leads[0]?.address||'Property');
-        const biz = document.getElementById('bizName').value || 'Your LLC';
+        const address = document.getElementById('leadAddress')?.value || (state.leads[0]?.address||'Property');
+        const biz = document.getElementById('bizName')?.value || 'Your LLC';
         const mao = computeMAOFromLeadOrForm();
         let price = mao;
         let templateKey='standard';
         let terms = 'Cash offer';
         if (kind==='cash'){
-          const pct = Number(document.getElementById('offerCashPct').value||100)/100;
+          const pct = Number(document.getElementById('offerCashPct')?.value||100)/100;
           price = Math.round(mao*pct);
           terms = `Cash offer at ~${Math.round(pct*100)}% of MAO.`;
         } else if(kind==='terms'){
-          const arv = Number(document.getElementById('leadARV').value||0);
-          const downPct = Number(document.getElementById('offerTermsDownPct').value||5)/100;
-          const rate = Number(document.getElementById('offerTermsRate').value||4.5);
-          const yrs = Number(document.getElementById('offerTermsAmort').value||30);
+          const arv = Number(document.getElementById('leadARV')?.value||0);
+          const downPct = Number(document.getElementById('offerTermsDownPct')?.value||5)/100;
+          const rate = Number(document.getElementById('offerTermsRate')?.value||4.5);
+          const yrs = Number(document.getElementById('offerTermsAmort')?.value||30);
           const down = Math.round(arv*downPct);
-          // Rough P&I for visibility
           const princ = Math.max(0, (price||arv) - down);
           const mRate = rate/100/12;
           const n = yrs*12;
           const pmt = mRate>0 ? Math.round(princ * (mRate*Math.pow(1+mRate,n))/(Math.pow(1+mRate,n)-1)) : Math.round(princ/n);
           templateKey='subject_to';
           terms = `Subject-to terms: ~${money(down)} down, ~${rate}% ${yrs}yr, est P&I ≈ ${money(pmt)}/mo (taxes/ins extra).`;
-          price = arv || mao; // terms price often nearer ARV
+          price = arv || mao;
         }
         const tempDeal = {
           bizName: biz,
-          bizAddress: document.getElementById('bizAddress').value||'',
+          bizAddress: document.getElementById('bizAddress')?.value||'',
           propertyAddress: address,
           sellerNames: '',
           purchasePrice: price,
@@ -1887,27 +1768,26 @@ Seller: ____________________________ Date: ____________`;
       }
     }
 
-    document.getElementById('sendCashOfferBtn').addEventListener('click', e=>{
+    document.getElementById('sendCashOfferBtn') && document.getElementById('sendCashOfferBtn').addEventListener('click', e=>{
       e.preventDefault();
       sendOfferVariant('cash');
     });
 
-    document.getElementById('sendTermsOfferBtn').addEventListener('click', e=>{
+    document.getElementById('sendTermsOfferBtn') && document.getElementById('sendTermsOfferBtn').addEventListener('click', e=>{
       e.preventDefault();
       sendOfferVariant('terms');
     });
 
-    document.getElementById('sendBothOffersBtn').addEventListener('click', async e=>{
+    document.getElementById('sendBothOffersBtn') && document.getElementById('sendBothOffersBtn').addEventListener('click', async e=>{
       e.preventDefault();
       await sendOfferVariant('cash');
       await sendOfferVariant('terms');
     });
 
-    // Dispo blast (simple tag match on buyers.criteria)
-    document.getElementById('dispoSendBtn').addEventListener('click', async ()=>{
+    document.getElementById('dispoSendBtn') && document.getElementById('dispoSendBtn').addEventListener('click', async ()=>{
       try{
-        const tags = (document.getElementById('dispoTags').value||'').toLowerCase().split(/[,;]+/).map(s=>s.trim()).filter(Boolean);
-        const body = document.getElementById('dispoBody').value||'New deal available.';
+        const tags = (document.getElementById('dispoTags')?.value||'').toLowerCase().split(/[,;]+/).map(s=>s.trim()).filter(Boolean);
+        const body = document.getElementById('dispoBody')?.value||'New deal available.';
         if (!tags.length) return alert('Enter at least one tag');
         const matches = state.buyers.filter(b=>
           (b.criteria||'').toLowerCase().split(/[,;]+/).some(c=> tags.includes(c.trim())));
@@ -1922,7 +1802,7 @@ Seller: ____________________________ Date: ____________`;
       }
     });
 
-    // ========= Signer (PDF preview + typed/drawn placement) =========
+    // ========= Signer =========
     const pdfjsLibLocal = window['pdfjs-dist/build/pdf'];
     pdfjsLibLocal.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     const pdfFile = document.getElementById('pdfFile');
@@ -1989,7 +1869,6 @@ Seller: ____________________________ Date: ____________`;
     addSigBtn && addSigBtn.addEventListener('click',()=> currentTool='sig');
     addInitBtn && addInitBtn.addEventListener('click',()=> currentTool='init');
 
-    // Draw pads
     function makePad(canvas){
       if(!canvas) return null;
       function resize(){
@@ -2049,12 +1928,6 @@ Seller: ____________________________ Date: ____________`;
       alert('Initials (drawn) saved. Tap to place.');
     });
 
-    // Typed signature/initials (from your inputs & font selectors)
-    const typedSigInput = document.getElementById('typedSigInput') || document.getElementById('typedSignatureInput');
-    const typedSigFont = document.getElementById('typedSigFont');
-    const typedInitInput = document.getElementById('typedInitInput') || document.getElementById('typedInitialsInput');
-    const typedInitFont = document.getElementById('typedInitFont');
-
     function renderTypedToDataURL(text, fontCss, px){
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
@@ -2068,22 +1941,21 @@ Seller: ____________________________ Date: ____________`;
     }
 
     document.getElementById('typedSigGenerate') && document.getElementById('typedSigGenerate').addEventListener('click',()=>{
-      const text = (typedSigInput && typedSigInput.value.trim()) || '';
+      const text = (document.getElementById('typedSigInput')?.value.trim()) || '';
       if(!text) return alert('Type your name for the signature');
-      const font = (typedSigFont && typedSigFont.value) || "'Great Vibes', cursive";
+      const font = (document.getElementById('typedSigFont')?.value) || "'Great Vibes', cursive";
       state.signer.signatureUrl = renderTypedToDataURL(text, font, 50);
-           alert('Typed signature saved. Tap PDF to place.');
+      alert('Typed signature saved. Tap PDF to place.');
     });
 
     document.getElementById('typedInitGenerate') && document.getElementById('typedInitGenerate').addEventListener('click',()=>{
-      const text = (typedInitInput && typedInitInput.value.trim()) || '';
+      const text = (document.getElementById('typedInitInput')?.value.trim()) || '';
       if(!text) return alert('Type your initials');
-      const font = (typedInitFont && typedInitFont.value) || "'Great Vibes', cursive";
+      const font = (document.getElementById('typedInitFont')?.value) || "'Great Vibes', cursive";
       state.signer.initialsUrl = renderTypedToDataURL(text, font, 36);
       alert('Typed initials saved. Tap PDF to place.');
     });
 
-    // Finalize PDF with placements
     finishBtn && finishBtn.addEventListener('click', async ()=>{
       if(!state.signer.pdfBytes) return alert('No PDF loaded');
       if(!state.signer.placements.length) return alert('No signatures/initials placed');
@@ -2124,20 +1996,18 @@ Seller: ____________________________ Date: ____________`;
       const tbody = document.getElementById('buyerRows');
       if(!tbody) return;
       tbody.innerHTML='';
-      state.buyers.forEach((b,idx)=>{
+      state.buyers.forEach((buyer,idx)=>{
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td class="py-2 pr-4">${b.name||''}</td>
-          <td class="py-2 pr-4">${b.email||''}</td>
-          <td class="py-2 pr-4">${b.phone||''}</td>
-          <td class="py-2 pr-4">${b.criteria||''}</td>
-          <td class="py-2 pr-4">${b.notes||''}</td>
-          <td class="py-2 pr-4 flex gap-2">
-            <button class="btn btn-outline text-xs px-2 py-1 edit">Edit</button>
+          <td class="py-2 pr-4">${buyer.name}</td>
+          <td class="py-2 pr-4">${buyer.email||''}</td>
+          <td class="py-2 pr-4">${buyer.phone||''}</td>
+          <td class="py-2 pr-4">${buyer.criteria||''}</td>
+          <td class="py-2 pr-4">${buyer.notes||''}</td>
+          <td class="py-2 pr-4">
             <button class="btn btn-outline text-xs px-2 py-1 del">Delete</button>
           </td>
         `;
-        tr.querySelector('.edit').onclick = ()=> editBuyer(idx);
         tr.querySelector('.del').onclick = ()=>{
           if(confirm('Delete buyer?')){
             state.buyers.splice(idx,1);
@@ -2149,29 +2019,19 @@ Seller: ____________________________ Date: ____________`;
       });
     }
 
-    function editBuyer(idx){
-      const b = state.buyers[idx];
-      if(!b) return;
-      const name = prompt('Buyer Name:', b.name||'');
-      if(!name) return;
-      b.name = name;
-      b.email = prompt('Email:', b.email||'') || '';
-      b.phone = prompt('Phone:', b.phone||'') || '';
-      b.criteria = prompt('Criteria/Tags (comma separated):', b.criteria||'') || '';
-      b.notes = prompt('Notes:', b.notes||'') || '';
-      save('buyers',state.buyers);
-      renderBuyersTable();
-    }
-
     document.getElementById('addBuyerBtn') && document.getElementById('addBuyerBtn').addEventListener('click',()=>{
-      const name = prompt('Buyer Name:');
+      const name = prompt('Buyer name:');
       if(!name) return;
+      const email = prompt('Email:');
+      const phone = prompt('Phone:');
+      const criteria = prompt('Criteria/Tags (e.g. 30318; <200k; rehab):');
+      const notes = prompt('Notes:');
       const buyer = {
         name,
-        email: prompt('Email:') || '',
-        phone: prompt('Phone:') || '',
-        criteria: prompt('Criteria/Tags (e.g. 30318; <200k; rehab):') || '',
-        notes: prompt('Notes:') || '',
+        email: email||'',
+        phone: phone||'',
+        criteria: criteria||'',
+        notes: notes||'',
         id: 'B'+Date.now()
       };
       state.buyers.push(buyer);
@@ -2181,109 +2041,109 @@ Seller: ____________________________ Date: ____________`;
 
     // ========= KPI Dashboard =========
     function updateKPI(){
-      const start = weekStartMs();
-      const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime();
+      const today = new Date();
+      const thisWeekStart = weekStartMs();
+      const thisMonthStart = new Date(today.getFullYear(), today.getMonth(), 1).getTime();
       
-      // Conversations this week
-      const convos = state.calls.filter(c=>c.ts>=start).length;
-      const goalConvos = Number(state.goals.convos||50);
-      document.getElementById('kpiConvos').textContent = convos;
-      document.getElementById('kpiConvosTarget').textContent = `/ ${goalConvos}`;
-      document.getElementById('kpiConvosMeter').style.width = Math.min(100, Math.round((convos/goalConvos)*100))+'%';
+      const weekConvos = state.calls.filter(c=>c.ts>=thisWeekStart&&c.type==='call').length;
+      const weekTexts = state.calls.filter(c=>c.ts>=thisWeekStart&&c.type==='text').length;
+      const totalConvos = weekConvos + weekTexts;
       
-      // Offers this week
-      const offers = state.leads.filter(l=>l.offerSentDate && l.offerSentDate>=start).length;
-      const goalOffers = Number(state.goals.offers||10);
-      document.getElementById('kpiOffers').textContent = offers;
-      document.getElementById('kpiOffersTarget').textContent = `/ ${goalOffers}`;
-      document.getElementById('kpiOffersMeter').style.width = Math.min(100, Math.round((offers/goalOffers)*100))+'%';
+      const weekOffers = state.leads.filter(l=>l.offerSentDate&&l.offerSentDate>=thisWeekStart).length;
+      const monthContracts = state.deals.filter(d=>d.createdAt>=thisMonthStart&&d.status!=='lead').length;
+      const monthFees = state.deals.filter(d=>d.createdAt>=thisMonthStart&&d.status==='closed').reduce((sum,d)=>(sum+(d.fee||0)),0);
       
-      // Contracts this month
-      const contracts = state.deals.filter(d=>['signed','attorney','closed'].includes(d.status) && d.createdAt>=monthStart).length;
-      const goalContracts = Number(state.goals.contracts||5);
-      document.getElementById('kpiContracts').textContent = contracts;
-      document.getElementById('kpiContractsTarget').textContent = `/ ${goalContracts}`;
-      document.getElementById('kpiContractsMeter').style.width = Math.min(100, Math.round((contracts/goalContracts)*100))+'%';
+      document.getElementById('kpiConvos').textContent = totalConvos;
+      document.getElementById('kpiOffers').textContent = weekOffers;
+      document.getElementById('kpiContracts').textContent = monthContracts;
+      document.getElementById('kpiFees').textContent = money(monthFees);
       
-      // Assignment fees this month
-      const fees = state.deals.filter(d=>d.createdAt>=monthStart).reduce((sum,d)=>sum+(d.fee||0),0);
-      document.getElementById('kpiFees').textContent = money(fees);
-      document.getElementById('kpiFeesMeter').style.width = Math.min(100, Math.round((fees/35000)*100))+'%';
+      const convosTarget = state.goals.convos||50;
+      const offersTarget = state.goals.offers||10;
+      const contractsTarget = state.goals.contracts||5;
       
-      // Update daily metrics
+      document.getElementById('kpiConvosTarget').textContent = `Goal ${convosTarget}`;
+      document.getElementById('kpiOffersTarget').textContent = `Goal ${offersTarget}`;
+      document.getElementById('kpiContractsTarget').textContent = `Goal ${contractsTarget}`;
+      
+      document.getElementById('kpiConvosMeter').style.width = Math.min(100, (totalConvos/convosTarget)*100)+'%';
+      document.getElementById('kpiOffersMeter').style.width = Math.min(100, (weekOffers/offersTarget)*100)+'%';
+      document.getElementById('kpiContractsMeter').style.width = Math.min(100, (monthContracts/contractsTarget)*100)+'%';
+      document.getElementById('kpiFeesMeter').style.width = Math.min(100, (monthFees/35000)*100)+'%';
+      
       updateDailyMetrics();
     }
 
     function updateDailyMetrics(){
       const today = new Date().toDateString();
-      const todayStart = new Date(today).getTime();
-      const weekStart = weekStartMs();
+      const searches = JSON.parse(localStorage.getItem('privySearches')||'[]');
+      const todaySearches = searches.find(s=>s.date===today)?.count || 0;
       
-      // Privy searches today
-      const searches = JSON.parse(localStorage.getItem('privySearches') || '[]');
-      const todaySearch = searches.find(s => s.date === today);
-      document.getElementById('privySearchesToday').textContent = todaySearch ? todaySearch.count : 0;
+      const todayOffers = state.leads.filter(l=>l.offerSentDate && new Date(l.offerSentDate).toDateString()===today).length;
+      const todayFollowups = state.calls.filter(c=>c.type==='call'&&new Date(c.ts).toDateString()===today).length;
       
-      // Offers sent today
-      const offersToday = state.leads.filter(l=>l.offerSentDate && l.offerSentDate>=todayStart).length;
-      document.getElementById('offersSentToday').textContent = offersToday;
+      const totalLeads = state.leads.length;
+      const responseLeads = state.leads.filter(l=>l.attempts>0).length;
+      const responseRate = totalLeads > 0 ? Math.round((responseLeads/totalLeads)*100) : 0;
       
-      // Follow-ups today
-      const followUpsToday = state.calls.filter(c=>c.ts>=todayStart && c.type!=='initial').length;
-      document.getElementById('followUpsToday').textContent = followUpsToday;
+      document.getElementById('privySearchesToday').textContent = todaySearches;
+      document.getElementById('offersSentToday').textContent = todayOffers;  
+      document.getElementById('followUpsToday').textContent = todayFollowups;
+      document.getElementById('responseRate').textContent = responseRate+'%';
       
-      // Response rate
-      const contacted = state.leads.filter(l=>l.attempts>0).length;
-      const responded = state.leads.filter(l=>l.offerResponse).length;
-      const responseRate = contacted>0 ? Math.round((responded/contacted)*100) : 0;
-      document.getElementById('responseRate').textContent = responseRate + '%';
+      const totalSearches = searches.reduce((sum,s)=>sum+s.count,0);
+      const totalOffers = state.leads.filter(l=>l.offerSent).length;
+      const totalContracts = state.deals.filter(d=>d.status!=='lead').length;
       
-      // Weekly conversion funnel
-      const weekSearches = searches.filter(s => {
-        const searchDate = new Date(s.date).getTime();
-        return searchDate >= weekStart;
-      }).reduce((sum, s) => sum + s.count, 0);
+      const searchToOfferRate = totalSearches>0 ? Math.round((totalOffers/totalSearches)*100) : 0;
+      const offerToContractRate = totalOffers>0 ? Math.round((totalContracts/totalOffers)*100) : 0;
       
-      const weekOffers = state.leads.filter(l=>l.offerSentDate && l.offerSentDate>=weekStart).length;
-      const weekContracts = state.deals.filter(d=>d.createdAt>=weekStart && ['signed','attorney','closed'].includes(d.status)).length;
+      document.getElementById('searchToOfferRate').textContent = searchToOfferRate+'%';
+      document.getElementById('offerToContractRate').textContent = offerToContractRate+'%';
       
-      const searchToOfferRate = weekSearches>0 ? Math.round((weekOffers/weekSearches)*100) : 0;
-      const offerToContractRate = weekOffers>0 ? Math.round((weekContracts/weekOffers)*100) : 0;
+      document.getElementById('searchToOfferMeter').style.width = Math.min(100, searchToOfferRate)+'%';
+      document.getElementById('offerToContractMeter').style.width = Math.min(100, offerToContractRate)+'%';
       
-      document.getElementById('searchToOfferRate').textContent = searchToOfferRate + '%';
-      document.getElementById('searchToOfferMeter').style.width = searchToOfferRate + '%';
-      document.getElementById('offerToContractRate').textContent = offerToContractRate + '%';
-      document.getElementById('offerToContractMeter').style.width = offerToContractRate + '%';
-      
-      // Monthly pace
       const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth()+1, 0).getDate();
       const dayOfMonth = new Date().getDate();
       const monthProgress = dayOfMonth / daysInMonth;
-      const monthDeals = state.deals.filter(d=>d.createdAt>=new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime() && ['signed','attorney','closed'].includes(d.status)).length;
-      const projectedDeals = Math.round(monthDeals / monthProgress);
-      const projectedFees = Math.round(projectedDeals * 7000); // Avg $7k per deal
+      const monthContracts = state.deals.filter(d=>d.createdAt>=new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime()&&d.status!=='lead').length;
+      const projectedContracts = monthContracts / monthProgress;
+      const paceElement = document.getElementById('monthlyPace');
+      const recElement = document.getElementById('paceRecommendation');
       
-      document.getElementById('monthlyPace').textContent = `Current: ${monthDeals} deals • Projected: ${projectedDeals} deals (~${money(projectedFees)})`;
+      if (paceElement) {
+        paceElement.textContent = `Current: ${monthContracts} deals | Projected: ${Math.round(projectedContracts)} deals`;
+      }
       
-      // Recommendations
-      const recommendations = [];
-      if (weekSearches < 20) recommendations.push('⚡ Increase Privy searches (target: 20+/week)');
-      if (searchToOfferRate < 50) recommendations.push('📞 Improve contact rate (target: 50%+ search→offer)');
-      if (offerToContractRate < 30 && weekOffers > 5) recommendations.push('💰 Refine offer strategy (target: 30%+ offer→contract)');
-      if (projectedDeals < 3) recommendations.push('🎯 Pick up pace to hit 3-5 deals/month');
-      
-      document.getElementById('paceRecommendation').textContent = recommendations.length ? recommendations.join(' • ') : '✅ On track! Keep going!';
+      if (recElement) {
+        if (projectedContracts < 3) {
+          recElement.textContent = "⚠️ Behind pace - increase daily activity";
+        } else if (projectedContracts > 5) {
+          recElement.textContent = "🚀 Ahead of pace - maintain momentum!";
+        } else {
+          recElement.textContent = "✅ On track for monthly goal";
+        }
+      }
     }
 
-    // Quick action buttons
+    document.getElementById('saveGoalsBtn') && document.getElementById('saveGoalsBtn').addEventListener('click',()=>{
+      state.goals.convos = Number(document.getElementById('goalConvos').value||50);
+      state.goals.offers = Number(document.getElementById('goalOffers').value||10);
+      state.goals.contracts = Number(document.getElementById('goalContracts').value||5);
+      save('goals',state.goals);
+      updateKPI();
+      alert('Goals saved');
+    });
+
     document.getElementById('logPrivySearchBtn') && document.getElementById('logPrivySearchBtn').addEventListener('click',()=>{
-      const searches = JSON.parse(localStorage.getItem('privySearches') || '[]');
+      const searches = JSON.parse(localStorage.getItem('privySearches')||'[]');
       const today = new Date().toDateString();
-      const todaySearch = searches.find(s => s.date === today);
+      const todaySearch = searches.find(s=>s.date===today);
       if (todaySearch) {
         todaySearch.count++;
       } else {
-        searches.push({ date: today, count: 1 });
+        searches.push({date:today, count:1});
       }
       localStorage.setItem('privySearches', JSON.stringify(searches));
       updateDailyMetrics();
@@ -2291,54 +2151,43 @@ Seller: ____________________________ Date: ____________`;
     });
 
     document.getElementById('markOfferSentBtn') && document.getElementById('markOfferSentBtn').addEventListener('click',()=>{
-      if (state.leads.length === 0) {
-        alert('No leads available to mark');
-        return;
-      }
       const lead = state.leads[0];
-      lead.offerSent = true;
-      lead.offerSentDate = Date.now();
-      save('leads', state.leads);
-      updateKPI();
-      alert('Offer marked as sent');
+      if (lead) {
+        lead.offerSent = true;
+        lead.offerSentDate = Date.now();
+        save('leads', state.leads);
+        updateKPI();
+        alert('Offer marked as sent');
+      } else {
+        alert('No leads to mark');
+      }
     });
 
     document.getElementById('viewActivityLogBtn') && document.getElementById('viewActivityLogBtn').addEventListener('click',()=>{
-      const log = state.calls.slice(-20).reverse().map(c=> {
-        const d = new Date(c.ts);
-        return `${d.toLocaleDateString()} ${d.toLocaleTimeString()} - ${c.type}`;
-      }).join('\n');
+      const log = state.calls.slice(-20).reverse().map(c=>
+        `${new Date(c.ts).toLocaleString()}: ${c.type} ${c.leadId?'(Lead '+c.leadId+')':''}`
+      ).join('\n');
       alert('Recent Activity:\n\n' + (log || 'No activity yet'));
     });
 
-    // Save goals
-    document.getElementById('saveGoalsBtn') && document.getElementById('saveGoalsBtn').addEventListener('click',()=>{
-      state.goals.convos = Number(document.getElementById('goalConvos').value||50);
-      state.goals.offers = Number(document.getElementById('goalOffers').value||10);
-      state.goals.contracts = Number(document.getElementById('goalContracts').value||5);
-      localStorage.setItem('goals', JSON.stringify(state.goals));
-      updateKPI();
-      renderOneMetric();
-      alert('Goals saved');
-    });
-
     // ========= Settings =========
-    function loadSettings(){
+    function loadSettingsUI(){
       document.getElementById('sbUrl').value = state.settings.sbUrl;
       document.getElementById('sbAnon').value = state.settings.sbAnon;
       document.getElementById('sbBucket').value = state.settings.sbBucket;
       document.getElementById('ejService').value = state.settings.ejService;
       document.getElementById('ejTemplate').value = state.settings.ejTemplate;
       document.getElementById('ejPublic').value = state.settings.ejPublic;
-      document.getElementById('goalConvos').value = state.goals.convos || 50;
-      document.getElementById('goalOffers').value = state.goals.offers || 10;
-      document.getElementById('goalContracts').value = state.goals.contracts || 5;
+      
+      document.getElementById('goalConvos').value = state.goals.convos;
+      document.getElementById('goalOffers').value = state.goals.offers;
+      document.getElementById('goalContracts').value = state.goals.contracts;
     }
 
     document.getElementById('saveSbBtn') && document.getElementById('saveSbBtn').addEventListener('click',()=>{
       state.settings.sbUrl = document.getElementById('sbUrl').value.trim();
       state.settings.sbAnon = document.getElementById('sbAnon').value.trim();
-      state.settings.sbBucket = document.getElementById('sbBucket').value.trim() || 'contracts';
+      state.settings.sbBucket = document.getElementById('sbBucket').value.trim();
       localStorage.setItem('SUPABASE_URL', state.settings.sbUrl);
       localStorage.setItem('SUPABASE_ANON', state.settings.sbAnon);
       localStorage.setItem('SUPABASE_BUCKET', state.settings.sbBucket);
@@ -2355,88 +2204,379 @@ Seller: ____________________________ Date: ____________`;
       alert('EmailJS settings saved');
     });
 
-    // ========= Export/Import =========
+    // ========= Import/Export =========
     document.getElementById('exportCsvBtn') && document.getElementById('exportCsvBtn').addEventListener('click',()=>{
-      const rows = [['address','seller','phone','email','agent','arv','repairs','ask','notes','source','status']];
-      state.leads.forEach(l=>rows.push([
-        l.address, l.seller||'', l.phone||'', l.email||'', l.agent||'',
-        l.arv||0, l.repairs||0, l.ask||0, l.notes||'', l.source||'', l.status||''
-      ]));
-      const csv = rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
-      const blob = new Blob([csv],{type:'text/csv'});
+      const headers = ['Type','Address','Seller','Phone','Email','ARV','Ask','Status','Notes','Created'];
+      const rows = [headers.join(',')];
+      state.leads.forEach(l=>{
+        const row = [
+          'Lead',
+          `"${l.address}"`,
+          `"${l.seller||''}"`,
+          l.phone||'',
+          l.email||'',
+          l.arv||'',
+          l.ask||'',
+          l.status||'',
+          `"${(l.notes||'').replace(/"/g,'""')}"`,
+          new Date(l.createdAt||Date.now()).toLocaleDateString()
+        ];
+        rows.push(row.join(','));
+      });
+      state.deals.forEach(d=>{
+        const row = [
+          'Deal',
+          `"${d.propertyAddress}"`,
+          `"${d.sellerNames||''}"`,
+          '',
+          '',
+          '',
+          d.purchasePrice||'',
+          d.status||'',
+          `"${(d.dealTerms||'').replace(/"/g,'""')}"`,
+          new Date(d.createdAt||Date.now()).toLocaleDateString()
+        ];
+        rows.push(row.join(','));
+      });
+      const csv = rows.join('\n');
+      const blob = new Blob([csv], {type:'text/csv'});
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `REI_Leads_${new Date().toISOString().split('T')[0]}.csv`;
+      a.href = url;
+      a.download = `REI_Export_${new Date().toISOString().split('T')[0]}.csv`;
       a.click();
+      URL.revokeObjectURL(url);
     });
 
     document.getElementById('backupBtn') && document.getElementById('backupBtn').addEventListener('click',()=>{
       const backup = {
-        version: '1.0',
-        timestamp: Date.now(),
         leads: state.leads,
         deals: state.deals,
         buyers: state.buyers,
         calls: state.calls,
         goals: state.goals,
-        settings: state.settings
+        sprintTasks: state.sprintTasks,
+        sprintStartDate: state.sprintStartDate,
+        settings: state.settings,
+        exportDate: new Date().toISOString()
       };
-      const blob = new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
+      const json = JSON.stringify(backup, null, 2);
+      const blob = new Blob([json], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
+      a.href = url;
       a.download = `REI_Backup_${new Date().toISOString().split('T')[0]}.json`;
       a.click();
+      URL.revokeObjectURL(url);
     });
 
     document.getElementById('restoreBtn') && document.getElementById('restoreBtn').addEventListener('click',()=>{
       document.getElementById('restoreInput').click();
     });
 
-    document.getElementById('restoreInput') && document.getElementById('restoreInput').addEventListener('change', async e=>{
+    document.getElementById('restoreInput') && document.getElementById('restoreInput').addEventListener('change',(e)=>{
       const file = e.target.files[0];
-      if(!file) return;
-      try{
-        const text = await file.text();
-        const backup = JSON.parse(text);
-        if(confirm('Restore from backup? This will replace all current data.')){
-          state.leads = backup.leads || [];
-          state.deals = backup.deals || [];
-          state.buyers = backup.buyers || [];
-          state.calls = backup.calls || [];
-          state.goals = backup.goals || {convos:50,offers:10,contracts:5};
-          state.settings = backup.settings || {};
-          save('leads',state.leads);
-          save('deals',state.deals);
-          save('buyers',state.buyers);
-          save('calls',state.calls);
-          save('goals',state.goals);
-          Object.keys(state.settings).forEach(k=>{
-            const storageKey = {
-              sbUrl: 'SUPABASE_URL',
-              sbAnon: 'SUPABASE_ANON',
-              sbBucket: 'SUPABASE_BUCKET',
-              ejService: 'EJ_SERVICE',
-              ejTemplate: 'EJ_TEMPLATE',
-              ejPublic: 'EJ_PUBLIC'
-            }[k];
-            if(storageKey) localStorage.setItem(storageKey, state.settings[k]);
-          });
-          location.reload();
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        try {
+          const backup = JSON.parse(reader.result);
+          if (confirm('Restore data? This will overwrite current data.')) {
+            if (backup.leads) { state.leads = backup.leads; save('leads', state.leads); }
+            if (backup.deals) { state.deals = backup.deals; save('deals', state.deals); }
+            if (backup.buyers) { state.buyers = backup.buyers; save('buyers', state.buyers); }
+            if (backup.calls) { state.calls = backup.calls; save('calls', state.calls); }
+            if (backup.goals) { state.goals = backup.goals; save('goals', state.goals); }
+            if (backup.sprintTasks) { state.sprintTasks = backup.sprintTasks; saveSprintTasks(); }
+            if (backup.sprintStartDate) { state.sprintStartDate = backup.sprintStartDate; localStorage.setItem('sprintStartDate', backup.sprintStartDate); }
+            renderAll();
+            alert('Data restored successfully');
+          }
+        } catch (err) {
+          alert('Invalid backup file');
         }
-      }catch(err){
-        alert('Restore failed: '+err.message);
+      };
+      reader.readAsText(file);
+    });
+
+    // ========= CSV Import =========  
+    document.getElementById('importLeadsBtn') && document.getElementById('importLeadsBtn').addEventListener('click',()=>{
+      document.getElementById('importLeadsInput').click();
+    });
+
+    document.getElementById('importLeadsInput') && document.getElementById('importLeadsInput').addEventListener('change',(e)=>{
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        const csv = reader.result;
+        const lines = csv.split('\n').filter(line=>line.trim());
+        if (lines.length < 2) return alert('CSV must have headers and at least one row');
+        
+        const headers = lines[0].toLowerCase().split(',').map(h=>h.trim().replace(/"/g,''));
+        const imported = [];
+        
+        for (let i = 1; i < lines.length; i++) {
+          const values = lines[i].split(',').map(v=>v.trim().replace(/"/g,''));
+          const lead = {
+            id: 'L'+Date.now()+'_'+i,
+            source: 'CSV Import',
+            address: getValue('address', headers, values) || '',
+            seller: getValue('seller', headers, values) || getValue('name', headers, values) || '',
+            agent: getValue('agent', headers, values) || '',
+            phone: getValue('phone', headers, values) || '',
+            email: getValue('email', headers, values) || '',
+            arv: Number(getValue('arv', headers, values) || 0),
+            repairs: Number(getValue('repairs', headers, values) || 0),
+            ask: Number(getValue('ask', headers, values) || getValue('list', headers, values) || 0),
+            mortgageBalance: Number(getValue('mortgage', headers, values) || 0),
+            dom: Number(getValue('dom', headers, values) || getValue('days', headers, values) || 0),
+            propertyType: getValue('type', headers, values) || getValue('property', headers, values) || '',
+            notes: getValue('notes', headers, values) || '',
+            status: 'New',
+            attempts: 0,
+            offerSent: false,
+            createdAt: Date.now(),
+            nextAction: Date.now() + 24*3600*1000
+          };
+          
+          if (lead.address) {
+            imported.push(lead);
+          }
+        }
+        
+        if (imported.length > 0) {
+          state.leads.unshift(...imported);
+          save('leads', state.leads);
+          renderLeads();
+          alert(`Imported ${imported.length} leads from CSV`);
+        } else {
+          alert('No valid leads found in CSV');
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    function getValue(key, headers, values) {
+      const index = headers.findIndex(h => h.includes(key));
+      return index >= 0 ? values[index] : '';
+    }
+
+    // ========= Privy Bulk Import Modal =========
+    const bulkImportModal = document.getElementById('bulkImportModal');
+    const privyBulkImportBtn = document.getElementById('privyBulkImportBtn');
+    const closeBulkImport = document.getElementById('closeBulkImport');
+    const selectPrivyFile = document.getElementById('selectPrivyFile');
+    const privyFileInput = document.getElementById('privyFileInput');
+    const processImport = document.getElementById('processImport');
+    
+    let privyData = [];
+    
+    privyBulkImportBtn && privyBulkImportBtn.addEventListener('click', ()=>{
+      bulkImportModal.classList.remove('hidden');
+    });
+    
+    closeBulkImport && closeBulkImport.addEventListener('click', ()=>{
+      bulkImportModal.classList.add('hidden');
+      document.getElementById('fieldMappingSection').classList.add('hidden');
+      document.getElementById('previewSection').classList.add('hidden');
+      processImport.classList.add('hidden');
+    });
+    
+    selectPrivyFile && selectPrivyFile.addEventListener('click', ()=>{
+      privyFileInput.click();
+    });
+    
+    privyFileInput && privyFileInput.addEventListener('change', (e)=>{
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      document.getElementById('privyFileName').textContent = file.name;
+      
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        const csv = reader.result;
+        const lines = csv.split('\n').filter(line=>line.trim());
+        if (lines.length < 2) return alert('CSV must have headers and data');
+        
+        const headers = lines[0].split(',').map(h=>h.trim().replace(/"/g,''));
+        privyData = { headers, rows: lines.slice(1) };
+        
+        const mappingSelects = ['mapAddress','mapOwner','mapMailing','mapPhone','mapEmail','mapARV','mapMortgage','mapEquity','mapType','mapDOM','mapListPrice','mapStatus'];
+        mappingSelects.forEach(selectId => {
+          const select = document.getElementById(selectId);
+          if (select) {
+            select.innerHTML = '<option value="">-- Skip --</option>';
+            headers.forEach((header, idx) => {
+              select.innerHTML += `<option value="${idx}">${header}</option>`;
+            });
+          }
+        });
+        
+        document.getElementById('fieldMappingSection').classList.remove('hidden');
+      };
+      reader.readAsText(file);
+    });
+    
+    function autoMapFields() {
+      if (!privyData.headers) return;
+      const headers = privyData.headers.map(h => h.toLowerCase());
+      
+      const mappings = {
+        mapAddress: ['address', 'property address', 'property_address', 'street'],
+        mapOwner: ['owner', 'owner name', 'owner_name', 'seller'],
+        mapPhone: ['phone', 'owner phone', 'phone number'],
+        mapEmail: ['email', 'owner email', 'email address'],
+        mapARV: ['arv', 'value', 'estimated value', 'market value'],
+        mapMortgage: ['mortgage', 'loan balance', 'mortgage balance'],
+        mapEquity: ['equity', 'estimated equity'],
+        mapListPrice: ['list price', 'asking price', 'price']
+      };
+      
+      Object.keys(mappings).forEach(selectId => {
+        const select = document.getElementById(selectId);
+        if (!select) return;
+        
+        for (let keyword of mappings[selectId]) {
+          const index = headers.findIndex(h => h.includes(keyword));
+          if (index >= 0) {
+            select.value = index;
+            break;
+          }
+        }
+      });
+    }
+    
+    document.getElementById('fieldMappingSection') && document.getElementById('fieldMappingSection').addEventListener('change', ()=>{
+      if (!privyData.rows) return;
+      
+      autoMapFields();
+      
+      const preview = document.getElementById('importPreview');
+      const totalRows = document.getElementById('totalRows');
+      const validLeads = document.getElementById('validLeads');
+      const duplicateCount = document.getElementById('duplicateCount');
+      
+      if (!preview) return;
+      
+      const mappings = {
+        address: document.getElementById('mapAddress').value,
+        owner: document.getElementById('mapOwner').value,
+        phone: document.getElementById('mapPhone').value,
+        email: document.getElementById('mapEmail').value,
+        arv: document.getElementById('mapARV').value,
+        mortgage: document.getElementById('mapMortgage').value
+      };
+      
+      let validCount = 0;
+      let dupCount = 0;
+      preview.innerHTML = '';
+      
+      const sampleRows = privyData.rows.slice(0, 5);
+      sampleRows.forEach((row, idx) => {
+        const values = row.split(',').map(v => v.trim().replace(/"/g, ''));
+        const address = mappings.address ? values[mappings.address] : '';
+        const owner = mappings.owner ? values[mappings.owner] : '';
+        
+        if (address) {
+          validCount++;
+          if (state.leads.some(l => l.address.toLowerCase() === address.toLowerCase())) {
+            dupCount++;
+          }
+        }
+        
+        preview.innerHTML += `<div>Row ${idx + 1}: ${address} | ${owner} | ARV: ${mappings.arv ? values[mappings.arv] : 'N/A'}</div>`;
+      });
+      
+      totalRows.textContent = privyData.rows.length;
+      validLeads.textContent = validCount;
+      duplicateCount.textContent = dupCount;
+      
+      document.getElementById('previewSection').classList.remove('hidden');
+      processImport.classList.remove('hidden');
+    });
+    
+    processImport && processImport.addEventListener('click', ()=>{
+      if (!privyData.rows) return;
+      
+      const mappings = {
+        address: document.getElementById('mapAddress').value,
+        owner: document.getElementById('mapOwner').value,
+        phone: document.getElementById('mapPhone').value,
+        email: document.getElementById('mapEmail').value,
+        arv: document.getElementById('mapARV').value,
+        mortgage: document.getElementById('mapMortgage').value,
+        equity: document.getElementById('mapEquity').value,
+        listPrice: document.getElementById('mapListPrice').value
+      };
+      
+      const skipDuplicates = document.getElementById('skipDuplicates').checked;
+      const autoCalcRepairs = document.getElementById('autoCalcRepairs').checked;
+      const defaultSource = document.getElementById('defaultSource').value;
+      
+      const imported = [];
+      let skipped = 0;
+      
+      privyData.rows.forEach((row, idx) => {
+        const values = row.split(',').map(v => v.trim().replace(/"/g, ''));
+        const address = mappings.address ? values[mappings.address] : '';
+        
+        if (!address) return;
+        
+        if (skipDuplicates && state.leads.some(l => l.address.toLowerCase() === address.toLowerCase())) {
+          skipped++;
+          return;
+        }
+        
+        const arv = mappings.arv ? Number(values[mappings.arv] || 0) : 0;
+        const repairs = autoCalcRepairs ? Math.round(arv * 0.25) : 0;
+        
+        const lead = {
+          id: 'PL' + Date.now() + '_' + idx,
+          source: defaultSource,
+          address: address,
+          seller: mappings.owner ? values[mappings.owner] : '',
+          phone: mappings.phone ? values[mappings.phone] : '',
+          email: mappings.email ? values[mappings.email] : '',
+          arv: arv,
+          repairs: repairs,
+          ask: mappings.listPrice ? Number(values[mappings.listPrice] || 0) : 0,
+          mortgageBalance: mappings.mortgage ? Number(values[mappings.mortgage] || 0) : 0,
+          notes: `Imported from Privy - ${new Date().toLocaleDateString()}`,
+          status: 'New',
+          attempts: 0,
+          offerSent: false,
+          createdAt: Date.now(),
+          nextAction: Date.now() + 24*3600*1000
+        };
+        
+        imported.push(lead);
+      });
+      
+      if (imported.length > 0) {
+        state.leads.unshift(...imported);
+        save('leads', state.leads);
+        renderLeads();
+        bulkImportModal.classList.add('hidden');
+        alert(`Successfully imported ${imported.length} leads! ${skipped > 0 ? `(${skipped} duplicates skipped)` : ''}`);
+      } else {
+        alert('No valid leads to import');
       }
     });
 
-    // ========= Initialize =========
-    renderLeads();
-    renderDealsTable();
-    renderPipeline();
-    renderBuyersTable();
-    loadSettings();
-    updateKPI();
+    // ========= Initialize App =========
+    function renderAll(){
+      renderLeads();
+      renderDealsTable();
+      renderPipeline();
+      renderBuyersTable();
+      updateKPI();
+      loadSettingsUI();
+      renderSevenDaySprint();
+    }
+
+    renderAll();
     lucide.createIcons();
   </script>
 </body>
-</html></parameter>
-</invoke>
+</html>
