@@ -580,13 +580,13 @@
     }
 
     function renderOneMetric(){
-      const start=weekStartMs();
-      const convos=state.calls.filter(c=>c.ts>=start).length;
-      const goal=Number(state.goals.convos||50);
-      document.getElementById('omValue').textContent = convos;
-      document.getElementById('omTarget').textContent = `Goal ${goal}`;
-      document.getElementById('omMeter').style.width = Math.min(100, Math.round((convos/goal)*100))+'%';
-    }
+  const start = weekStartMs();
+  const convos = state.calls.filter(c => c.type === 'convo' && c.ts >= start).length;
+  const goal = Number(state.goals.convos || 50);
+  omValue.textContent = convos;
+  omTarget.textContent = `Goal ${goal}`;
+  omMeter.style.width = Math.min(100, Math.round((convos/goal)*100)) + '%';
+}
 
     // Auto-log when user clicks call/text/email links
     function logConvo(type, meta = {}) {
@@ -801,8 +801,31 @@
           </div>
           <div class="text-xs text-gray-600 mt-1">${l.notes||''}</div>
         `;
-        div.querySelector('.emailLead').addEventListener('click',()=> openOfferEmail(l));
-        div.querySelector('.offerLead').addEventListener('click',()=> leadToContract(l));
+        // === Added logging hooks ===
+    // Phone & SMS anchors
+    const phoneA = div.querySelector('a[href^="tel:"]');
+    phoneA && phoneA.addEventListener('click', () => {
+      logConvo('convo', { via: 'phone', leadId: l.id });
+    });
+
+    const smsA = div.querySelector('a[href^="sms:"]');
+    smsA && smsA.addEventListener('click', () => {
+      logConvo('convo', { via: 'sms', leadId: l.id });
+    });
+
+    // Email button
+    div.querySelector('.emailLead').addEventListener('click', () => {
+      openOfferEmail(l);
+      logConvo('convo', { via: 'email', leadId: l.id });
+    });
+
+    // Offer button
+    div.querySelector('.offerLead').addEventListener('click', () => {
+      leadToContract(l);
+      logConvo('convo', { via: 'offer', leadId: l.id });
+    });
+    // === /logging hooks ===
+
         div.querySelector('.followLead').addEventListener('click',()=> {
           scheduleCadence(l, (l.cadenceStep||0));
           save('leads',state.leads);
