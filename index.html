@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>REI Stack — MBPS Deal Sprint + DealDesk CRM</title>
   <meta name="theme-color" content="#0ea5e9" />
+  <!-- Add favicon to prevent 404 error -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><rect width=%2264%22 height=%2264%22 rx=%2210%22 fill=%22%2306b6d4%22/><text x=%2232%22 y=%2239%22 font-size=%2230%22 text-anchor=%22middle%22 fill=%22white%22 font-family=%22Arial%22>REI</text></svg>">
   <!-- Fonts for typed signature styles -->
   <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Dancing+Script:wght@600&family=Pacifico&family=Satisfy&display=swap" rel="stylesheet">
   <!-- Tailwind -->
@@ -151,7 +153,17 @@
           <div>
             <label class="text-sm font-medium">Source</label>
             <select id="leadSource" class="w-full rounded-xl border-gray-200">
-              <option>Expired</option><option>Agent</option><option>FSBO</option><option>Referral</option><option>Other</option>
+              <option>Privy-Distressed</option>
+              <option>Privy-HighEquity</option>
+              <option>Privy-Absentee</option>
+              <option>Privy-PreForeclosure</option>
+              <option>Privy-Probate</option>
+              <option>Privy-TaxLien</option>
+              <option>Expired</option>
+              <option>Agent</option>
+              <option>FSBO</option>
+              <option>Referral</option>
+              <option>Other</option>
             </select>
           </div>
           <div>
@@ -177,6 +189,18 @@
             <input id="leadRepairs" type="number" class="w-full rounded-xl border-gray-200" placeholder="Repairs $" />
             <input id="leadAsk" type="number" class="w-full rounded-xl border-gray-200" placeholder="Ask/List $" />
           </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <input id="leadMortgage" type="number" class="w-full rounded-xl border-gray-200" placeholder="Mortgage Bal $" />
+            <input id="leadDOM" type="number" class="w-full rounded-xl border-gray-200" placeholder="Days on Market" />
+            <select id="leadPropertyType" class="w-full rounded-xl border-gray-200">
+              <option value="">Property Type</option>
+              <option>SFH</option>
+              <option>Townhome</option>
+              <option>Condo</option>
+              <option>Multi-Family</option>
+              <option>Land</option>
+            </select>
+          </div>
           <div class="grid grid-cols-2 gap-3 text-sm">
             <div class="p-3 rounded-xl border bg-white dark:bg-[#0b1322]">
               <div class="text-gray-500">MAO (70% Rule)</div>
@@ -196,6 +220,7 @@
             <button id="importLeadsBtn" type="button" class="btn btn-outline"><i data-lucide="file-up"></i>Import CSV</button>
             <input id="importLeadsInput" type="file" accept=".csv" class="hidden" />
           </div>
+          <button id="privyBulkImportBtn" type="button" class="btn btn-accent w-full mt-2"><i data-lucide="upload-cloud"></i>Bulk Import from Privy</button>
           <p class="text-xs text-gray-500">CSV headers: address, seller, phone, email, agent, arv, repairs, ask, notes, source</p>
         </form>
       </section>
@@ -515,6 +540,56 @@
               <div class="meter mt-2"><i id="kpiFeesMeter" style="width:0%"></i></div>
             </div>
           </div>
+          
+          <!-- Daily Activity Tracker -->
+          <div class="mt-6 p-4 rounded-xl border bg-white dark:bg-[#0b1322]">
+            <h3 class="font-semibold mb-3">Daily Activity Tracker</h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+              <div class="border rounded-lg p-2">
+                <div class="text-xs text-gray-500">Privy Searches Today</div>
+                <div id="privySearchesToday" class="text-lg font-semibold">0</div>
+              </div>
+              <div class="border rounded-lg p-2">
+                <div class="text-xs text-gray-500">Offers Sent Today</div>
+                <div id="offersSentToday" class="text-lg font-semibold">0</div>
+              </div>
+              <div class="border rounded-lg p-2">
+                <div class="text-xs text-gray-500">Follow-ups Today</div>
+                <div id="followUpsToday" class="text-lg font-semibold">0</div>
+              </div>
+              <div class="border rounded-lg p-2">
+                <div class="text-xs text-gray-500">Response Rate</div>
+                <div id="responseRate" class="text-lg font-semibold">0%</div>
+              </div>
+            </div>
+            
+            <!-- Weekly Conversion Funnel -->
+            <div class="mt-4">
+              <h4 class="font-medium text-sm mb-2">Weekly Conversion Funnel</h4>
+              <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs">Searches → Offers</span>
+                  <span id="searchToOfferRate" class="text-xs font-semibold">0%</span>
+                </div>
+                <div class="meter"><i id="searchToOfferMeter" style="width:0%"></i></div>
+                <div class="flex items-center justify-between">
+                  <span class="text-xs">Offers → Contracts</span>
+                  <span id="offerToContractRate" class="text-xs font-semibold">0%</span>
+                </div>
+                <div class="meter"><i id="offerToContractMeter" style="width:0%"></i></div>
+              </div>
+            </div>
+            
+            <!-- Pace to Goal -->
+            <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <div class="text-sm font-medium">Monthly Pace</div>
+              <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                <div>Target: 3-5 deals/month = $35,000</div>
+                <div id="monthlyPace" class="mt-1"></div>
+                <div id="paceRecommendation" class="mt-1 text-blue-700 dark:text-blue-300"></div>
+              </div>
+            </div>
+          </div>
         </section>
         <aside class="card">
           <h3 class="font-semibold mb-3">Targets</h3>
@@ -524,6 +599,16 @@
             <div><label>Monthly Contracts</label><input id="goalContracts" type="number" class="w-full rounded-xl border-gray-200" value="5" /></div>
             <button id="saveGoalsBtn" class="btn btn-primary">Save Goals</button>
             <p class="text-xs text-gray-500">Rule: 50 quality convos → 10 offers → 3–5 contracts.</p>
+          </div>
+          
+          <!-- Quick Actions -->
+          <div class="mt-6 pt-6 border-t">
+            <h3 class="font-semibold mb-3">Quick Actions</h3>
+            <div class="grid gap-2">
+              <button id="logPrivySearchBtn" class="btn btn-outline text-sm"><i data-lucide="search"></i>Log Privy Search</button>
+              <button id="markOfferSentBtn" class="btn btn-outline text-sm"><i data-lucide="send"></i>Mark Offer Sent</button>
+              <button id="viewActivityLogBtn" class="btn btn-outline text-sm"><i data-lucide="bar-chart-2"></i>Activity Log</button>
+            </div>
           </div>
         </aside>
       </div>
@@ -556,6 +641,125 @@
     </section>
   </div>
 
+  <!-- Bulk Import Modal -->
+  <div id="bulkImportModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-[#0b1322] rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-auto p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-semibold">Bulk Import from Privy</h2>
+        <button id="closeBulkImport" class="btn btn-outline text-sm"><i data-lucide="x"></i></button>
+      </div>
+      
+      <div class="mb-4">
+        <label class="block text-sm font-medium mb-2">Step 1: Upload Privy Export</label>
+        <input id="privyFileInput" type="file" accept=".csv" class="hidden" />
+        <button id="selectPrivyFile" class="btn btn-outline"><i data-lucide="file-up"></i>Select CSV File</button>
+        <span id="privyFileName" class="ml-3 text-sm text-gray-500"></span>
+      </div>
+      
+      <div id="fieldMappingSection" class="hidden mb-4">
+        <label class="block text-sm font-medium mb-2">Step 2: Map Fields</label>
+        <p class="text-xs text-gray-500 mb-3">Match your Privy columns to the system fields</p>
+        <div class="grid grid-cols-2 gap-3 text-sm">
+          <div class="flex items-center justify-between">
+            <span>Property Address:</span>
+            <select id="mapAddress" class="rounded-lg border-gray-200 text-xs"></select>
+          </div>
+          <div class="flex items-center justify-between">
+            <span>Owner Name:</span>
+            <select id="mapOwner" class="rounded-lg border-gray-200 text-xs"></select>
+          </div>
+          <div class="flex items-center justify-between">
+            <span>Mailing Address:</span>
+            <select id="mapMailing" class="rounded-lg border-gray-200 text-xs"></select>
+          </div>
+          <div class="flex items-center justify-between">
+            <span>Phone:</span>
+            <select id="mapPhone" class="rounded-lg border-gray-200 text-xs"></select>
+          </div>
+          <div class="flex items-center justify-between">
+            <span>Email:</span>
+            <select id="mapEmail" class="rounded-lg border-gray-200 text-xs"></select>
+          </div>
+          <div class="flex items-center justify-between">
+            <span>Est. Value/ARV:</span>
+            <select id="mapARV" class="rounded-lg border-gray-200 text-xs"></select>
+          </div>
+          <div class="flex items-center justify-between">
+            <span>Mortgage Balance:</span>
+            <select id="mapMortgage" class="rounded-lg border-gray-200 text-xs"></select>
+          </div>
+          <div class="flex items-center justify-between">
+            <span>Est. Equity:</span>
+            <select id="mapEquity" class="rounded-lg border-gray-200 text-xs"></select>
+          </div>
+          <div class="flex items-center justify-between">
+            <span>Property Type:</span>
+            <select id="mapType" class="rounded-lg border-gray-200 text-xs"></select>
+          </div>
+          <div class="flex items-center justify-between">
+            <span>Days on Market:</span>
+            <select id="mapDOM" class="rounded-lg border-gray-200 text-xs"></select>
+          </div>
+          <div class="flex items-center justify-between">
+            <span>List Price:</span>
+            <select id="mapListPrice" class="rounded-lg border-gray-200 text-xs"></select>
+          </div>
+          <div class="flex items-center justify-between">
+            <span>Status/Notes:</span>
+            <select id="mapStatus" class="rounded-lg border-gray-200 text-xs"></select>
+          </div>
+        </div>
+        
+        <div class="mt-4">
+          <label class="block text-sm font-medium mb-2">Import Settings</label>
+          <div class="space-y-2">
+            <label class="flex items-center gap-2 text-sm">
+              <input id="skipDuplicates" type="checkbox" checked class="accent-brand-500">
+              Skip duplicate addresses
+            </label>
+            <label class="flex items-center gap-2 text-sm">
+              <input id="autoCalcRepairs" type="checkbox" checked class="accent-brand-500">
+              Auto-calculate repairs (25% of ARV for distressed)
+            </label>
+            <div class="flex items-center gap-2">
+              <label class="text-sm">Default Source:</label>
+              <select id="defaultSource" class="rounded-lg border-gray-200 text-sm">
+                <option>Privy-Distressed</option>
+                <option>Privy-HighEquity</option>
+                <option>Privy-Absentee</option>
+                <option>Privy-PreForeclosure</option>
+                <option>Privy-Probate</option>
+                <option>Privy-TaxLien</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div id="previewSection" class="hidden mb-4">
+        <label class="block text-sm font-medium mb-2">Step 3: Preview Import</label>
+        <div class="border rounded-lg p-3 bg-gray-50 dark:bg-gray-900 max-h-60 overflow-auto">
+          <div id="importPreview" class="text-xs space-y-2"></div>
+        </div>
+        <div class="mt-2 text-sm">
+          <span>Total rows: <span id="totalRows" class="font-semibold">0</span></span>
+          <span class="ml-4">Valid leads: <span id="validLeads" class="font-semibold text-green-600">0</span></span>
+          <span class="ml-4">Duplicates: <span id="duplicateCount" class="font-semibold text-yellow-600">0</span></span>
+        </div>
+      </div>
+      
+      <div class="flex gap-3 justify-end mt-6">
+        <button id="cancelImport" class="btn btn-outline">Cancel</button>
+        <button id="processImport" class="btn btn-primary hidden"><i data-lucide="upload"></i>Import Leads</button>
+      </div>
+      
+      <div id="importProgress" class="hidden mt-4">
+        <div class="text-sm mb-2">Importing... <span id="progressCount">0</span> / <span id="progressTotal">0</span></div>
+        <div class="meter"><i id="progressBar" style="width:0%"></i></div>
+      </div>
+    </div>
+  </div>
+
   <script>
     lucide.createIcons();
     const pdfjsLib = window['pdfjs-dist/build/pdf'];
@@ -580,13 +784,13 @@
     }
 
     function renderOneMetric(){
-  const start = weekStartMs();
-  const convos = state.calls.filter(c => c.type === 'convo' && c.ts >= start).length;
-  const goal = Number(state.goals.convos || 50);
-  omValue.textContent = convos;
-  omTarget.textContent = `Goal ${goal}`;
-  omMeter.style.width = Math.min(100, Math.round((convos/goal)*100)) + '%';
-}
+      const start=weekStartMs();
+      const convos=state.calls.filter(c=>c.ts>=start).length;
+      const goal=Number(state.goals.convos||50);
+      document.getElementById('omValue').textContent = convos;
+      document.getElementById('omTarget').textContent = `Goal ${goal}`;
+      document.getElementById('omMeter').style.width = Math.min(100, Math.round((convos/goal)*100))+'%';
+    }
 
     // Auto-log when user clicks call/text/email links
     function logConvo(type, meta = {}) {
@@ -660,16 +864,44 @@
 
     // ========= Lead Scoring =========
     function scoreLead(l){
-      // Weights: source, spread, recency, follow-up due, keywords (simple)
-      const sourceW = { 'Expired': 25, 'Agent': 20, 'FSBO': 15, 'Referral': 30, 'Other': 10 }[l.source] || 10;
-      const spread = Math.max(0, (l.arv||0)*0.7 - (l.repairs||0) - (l.ask||0)); // positive spread = good
-      const spreadW = Math.min(30, spread / 10000); // $10k spread ~ +1pt up to 30
+      // Enhanced scoring with Privy indicators
+      const sourceW = { 
+        'Privy-Distressed': 35,
+        'Privy-HighEquity': 30,
+        'Privy-Absentee': 28,
+        'Privy-PreForeclosure': 40,
+        'Privy-Probate': 35,
+        'Privy-TaxLien': 38,
+        'Expired': 25, 
+        'Agent': 20, 
+        'FSBO': 15, 
+        'Referral': 30, 
+        'Other': 10 
+      }[l.source] || 10;
+      
+      const spread = Math.max(0, (l.arv||0)*0.7 - (l.repairs||0) - (l.ask||0));
+      const spreadW = Math.min(30, spread / 10000);
+      
+      // Equity calculation for subject-to potential
+      const equity = (l.arv||0) - (l.mortgageBalance||0);
+      const equityW = equity > 50000 ? 15 : equity > 20000 ? 10 : 0;
+      
       const ageDays = (Date.now() - (l.createdAt||Date.now())) / 86400000;
-      const recencyW = Math.max(0, 15 - ageDays); // decays after 15 days
+      const recencyW = Math.max(0, 15 - ageDays);
       const dueW = l.nextAction && l.nextAction <= Date.now() ? 20 : 0;
+      
+      // Enhanced keywords for distress signals
       const kw = ((l.notes||'') + ' ' + (l.agent||'')).toLowerCase();
-      const kwW = (/(needs work|vacant|tired|behind|relocating|job|divorce|estate|investor)/.test(kw)) ? 10 : 0;
-      return Math.round(sourceW + spreadW + recencyW + dueW + kwW);
+      const distressKw = /(pre-foreclosure|foreclosure|tax lien|probate|divorce|behind|vacant|tired|relocating|job loss|inheritance|code violation|expired)/.test(kw);
+      const kwW = distressKw ? 15 : 0;
+      
+      // Days on market bonus (stale listings)
+      const domW = l.dom > 90 ? 10 : l.dom > 60 ? 5 : 0;
+      
+      // Contact attempts - prioritize uncontacted leads
+      const contactW = l.attempts === 0 ? 10 : l.attempts < 3 ? 5 : 0;
+      
+      return Math.round(sourceW + spreadW + equityW + recencyW + dueW + kwW + domW + contactW);
     }
 
     // ========= MBPS: Lead Intake =========
@@ -704,20 +936,354 @@
         arv: Number(document.getElementById('leadARV').value||0),
         repairs: Number(document.getElementById('leadRepairs').value||0),
         ask: Number(document.getElementById('leadAsk').value||0),
+        mortgageBalance: Number(document.getElementById('leadMortgage').value||0),
+        dom: Number(document.getElementById('leadDOM').value||0),
+        propertyType: document.getElementById('leadPropertyType').value,
         notes: document.getElementById('leadNotes').value.trim(),
         status: 'New',
+        attempts: 0,
+        offerSent: false,
+        offerResponse: null,
         createdAt: Date.now(),
-        nextAction: Date.now() + 24*3600*1000 // D+1 auto follow-up
+        nextAction: Date.now() + 24*3600*1000  // D+1 auto follow-up
       };
+      
+      // Track Privy searches
+      if (lead.source.startsWith('Privy')) {
+        const searches = JSON.parse(localStorage.getItem('privySearches') || '[]');
+        const today = new Date().toDateString();
+        const todaySearch = searches.find(s => s.date === today);
+        if (todaySearch) {
+          todaySearch.count++;
+        } else {
+          searches.push({ date: today, count: 1 });
+        }
+        localStorage.setItem('privySearches', JSON.stringify(searches));
+      }
+      
       state.leads.unshift(lead);
       save('leads',state.leads);
       leadForm.reset();
       recalcMAO();
       renderLeads();
+      updateDailyMetrics();
       alert('Lead added');
     });
 
-    // Import CSV
+    // ========= Privy Bulk Import =========
+    let privyImportData = null;
+    let privyHeaders = [];
+    
+    document.getElementById('privyBulkImportBtn').addEventListener('click', ()=>{
+      document.getElementById('bulkImportModal').classList.remove('hidden');
+    });
+    
+    document.getElementById('closeBulkImport').addEventListener('click', ()=>{
+      document.getElementById('bulkImportModal').classList.add('hidden');
+      privyImportData = null;
+      privyHeaders = [];
+    });
+    
+    document.getElementById('cancelImport').addEventListener('click', ()=>{
+      document.getElementById('bulkImportModal').classList.add('hidden');
+      privyImportData = null;
+      privyHeaders = [];
+    });
+    
+    document.getElementById('selectPrivyFile').addEventListener('click', ()=>{
+      document.getElementById('privyFileInput').click();
+    });
+    
+    document.getElementById('privyFileInput').addEventListener('change', async (e)=>{
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      document.getElementById('privyFileName').textContent = file.name;
+      
+      try {
+        const text = await file.text();
+        const lines = text.split(/\r?\n/).filter(l => l.trim());
+        const rows = lines.map(line => {
+          // Handle both comma and tab delimited files
+          const delimiter = line.includes('\t') ? '\t' : ',';
+          // Parse CSV properly handling quoted fields
+          const regex = new RegExp(`(?:^|${delimiter})("(?:[^"]|"")*"|[^${delimiter}]*)`, 'g');
+          const fields = [];
+          let match;
+          while ((match = regex.exec(line)) !== null) {
+            let field = match[1];
+            if (field.startsWith('"') && field.endsWith('"')) {
+              field = field.slice(1, -1).replace(/""/g, '"');
+            }
+            fields.push(field);
+          }
+          return fields;
+        });
+        
+        privyHeaders = rows[0].map(h => h.trim());
+        privyImportData = rows.slice(1).map(row => {
+          const obj = {};
+          privyHeaders.forEach((header, idx) => {
+            obj[header] = row[idx] ? row[idx].trim() : '';
+          });
+          return obj;
+        });
+        
+        // Show field mapping section
+        document.getElementById('fieldMappingSection').classList.remove('hidden');
+        
+        // Populate mapping dropdowns
+        const mappingSelects = [
+          'mapAddress', 'mapOwner', 'mapMailing', 'mapPhone', 'mapEmail',
+          'mapARV', 'mapMortgage', 'mapEquity', 'mapType', 'mapDOM', 
+          'mapListPrice', 'mapStatus'
+        ];
+        
+        mappingSelects.forEach(selectId => {
+          const select = document.getElementById(selectId);
+          select.innerHTML = '<option value="">-- Not Mapped --</option>';
+          privyHeaders.forEach(header => {
+            select.innerHTML += `<option value="${header}">${header}</option>`;
+          });
+        });
+        
+        // Auto-detect common field names
+        autoDetectFields();
+        
+        // Preview data
+        previewImportData();
+        
+      } catch(err) {
+        alert('Error reading file: ' + err.message);
+      }
+    });
+    
+    function autoDetectFields() {
+      const mappings = {
+        'mapAddress': ['Property Address', 'Address', 'Property', 'Site Address'],
+        'mapOwner': ['Owner Name', 'Owner', 'Name', 'Seller', 'Owner 1 Name'],
+        'mapMailing': ['Mailing Address', 'Mail Address', 'Owner Address'],
+        'mapPhone': ['Phone', 'Phone Number', 'Mobile', 'Cell'],
+        'mapEmail': ['Email', 'Email Address', 'Owner Email'],
+        'mapARV': ['Estimated Value', 'Est Value', 'ARV', 'Value', 'Zestimate'],
+        'mapMortgage': ['Mortgage Balance', 'Loan Balance', 'Mortgage', 'Total Loan Amount'],
+        'mapEquity': ['Equity', 'Est Equity', 'Estimated Equity'],
+        'mapType': ['Property Type', 'Type', 'Property Use'],
+        'mapDOM': ['Days on Market', 'DOM', 'Days Listed'],
+        'mapListPrice': ['List Price', 'Listing Price', 'Ask Price', 'Price'],
+        'mapStatus': ['Status', 'Property Status', 'Notes', 'Listing Status']
+      };
+      
+      Object.entries(mappings).forEach(([selectId, possibleHeaders]) => {
+        const select = document.getElementById(selectId);
+        const match = privyHeaders.find(h => 
+          possibleHeaders.some(ph => h.toLowerCase().includes(ph.toLowerCase()))
+        );
+        if (match) {
+          select.value = match;
+        }
+      });
+    }
+    
+    function previewImportData() {
+      if (!privyImportData) return;
+      
+      const preview = document.getElementById('importPreview');
+      const skipDupes = document.getElementById('skipDuplicates').checked;
+      const addressField = document.getElementById('mapAddress').value;
+      
+      if (!addressField) {
+        preview.innerHTML = '<div class="text-red-500">Please map the Property Address field</div>';
+        return;
+      }
+      
+      // Check for duplicates
+      const existingAddresses = state.leads.map(l => l.address.toLowerCase());
+      let validCount = 0;
+      let dupeCount = 0;
+      const previewHTML = [];
+      
+      privyImportData.slice(0, 5).forEach(row => {
+        const address = row[addressField];
+        if (!address) return;
+        
+        const isDupe = existingAddresses.includes(address.toLowerCase());
+        if (isDupe && skipDupes) {
+          dupeCount++;
+          previewHTML.push(`<div class="text-yellow-600">⚠️ Duplicate: ${address}</div>`);
+        } else {
+          validCount++;
+          const owner = row[document.getElementById('mapOwner').value] || 'Unknown';
+          const arv = row[document.getElementById('mapARV').value] || '0';
+          previewHTML.push(`<div class="text-green-600">✓ ${address} - ${owner} - ARV: $${arv}</div>`);
+        }
+      });
+      
+      preview.innerHTML = previewHTML.join('') + 
+        (privyImportData.length > 5 ? `<div class="text-gray-500">...and ${privyImportData.length - 5} more</div>` : '');
+      
+      // Count totals
+      let totalValid = 0;
+      let totalDupes = 0;
+      
+      privyImportData.forEach(row => {
+        const address = row[addressField];
+        if (!address) return;
+        const isDupe = existingAddresses.includes(address.toLowerCase());
+        if (isDupe && skipDupes) {
+          totalDupes++;
+        } else {
+          totalValid++;
+        }
+      });
+      
+      document.getElementById('totalRows').textContent = privyImportData.length;
+      document.getElementById('validLeads').textContent = totalValid;
+      document.getElementById('duplicateCount').textContent = totalDupes;
+      
+      document.getElementById('previewSection').classList.remove('hidden');
+      document.getElementById('processImport').classList.remove('hidden');
+    }
+    
+    // Re-preview when settings change
+    ['mapAddress', 'skipDuplicates', 'autoCalcRepairs', 'defaultSource'].forEach(id => {
+      document.getElementById(id).addEventListener('change', previewImportData);
+    });
+    
+    document.getElementById('processImport').addEventListener('click', async ()=>{
+      const addressField = document.getElementById('mapAddress').value;
+      if (!addressField) {
+        alert('Please map the Property Address field');
+        return;
+      }
+      
+      const skipDupes = document.getElementById('skipDuplicates').checked;
+      const autoRepairs = document.getElementById('autoCalcRepairs').checked;
+      const defaultSource = document.getElementById('defaultSource').value;
+      
+      // Field mappings
+      const ownerField = document.getElementById('mapOwner').value;
+      const mailingField = document.getElementById('mapMailing').value;
+      const phoneField = document.getElementById('mapPhone').value;
+      const emailField = document.getElementById('mapEmail').value;
+      const arvField = document.getElementById('mapARV').value;
+      const mortgageField = document.getElementById('mapMortgage').value;
+      const equityField = document.getElementById('mapEquity').value;
+      const typeField = document.getElementById('mapType').value;
+      const domField = document.getElementById('mapDOM').value;
+      const listPriceField = document.getElementById('mapListPrice').value;
+      const statusField = document.getElementById('mapStatus').value;
+      
+      const existingAddresses = state.leads.map(l => l.address.toLowerCase());
+      
+      // Show progress
+      document.getElementById('importProgress').classList.remove('hidden');
+      document.getElementById('processImport').disabled = true;
+      
+      let imported = 0;
+      let skipped = 0;
+      const totalToProcess = privyImportData.length;
+      
+      document.getElementById('progressTotal').textContent = totalToProcess;
+      
+      for (let i = 0; i < privyImportData.length; i++) {
+        const row = privyImportData[i];
+        const address = row[addressField];
+        
+        if (!address) {
+          skipped++;
+          continue;
+        }
+        
+        if (skipDupes && existingAddresses.includes(address.toLowerCase())) {
+          skipped++;
+          continue;
+        }
+        
+        // Parse numeric values
+        const parseNumber = (val) => {
+          if (!val) return 0;
+          return Number(val.toString().replace(/[$,]/g, '')) || 0;
+        };
+        
+        const arv = parseNumber(row[arvField]);
+        const mortgage = parseNumber(row[mortgageField]);
+        const listPrice = parseNumber(row[listPriceField]);
+        const equity = equityField ? parseNumber(row[equityField]) : (arv - mortgage);
+        
+        // Calculate repairs if needed
+        let repairs = 0;
+        if (autoRepairs) {
+          if (defaultSource.includes('Distressed') || defaultSource.includes('PreForeclosure')) {
+            repairs = Math.round(arv * 0.25); // 25% for distressed
+          } else {
+            repairs = Math.round(arv * 0.15); // 15% for others
+          }
+        }
+        
+        const lead = {
+          id: 'L' + Date.now() + '_' + i,
+          source: defaultSource,
+          address: address,
+          seller: row[ownerField] || '',
+          agent: '', // Usually not in Privy data
+          phone: row[phoneField] || '',
+          email: row[emailField] || '',
+          arv: arv,
+          repairs: repairs,
+          ask: listPrice || arv,
+          mortgageBalance: mortgage,
+          dom: parseNumber(row[domField]),
+          propertyType: row[typeField] || 'SFH',
+          notes: `Imported from Privy. ${row[statusField] || ''} ${row[mailingField] ? 'Mail: ' + row[mailingField] : ''} Equity: ${money(equity)}`.trim(),
+          status: 'New',
+          attempts: 0,
+          offerSent: false,
+          offerResponse: null,
+          createdAt: Date.now(),
+          nextAction: Date.now() + 24*3600*1000
+        };
+        
+        state.leads.unshift(lead);
+        imported++;
+        
+        // Update progress
+        document.getElementById('progressCount').textContent = i + 1;
+        document.getElementById('progressBar').style.width = Math.round(((i + 1) / totalToProcess) * 100) + '%';
+        
+        // Allow UI to update
+        if (i % 10 === 0) {
+          await new Promise(resolve => setTimeout(resolve, 10));
+        }
+      }
+      
+      // Save and update
+      save('leads', state.leads);
+      renderLeads();
+      updateKPI();
+      
+      // Track the import
+      const searches = JSON.parse(localStorage.getItem('privySearches') || '[]');
+      const today = new Date().toDateString();
+      const todaySearch = searches.find(s => s.date === today);
+      if (todaySearch) {
+        todaySearch.count += imported;
+      } else {
+        searches.push({ date: today, count: imported });
+      }
+      localStorage.setItem('privySearches', JSON.stringify(searches));
+      
+      alert(`Import complete!\n\nImported: ${imported} leads\nSkipped: ${skipped} (duplicates or invalid)`);
+      
+      // Reset modal
+      document.getElementById('bulkImportModal').classList.add('hidden');
+      privyImportData = null;
+      privyHeaders = [];
+      document.getElementById('importProgress').classList.add('hidden');
+      document.getElementById('processImport').disabled = false;
+    });
+
+    // Import CSV (original simple import)
     document.getElementById('importLeadsBtn').addEventListener('click',()=>
       document.getElementById('importLeadsInput').click());
 
@@ -779,6 +1345,10 @@
         const div = document.createElement('div');
         div.className='border rounded-xl p-3 bg-white dark:bg-[#0b1322]';
         const dueBadge = (l.nextAction && l.nextAction<=today) ? '<span class="badge badge-pending ml-2">Due</span>':'';
+        const offerBadge = l.offerSent ? '<span class="badge badge-offer ml-1">Offer Sent</span>' : '';
+        const equity = (l.arv||0) - (l.mortgageBalance||0);
+        const equityDisplay = l.mortgageBalance ? `Equity: ${money(equity)}` : '';
+        
         div.innerHTML = `
           <div class="flex items-center justify-between">
             <div class="font-medium">${l.address}</div>
@@ -786,13 +1356,21 @@
               <span class="text-xs text-gray-500">Score</span>
               <span class="badge ${score>=60?'badge-signed':score>=40?'badge-offer':'badge-lead'}">${score}</span>
               ${dueBadge}
+              ${offerBadge}
             </div>
           </div>
-          <div class="text-xs text-gray-600 dark:text-gray-300 mt-1">${l.seller||'—'} ${l.agent? ' • Agent: '+l.agent:''}</div>
-          <div class="text-xs text-gray-500 mt-1">ARV ${money(l.arv)} • Repairs ${money(l.repairs)} • Ask ${money(l.ask)}</div>
+          <div class="text-xs text-gray-600 dark:text-gray-300 mt-1">
+            ${l.seller||'—'} ${l.agent? ' • Agent: '+l.agent:''}
+            ${l.propertyType ? ' • ' + l.propertyType : ''}
+            ${l.dom ? ' • DOM: ' + l.dom : ''}
+          </div>
+          <div class="text-xs text-gray-500 mt-1">
+            ARV ${money(l.arv)} • Repairs ${money(l.repairs)} • Ask ${money(l.ask)}
+            ${equityDisplay}
+          </div>
           <div class="flex flex-wrap gap-2 mt-2">
-            <a class="btn btn-outline text-xs" href="tel:${l.phone||''}"><i data-lucide="phone"></i>Call</a>
-            <a class="btn btn-outline text-xs" href="sms:${l.phone||''}"><i data-lucide="message-square"></i>Text</a>
+            <a class="btn btn-outline text-xs callBtn" href="tel:${l.phone||''}"><i data-lucide="phone"></i>Call</a>
+            <a class="btn btn-outline text-xs textBtn" href="sms:${l.phone||''}"><i data-lucide="message-square"></i>Text</a>
             <button class="btn btn-outline text-xs emailLead"><i data-lucide="mail"></i>Email</button>
             <button class="btn btn-outline text-xs offerLead"><i data-lucide="file-text"></i>Offer</button>
             <button class="btn btn-outline text-xs followLead"><i data-lucide="clock"></i>Follow-Up</button>
@@ -801,38 +1379,41 @@
           </div>
           <div class="text-xs text-gray-600 mt-1">${l.notes||''}</div>
         `;
-        // === Added logging hooks ===
-    // Phone & SMS anchors
-    const phoneA = div.querySelector('a[href^="tel:"]');
-    phoneA && phoneA.addEventListener('click', () => {
-      logConvo('convo', { via: 'phone', leadId: l.id });
-    });
-
-    const smsA = div.querySelector('a[href^="sms:"]');
-    smsA && smsA.addEventListener('click', () => {
-      logConvo('convo', { via: 'sms', leadId: l.id });
-    });
-
-    // Email button
-    div.querySelector('.emailLead').addEventListener('click', () => {
-      openOfferEmail(l);
-      logConvo('convo', { via: 'email', leadId: l.id });
-    });
-
-    // Offer button
-    div.querySelector('.offerLead').addEventListener('click', () => {
-      leadToContract(l);
-      logConvo('convo', { via: 'offer', leadId: l.id });
-    });
-    // === /logging hooks ===
-
+        
+        // Track call attempts
+        div.querySelector('.callBtn').addEventListener('click', ()=>{
+          l.attempts = (l.attempts || 0) + 1;
+          l.lastContact = Date.now();
+          logConvo('call', {leadId: l.id});
+          save('leads', state.leads);
+        });
+        
+        // Track text attempts
+        div.querySelector('.textBtn').addEventListener('click', ()=>{
+          l.attempts = (l.attempts || 0) + 1;
+          l.lastContact = Date.now();
+          logConvo('text', {leadId: l.id});
+          save('leads', state.leads);
+        });
+        
+        div.querySelector('.emailLead').addEventListener('click',()=> openOfferEmail(l));
+        
+        div.querySelector('.offerLead').addEventListener('click',()=> {
+          leadToContract(l);
+          l.offerSent = true;
+          l.offerSentDate = Date.now();
+          save('leads', state.leads);
+        });
+        
         div.querySelector('.followLead').addEventListener('click',()=> {
           scheduleCadence(l, (l.cadenceStep||0));
           save('leads',state.leads);
           renderLeads();
           alert('Follow-up scheduled');
         });
+        
         div.querySelector('.toDeal').addEventListener('click',()=> leadToDeal(l));
+        
         div.querySelector('.delLead').addEventListener('click',()=>{
           if(confirm('Delete lead?')){
             state.leads = state.leads.filter(x=>x.id!==l.id);
@@ -840,6 +1421,7 @@
             renderLeads();
           }
         });
+        
         div.addEventListener('click', ()=> state.selectedLeadId = l.id);
         list.appendChild(div);
       });
@@ -909,12 +1491,14 @@ Date: ${new Date().toLocaleDateString()}
 Buyer: ${d.bizName}, located at ${d.bizAddress}.
 Seller(s): ${d.sellerNames}.
 Property: ${d.propertyAddress}.`;
+      
       const baseBody = `Purchase Price: ${money(d.purchasePrice)}.
 Earnest Money: $1,000 (refundable within inspection period unless otherwise stated).
 Closing: On or before 30 days from execution, or as mutually agreed.
 Condition: Property sold AS-IS. Buyer may access property for inspections.
 Title & Taxes: Seller to provide clear, marketable title. Taxes prorated at closing.
 Assignments: Buyer may assign this agreement.`;
+      
       let extra = '';
       if (template==='standard'){
         extra = `Additional Terms: ${d.dealTerms || 'N/A'}.`;
@@ -949,10 +1533,13 @@ Loan #: ______________
 Phone: ______________
 Additional Terms: ${d.dealTerms || 'N/A'}.`;
       }
-      const footer = `Signatures:
+      
+      const footer = `
+Signatures:
 Buyer: ____________________________ Date: ____________
 Seller: ____________________________ Date: ____________
 Seller: ____________________________ Date: ____________`;
+      
       return `${baseHeader}\n${baseBody}\n${extra}\n${footer}`;
     }
 
@@ -1484,256 +2071,372 @@ Seller: ____________________________ Date: ____________`;
       const text = (typedSigInput && typedSigInput.value.trim()) || '';
       if(!text) return alert('Type your name for the signature');
       const font = (typedSigFont && typedSigFont.value) || "'Great Vibes', cursive";
-      state.signer.signatureUrl = renderTypedToDataURL(text, font, 48);
-      alert('Typed signature saved. Tap page to place.');
+      state.signer.signatureUrl = renderTypedToDataURL(text, font, 50);
+           alert('Typed signature saved. Tap PDF to place.');
     });
 
     document.getElementById('typedInitGenerate') && document.getElementById('typedInitGenerate').addEventListener('click',()=>{
       const text = (typedInitInput && typedInitInput.value.trim()) || '';
       if(!text) return alert('Type your initials');
-      const font = (typedInitFont && typedInitFont.value) || "'Dancing Script', cursive";
+      const font = (typedInitFont && typedInitFont.value) || "'Great Vibes', cursive";
       state.signer.initialsUrl = renderTypedToDataURL(text, font, 36);
-      alert('Typed initials saved. Tap page to place.');
+      alert('Typed initials saved. Tap PDF to place.');
     });
 
-    // Finalize: burn signatures/initials into PDF
+    // Finalize PDF with placements
     finishBtn && finishBtn.addEventListener('click', async ()=>{
-      if (!state.signer.pdfBytes) return alert('Upload a PDF first');
-      const pdfDoc = await PDFLib.PDFDocument.load(state.signer.pdfBytes);
-      const sigImg = state.signer.signatureUrl? await pdfDoc.embedPng(state.signer.signatureUrl):null;
-      const initImg = state.signer.initialsUrl? await pdfDoc.embedPng(state.signer.initialsUrl):null;
-      state.signer.placements.forEach(p=>{
-        const page = pdfDoc.getPage(p.page-1);
-        const {width,height}=page.getSize();
-        const cv=state.signer.pages[p.page-1];
-        const sx=width/cv.canvas.width, sy=height/cv.canvas.height;
-        const img=p.type==='signature'?sigImg:initImg;
-        if(!img) return;
-        const w=p.type==='signature'?180:100, h=p.type==='signature'?50:40;
-        const x=p.x*sx - w/2, y=height - (p.y*sy) - h/2;
-        page.drawImage(img,{x,y,width:w,height:h});
-      });
-      const bytes = await pdfDoc.save();
-      const blob = new Blob([bytes],{type:'application/pdf'});
-      const url=URL.createObjectURL(blob);
-      const a=document.createElement('a');
-      a.href=url;
-      a.download='Signed_Document.pdf';
-      a.click();
+      if(!state.signer.pdfBytes) return alert('No PDF loaded');
+      if(!state.signer.placements.length) return alert('No signatures/initials placed');
+      try{
+        const pdfDoc = await PDFLib.PDFDocument.load(state.signer.pdfBytes);
+        const pages = pdfDoc.getPages();
+        for(const p of state.signer.placements){
+          const page = pages[p.page-1];
+          const {width,height} = page.getSize();
+          const scale = width / (state.signer.pages[p.page-1].viewport.width);
+          const imgUrl = p.type==='signature'? state.signer.signatureUrl : state.signer.initialsUrl;
+          if(!imgUrl) continue;
+          const img = await pdfDoc.embedPng(imgUrl);
+          const dims = img.scale(0.5);
+          page.drawImage(img, {
+            x: p.x*scale - dims.width/2,
+            y: height - p.y*scale - dims.height/2,
+            width: dims.width,
+            height: dims.height
+          });
+        }
+        const finalBytes = await pdfDoc.save();
+        const blob = new Blob([finalBytes], {type:'application/pdf'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'Signed_Contract.pdf';
+        a.click();
+        URL.revokeObjectURL(url);
+        alert('Signed PDF downloaded!');
+      }catch(e){
+        alert('Finalize failed: '+e.message);
+      }
     });
 
-    // ========= Buyers =========
-    document.getElementById('addBuyerBtn').addEventListener('click',()=>{
-      const name=prompt('Buyer name');
-      if(!name) return;
-      const email=prompt('Email')||'';
-      const phone=prompt('Phone')||'';
-      const criteria=prompt('Criteria/Tags (zip;price;rehab)')||'';
-      const notes=prompt('Notes')||'';
-      state.buyers.unshift({name,email,phone,criteria,notes,createdAt:Date.now()});
-      save('buyers',state.buyers);
-      renderBuyers();
-    });
-
-    function renderBuyers(){
-      const tbody=document.getElementById('buyerRows');
+    // ========= Buyers CRM =========
+    function renderBuyersTable(){
+      const tbody = document.getElementById('buyerRows');
       if(!tbody) return;
       tbody.innerHTML='';
       state.buyers.forEach((b,idx)=>{
-        const tr=document.createElement('tr');
-        tr.innerHTML=`<td class='py-2 pr-4'>${b.name}</td><td class='py-2 pr-4'>${b.email}</td><td class='py-2 pr-4'>${b.phone}</td><td class='py-2 pr-4'>${b.criteria}</td><td class='py-2 pr-4'>${b.notes}</td><td class='py-2 pr-4'><button class='btn btn-outline text-xs px-2 py-1 del'>Delete</button></td>`;
-        tr.querySelector('.del').onclick=()=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="py-2 pr-4">${b.name||''}</td>
+          <td class="py-2 pr-4">${b.email||''}</td>
+          <td class="py-2 pr-4">${b.phone||''}</td>
+          <td class="py-2 pr-4">${b.criteria||''}</td>
+          <td class="py-2 pr-4">${b.notes||''}</td>
+          <td class="py-2 pr-4 flex gap-2">
+            <button class="btn btn-outline text-xs px-2 py-1 edit">Edit</button>
+            <button class="btn btn-outline text-xs px-2 py-1 del">Delete</button>
+          </td>
+        `;
+        tr.querySelector('.edit').onclick = ()=> editBuyer(idx);
+        tr.querySelector('.del').onclick = ()=>{
           if(confirm('Delete buyer?')){
             state.buyers.splice(idx,1);
             save('buyers',state.buyers);
-            renderBuyers();
+            renderBuyersTable();
           }
         };
         tbody.appendChild(tr);
       });
     }
 
-    // ========= KPI & One Metric =========
-    function updateKPI(){
-      const weekStart = (()=>{
-        const d=new Date();
-        const day=d.getDay();
-        const diff=d.getDate()-day+(day===0?-6:1);
-        return new Date(d.setDate(diff));
-      })();
-      const weekStartMs = new Date(weekStart.getFullYear(),weekStart.getMonth(),weekStart.getDate()).getTime();
-      const thisMonth = new Date();
-      const monthStartMs = new Date(thisMonth.getFullYear(), thisMonth.getMonth(), 1).getTime();
-      const convos = state.calls.filter(c=>c.type==='convo' && c.ts>=weekStartMs).length;
-      const offers = state.deals.filter(d=>d.createdAt>=weekStartMs && (d.status==='offer' || d.status==='pending' || d.status==='sent')).length;
-      const contracts = state.deals.filter(d=>d.createdAt>=monthStartMs && (d.status==='pending'||d.status==='signed'||d.status==='attorney'||d.status==='closed')).length;
-      const fees = state.deals.filter(d=>d.createdAt>=monthStartMs && d.fee).reduce((a,b)=>a+Number(b.fee||0),0);
-
-      const set = (id,val)=>{
-        const el=document.getElementById(id);
-        if(el) el.textContent = val;
-      };
-      set('kpiConvos', convos);
-      set('kpiOffers', offers);
-      set('kpiContracts', contracts);
-      set('kpiFees', money(fees));
-
-      const g = state.goals;
-      set('kpiConvosTarget', `Goal ${g.convos}`);
-      set('kpiOffersTarget', `Goal ${g.offers}`);
-      set('kpiContractsTarget', `Goal ${g.contracts}`);
-
-      const w = (num,den)=> Math.min(100, ((num/den)*100)||0)+'%';
-      const wset = (id, val)=>{
-        const el=document.getElementById(id);
-        if(el) el.style.width = val;
-      };
-      wset('kpiConvosMeter', w(convos,g.convos));
-      wset('kpiOffersMeter', w(offers,g.offers));
-      wset('kpiContractsMeter', w(contracts,g.contracts));
-      wset('kpiFeesMeter', w(fees,35000));
-      renderOneMetric();
+    function editBuyer(idx){
+      const b = state.buyers[idx];
+      if(!b) return;
+      const name = prompt('Buyer Name:', b.name||'');
+      if(!name) return;
+      b.name = name;
+      b.email = prompt('Email:', b.email||'') || '';
+      b.phone = prompt('Phone:', b.phone||'') || '';
+      b.criteria = prompt('Criteria/Tags (comma separated):', b.criteria||'') || '';
+      b.notes = prompt('Notes:', b.notes||'') || '';
+      save('buyers',state.buyers);
+      renderBuyersTable();
     }
 
-    document.getElementById('saveGoalsBtn').addEventListener('click',()=>{
-      state.goals = {
-        convos:Number(document.getElementById('goalConvos').value||50),
-        offers:Number(document.getElementById('goalOffers').value||10),
-        contracts:Number(document.getElementById('goalContracts').value||5)
+    document.getElementById('addBuyerBtn') && document.getElementById('addBuyerBtn').addEventListener('click',()=>{
+      const name = prompt('Buyer Name:');
+      if(!name) return;
+      const buyer = {
+        name,
+        email: prompt('Email:') || '',
+        phone: prompt('Phone:') || '',
+        criteria: prompt('Criteria/Tags (e.g. 30318; <200k; rehab):') || '',
+        notes: prompt('Notes:') || '',
+        id: 'B'+Date.now()
       };
-      save('goals',state.goals);
+      state.buyers.push(buyer);
+      save('buyers',state.buyers);
+      renderBuyersTable();
+    });
+
+    // ========= KPI Dashboard =========
+    function updateKPI(){
+      const start = weekStartMs();
+      const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime();
+      
+      // Conversations this week
+      const convos = state.calls.filter(c=>c.ts>=start).length;
+      const goalConvos = Number(state.goals.convos||50);
+      document.getElementById('kpiConvos').textContent = convos;
+      document.getElementById('kpiConvosTarget').textContent = `/ ${goalConvos}`;
+      document.getElementById('kpiConvosMeter').style.width = Math.min(100, Math.round((convos/goalConvos)*100))+'%';
+      
+      // Offers this week
+      const offers = state.leads.filter(l=>l.offerSentDate && l.offerSentDate>=start).length;
+      const goalOffers = Number(state.goals.offers||10);
+      document.getElementById('kpiOffers').textContent = offers;
+      document.getElementById('kpiOffersTarget').textContent = `/ ${goalOffers}`;
+      document.getElementById('kpiOffersMeter').style.width = Math.min(100, Math.round((offers/goalOffers)*100))+'%';
+      
+      // Contracts this month
+      const contracts = state.deals.filter(d=>['signed','attorney','closed'].includes(d.status) && d.createdAt>=monthStart).length;
+      const goalContracts = Number(state.goals.contracts||5);
+      document.getElementById('kpiContracts').textContent = contracts;
+      document.getElementById('kpiContractsTarget').textContent = `/ ${goalContracts}`;
+      document.getElementById('kpiContractsMeter').style.width = Math.min(100, Math.round((contracts/goalContracts)*100))+'%';
+      
+      // Assignment fees this month
+      const fees = state.deals.filter(d=>d.createdAt>=monthStart).reduce((sum,d)=>sum+(d.fee||0),0);
+      document.getElementById('kpiFees').textContent = money(fees);
+      document.getElementById('kpiFeesMeter').style.width = Math.min(100, Math.round((fees/35000)*100))+'%';
+      
+      // Update daily metrics
+      updateDailyMetrics();
+    }
+
+    function updateDailyMetrics(){
+      const today = new Date().toDateString();
+      const todayStart = new Date(today).getTime();
+      const weekStart = weekStartMs();
+      
+      // Privy searches today
+      const searches = JSON.parse(localStorage.getItem('privySearches') || '[]');
+      const todaySearch = searches.find(s => s.date === today);
+      document.getElementById('privySearchesToday').textContent = todaySearch ? todaySearch.count : 0;
+      
+      // Offers sent today
+      const offersToday = state.leads.filter(l=>l.offerSentDate && l.offerSentDate>=todayStart).length;
+      document.getElementById('offersSentToday').textContent = offersToday;
+      
+      // Follow-ups today
+      const followUpsToday = state.calls.filter(c=>c.ts>=todayStart && c.type!=='initial').length;
+      document.getElementById('followUpsToday').textContent = followUpsToday;
+      
+      // Response rate
+      const contacted = state.leads.filter(l=>l.attempts>0).length;
+      const responded = state.leads.filter(l=>l.offerResponse).length;
+      const responseRate = contacted>0 ? Math.round((responded/contacted)*100) : 0;
+      document.getElementById('responseRate').textContent = responseRate + '%';
+      
+      // Weekly conversion funnel
+      const weekSearches = searches.filter(s => {
+        const searchDate = new Date(s.date).getTime();
+        return searchDate >= weekStart;
+      }).reduce((sum, s) => sum + s.count, 0);
+      
+      const weekOffers = state.leads.filter(l=>l.offerSentDate && l.offerSentDate>=weekStart).length;
+      const weekContracts = state.deals.filter(d=>d.createdAt>=weekStart && ['signed','attorney','closed'].includes(d.status)).length;
+      
+      const searchToOfferRate = weekSearches>0 ? Math.round((weekOffers/weekSearches)*100) : 0;
+      const offerToContractRate = weekOffers>0 ? Math.round((weekContracts/weekOffers)*100) : 0;
+      
+      document.getElementById('searchToOfferRate').textContent = searchToOfferRate + '%';
+      document.getElementById('searchToOfferMeter').style.width = searchToOfferRate + '%';
+      document.getElementById('offerToContractRate').textContent = offerToContractRate + '%';
+      document.getElementById('offerToContractMeter').style.width = offerToContractRate + '%';
+      
+      // Monthly pace
+      const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth()+1, 0).getDate();
+      const dayOfMonth = new Date().getDate();
+      const monthProgress = dayOfMonth / daysInMonth;
+      const monthDeals = state.deals.filter(d=>d.createdAt>=new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime() && ['signed','attorney','closed'].includes(d.status)).length;
+      const projectedDeals = Math.round(monthDeals / monthProgress);
+      const projectedFees = Math.round(projectedDeals * 7000); // Avg $7k per deal
+      
+      document.getElementById('monthlyPace').textContent = `Current: ${monthDeals} deals • Projected: ${projectedDeals} deals (~${money(projectedFees)})`;
+      
+      // Recommendations
+      const recommendations = [];
+      if (weekSearches < 20) recommendations.push('⚡ Increase Privy searches (target: 20+/week)');
+      if (searchToOfferRate < 50) recommendations.push('📞 Improve contact rate (target: 50%+ search→offer)');
+      if (offerToContractRate < 30 && weekOffers > 5) recommendations.push('💰 Refine offer strategy (target: 30%+ offer→contract)');
+      if (projectedDeals < 3) recommendations.push('🎯 Pick up pace to hit 3-5 deals/month');
+      
+      document.getElementById('paceRecommendation').textContent = recommendations.length ? recommendations.join(' • ') : '✅ On track! Keep going!';
+    }
+
+    // Quick action buttons
+    document.getElementById('logPrivySearchBtn') && document.getElementById('logPrivySearchBtn').addEventListener('click',()=>{
+      const searches = JSON.parse(localStorage.getItem('privySearches') || '[]');
+      const today = new Date().toDateString();
+      const todaySearch = searches.find(s => s.date === today);
+      if (todaySearch) {
+        todaySearch.count++;
+      } else {
+        searches.push({ date: today, count: 1 });
+      }
+      localStorage.setItem('privySearches', JSON.stringify(searches));
+      updateDailyMetrics();
+      alert('Privy search logged');
+    });
+
+    document.getElementById('markOfferSentBtn') && document.getElementById('markOfferSentBtn').addEventListener('click',()=>{
+      if (state.leads.length === 0) {
+        alert('No leads available to mark');
+        return;
+      }
+      const lead = state.leads[0];
+      lead.offerSent = true;
+      lead.offerSentDate = Date.now();
+      save('leads', state.leads);
       updateKPI();
+      alert('Offer marked as sent');
+    });
+
+    document.getElementById('viewActivityLogBtn') && document.getElementById('viewActivityLogBtn').addEventListener('click',()=>{
+      const log = state.calls.slice(-20).reverse().map(c=> {
+        const d = new Date(c.ts);
+        return `${d.toLocaleDateString()} ${d.toLocaleTimeString()} - ${c.type}`;
+      }).join('\n');
+      alert('Recent Activity:\n\n' + (log || 'No activity yet'));
+    });
+
+    // Save goals
+    document.getElementById('saveGoalsBtn') && document.getElementById('saveGoalsBtn').addEventListener('click',()=>{
+      state.goals.convos = Number(document.getElementById('goalConvos').value||50);
+      state.goals.offers = Number(document.getElementById('goalOffers').value||10);
+      state.goals.contracts = Number(document.getElementById('goalContracts').value||5);
+      localStorage.setItem('goals', JSON.stringify(state.goals));
+      updateKPI();
+      renderOneMetric();
       alert('Goals saved');
     });
 
     // ========= Settings =========
-    // Prefill
-    (function prefillSettings(){
-      const S = state.settings;
-      const id = s=>document.getElementById(s);
-      id('sbUrl').value = S.sbUrl;
-      id('sbAnon').value = S.sbAnon;
-      id('sbBucket').value = S.sbBucket;
-      id('ejService').value = S.ejService;
-      id('ejTemplate').value = S.ejTemplate;
-      id('ejPublic').value = S.ejPublic;
-    })();
+    function loadSettings(){
+      document.getElementById('sbUrl').value = state.settings.sbUrl;
+      document.getElementById('sbAnon').value = state.settings.sbAnon;
+      document.getElementById('sbBucket').value = state.settings.sbBucket;
+      document.getElementById('ejService').value = state.settings.ejService;
+      document.getElementById('ejTemplate').value = state.settings.ejTemplate;
+      document.getElementById('ejPublic').value = state.settings.ejPublic;
+      document.getElementById('goalConvos').value = state.goals.convos || 50;
+      document.getElementById('goalOffers').value = state.goals.offers || 10;
+      document.getElementById('goalContracts').value = state.goals.contracts || 5;
+    }
 
-    document.getElementById('saveSbBtn').addEventListener('click',()=>{
-      state.settings.sbUrl=document.getElementById('sbUrl').value.trim();
-      state.settings.sbAnon=document.getElementById('sbAnon').value.trim();
-      state.settings.sbBucket=document.getElementById('sbBucket').value.trim()||'contracts';
-      localStorage.setItem('SUPABASE_URL',state.settings.sbUrl);
-      localStorage.setItem('SUPABASE_ANON',state.settings.sbAnon);
-      localStorage.setItem('SUPABASE_BUCKET',state.settings.sbBucket);
-      alert('Supabase saved');
+    document.getElementById('saveSbBtn') && document.getElementById('saveSbBtn').addEventListener('click',()=>{
+      state.settings.sbUrl = document.getElementById('sbUrl').value.trim();
+      state.settings.sbAnon = document.getElementById('sbAnon').value.trim();
+      state.settings.sbBucket = document.getElementById('sbBucket').value.trim() || 'contracts';
+      localStorage.setItem('SUPABASE_URL', state.settings.sbUrl);
+      localStorage.setItem('SUPABASE_ANON', state.settings.sbAnon);
+      localStorage.setItem('SUPABASE_BUCKET', state.settings.sbBucket);
+      alert('Supabase settings saved');
     });
 
-    document.getElementById('saveEjBtn').addEventListener('click',()=>{
-      state.settings.ejService=document.getElementById('ejService').value.trim();
-      state.settings.ejTemplate=document.getElementById('ejTemplate').value.trim();
-      state.settings.ejPublic=document.getElementById('ejPublic').value.trim();
-      localStorage.setItem('EJ_SERVICE',state.settings.ejService);
-      localStorage.setItem('EJ_TEMPLATE',state.settings.ejTemplate);
-      localStorage.setItem('EJ_PUBLIC',state.settings.ejPublic);
-      alert('EmailJS saved');
+    document.getElementById('saveEjBtn') && document.getElementById('saveEjBtn').addEventListener('click',()=>{
+      state.settings.ejService = document.getElementById('ejService').value.trim();
+      state.settings.ejTemplate = document.getElementById('ejTemplate').value.trim();
+      state.settings.ejPublic = document.getElementById('ejPublic').value.trim();
+      localStorage.setItem('EJ_SERVICE', state.settings.ejService);
+      localStorage.setItem('EJ_TEMPLATE', state.settings.ejTemplate);
+      localStorage.setItem('EJ_PUBLIC', state.settings.ejPublic);
+      alert('EmailJS settings saved');
     });
 
-    // ========= Export / Backup / Restore =========
-    document.getElementById('exportCsvBtn').addEventListener('click',()=>{
-      const rows = [['Type','Address','Name','Phone','Email','ARV','Repairs','Ask','Status','Notes','Created','Fee']];
-      state.leads.forEach(l=> rows.push(['Lead',l.address,l.seller,l.phone,l.email,l.arv,l.repairs,l.ask,l.status,(l.notes||'').replace(/\n/g,' '), new Date(l.createdAt).toLocaleString(),'']));
-      state.deals.forEach(d=> rows.push(['Deal',d.propertyAddress,d.sellerNames,'','', '', '', d.purchasePrice,d.status,(d.dealTerms||'').replace(/\n/g,' '), new Date(d.createdAt).toLocaleString(), d.fee||0]));
-      const csv = rows.map(r=> r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+    // ========= Export/Import =========
+    document.getElementById('exportCsvBtn') && document.getElementById('exportCsvBtn').addEventListener('click',()=>{
+      const rows = [['address','seller','phone','email','agent','arv','repairs','ask','notes','source','status']];
+      state.leads.forEach(l=>rows.push([
+        l.address, l.seller||'', l.phone||'', l.email||'', l.agent||'',
+        l.arv||0, l.repairs||0, l.ask||0, l.notes||'', l.source||'', l.status||''
+      ]));
+      const csv = rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
       const blob = new Blob([csv],{type:'text/csv'});
-      const a=document.createElement('a');
-      a.href=URL.createObjectURL(blob);
-      a.download='rei-export.csv';
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `REI_Leads_${new Date().toISOString().split('T')[0]}.csv`;
       a.click();
     });
 
-    document.getElementById('backupBtn').addEventListener('click',()=>{
-      const payload=JSON.stringify({
-        settings:state.settings,
-        leads:state.leads,
-        deals:state.deals,
-        buyers:state.buyers,
-        calls:state.calls,
-        goals:state.goals
-      }, null, 2);
-      const blob=new Blob([payload],{type:'application/json'});
-      const a=document.createElement('a');
-      a.href=URL.createObjectURL(blob);
-      a.download='rei-backup.json';
+    document.getElementById('backupBtn') && document.getElementById('backupBtn').addEventListener('click',()=>{
+      const backup = {
+        version: '1.0',
+        timestamp: Date.now(),
+        leads: state.leads,
+        deals: state.deals,
+        buyers: state.buyers,
+        calls: state.calls,
+        goals: state.goals,
+        settings: state.settings
+      };
+      const blob = new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `REI_Backup_${new Date().toISOString().split('T')[0]}.json`;
       a.click();
     });
 
-    document.getElementById('restoreBtn').addEventListener('click',()=> document.getElementById('restoreInput').click());
+    document.getElementById('restoreBtn') && document.getElementById('restoreBtn').addEventListener('click',()=>{
+      document.getElementById('restoreInput').click();
+    });
 
-    document.getElementById('restoreInput').addEventListener('change', async (e)=>{
-      const f=e.target.files[0];
-      if(!f) return;
-      const txt=await f.text();
+    document.getElementById('restoreInput') && document.getElementById('restoreInput').addEventListener('change', async e=>{
+      const file = e.target.files[0];
+      if(!file) return;
       try{
-        const data=JSON.parse(txt);
-        if(data.settings) state.settings=data.settings;
-        if(data.leads) state.leads=data.leads;
-        if(data.deals) state.deals=data.deals;
-        if(data.buyers) state.buyers=data.buyers;
-        if(data.calls) state.calls=data.calls;
-        if(data.goals) state.goals=data.goals;
-        save('leads',state.leads);
-        save('deals',state.deals);
-        save('buyers',state.buyers);
-        save('calls',state.calls);
-        localStorage.setItem('SUPABASE_URL',state.settings.sbUrl||'');
-        localStorage.setItem('SUPABASE_ANON',state.settings.sbAnon||'');
-        localStorage.setItem('SUPABASE_BUCKET',state.settings.sbBucket||'contracts');
-        localStorage.setItem('EJ_SERVICE',state.settings.ejService||'');
-        localStorage.setItem('EJ_TEMPLATE',state.settings.ejTemplate||'');
-        localStorage.setItem('EJ_PUBLIC',state.settings.ejPublic||'');
-        renderLeads();
-        renderDealsTable();
-        renderPipeline();
-        renderBuyers();
-        updateKPI();
-        alert('Restored!');
-      }catch{
-        alert('Invalid backup file');
+        const text = await file.text();
+        const backup = JSON.parse(text);
+        if(confirm('Restore from backup? This will replace all current data.')){
+          state.leads = backup.leads || [];
+          state.deals = backup.deals || [];
+          state.buyers = backup.buyers || [];
+          state.calls = backup.calls || [];
+          state.goals = backup.goals || {convos:50,offers:10,contracts:5};
+          state.settings = backup.settings || {};
+          save('leads',state.leads);
+          save('deals',state.deals);
+          save('buyers',state.buyers);
+          save('calls',state.calls);
+          save('goals',state.goals);
+          Object.keys(state.settings).forEach(k=>{
+            const storageKey = {
+              sbUrl: 'SUPABASE_URL',
+              sbAnon: 'SUPABASE_ANON',
+              sbBucket: 'SUPABASE_BUCKET',
+              ejService: 'EJ_SERVICE',
+              ejTemplate: 'EJ_TEMPLATE',
+              ejPublic: 'EJ_PUBLIC'
+            }[k];
+            if(storageKey) localStorage.setItem(storageKey, state.settings[k]);
+          });
+          location.reload();
+        }
+      }catch(err){
+        alert('Restore failed: '+err.message);
       }
     });
 
-    // ========= Init =========
-    function init(){
-      renderLeads();
-      renderDealsTable();
-      renderPipeline();
-      renderBuyers();
-      updateKPI();
-    }
-    init();
-
-    // ========= Minimal PWA (optional) =========
-    (function setupPWA(){
-      const manifest = {
-        name:'REI Stack',
-        short_name:'REI',
-        start_url:'./',
-        display:'standalone',
-        background_color:'#0ea5e9',
-        theme_color:'#0ea5e9',
-        icons:[{src:'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><rect width=%2264%22 height=%2264%22 rx=%2210%22 fill=%22%2306b6d4%22/><text x=%2232%22 y=%2239%22 font-size=%2230%22 text-anchor=%22middle%22 fill=%22white%22 font-family=%22Arial%22>REI</text></svg>', sizes:'64x64', type:'image/svg+xml'}]
-      };
-      const blob = new Blob([JSON.stringify(manifest)],{type:'application/json'});
-      const url = URL.createObjectURL(blob);
-      const link=document.createElement('link');
-      link.rel='manifest';
-      link.href=url;
-      document.head.appendChild(link);
-      const swCode = `self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('activate',e=>{self.clients.claim();});`;
-      const swUrl = URL.createObjectURL(new Blob([swCode],{type:'text/javascript'}));
-      navigator.serviceWorker && navigator.serviceWorker.register(swUrl).catch(()=>{});
-    })();
+    // ========= Initialize =========
+    renderLeads();
+    renderDealsTable();
+    renderPipeline();
+    renderBuyersTable();
+    loadSettings();
+    updateKPI();
+    lucide.createIcons();
   </script>
 </body>
-</html>
+</html></parameter>
+</invoke>
