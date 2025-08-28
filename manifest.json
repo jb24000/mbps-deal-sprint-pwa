@@ -8,10 +8,7 @@
   "background_color": "#4a5568",
   "theme_color": "#00a8ff",
   "orientation": "portrait",
-  "categories": [
-    "business",
-    "productivity"
-  ],
+  "categories": ["business", "productivity"],
   "icons": [
     {
       "src": "icons/icon-72.png",
@@ -72,6 +69,22 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Start Sprint",
+      "short_name": "Sprint",
+      "description": "Begin 7-day wholesale sprint",
+      "url": "./?tab=sprint",
+      "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Deal Pipeline",
+      "short_name": "Pipeline",
+      "description": "View active deals",
+      "url": "./?tab=pipeline",
+      "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }]
     }
   ]
 }
