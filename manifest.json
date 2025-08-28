@@ -71,34 +71,46 @@
       "purpose": "maskable"
     }
   ],
-"screenshots": [
-  {
-    "src": "icons/icon-512.png",
-    "sizes": "512x512",
-    "type": "image/png",
-    "form_factor": "wide"
-  },
-  {
-    "src": "icons/icon-512.png", 
-    "sizes": "512x512",
-    "type": "image/png",
-    "form_factor": "narrow"
-  }
-]
+  "screenshots": [
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
   "shortcuts": [
     {
       "name": "Start Sprint",
       "short_name": "Sprint",
       "description": "Begin 7-day wholesale sprint",
       "url": "./?tab=sprint",
-      "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }]
+      "icons": [
+        {
+          "src": "icons/icon-96.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
     },
     {
       "name": "Deal Pipeline",
       "short_name": "Pipeline",
       "description": "View active deals",
       "url": "./?tab=pipeline",
-      "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }]
+      "icons": [
+        {
+          "src": "icons/icon-96.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
     }
   ]
 }
