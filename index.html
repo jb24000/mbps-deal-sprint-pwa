@@ -2535,8 +2535,8 @@ Seller: ____________________________ Date: ____________`;
             if (backup.calls) { state.calls = backup.calls; save('calls', state.calls); }
             if (backup.goals) { state.goals = backup.goals; save('goals', state.goals); }
             if (backup.sprintTasks) { state.sprintTasks = backup.sprintTasks; saveSprintTasks(); }
-            if (backup.sprintStartDate) { state.sprintStartDate = backup.sprintStartDate; localStorage.setItem('sprintStartDate', backup.sprintStartDate)
-                    
+            if (backup.sprintStartDate) { state.sprintStartDate = backup.sprintStartDate; localStorage.setItem('sprintStartDate', backup.sprintStartDate);
+                                        }                                     
             renderAll();
             alert('Data restored successfully');
           }
