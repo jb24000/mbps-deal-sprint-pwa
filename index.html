@@ -175,16 +175,18 @@
     </header>
 
     <!-- NAV TABS -->
-    <nav class="sticky-tabs flex flex-wrap gap-2 mb-4 rounded-xl p-1 bg-white/80 dark:bg-[#0b1322]/70">
-      <button class="tab" data-tab="sprint">Sprint</button>
-      <button class="tab active" data-tab="seven-day-sprint">7-Day Sprint</button>
-      <button class="tab" data-tab="contracts">Contracts</button>
-      <button class="tab" data-tab="pipeline">Pipeline</button>
-      <button class="tab" data-tab="signer">Sign</button>
-      <button class="tab" data-tab="buyers">Buyers</button>
-      <button class="tab" data-tab="kpi">KPI</button>
-      <button class="tab" data-tab="settings">Settings</button>
-    </nav>
+<nav class="sticky-tabs flex flex-wrap gap-2 mb-4 rounded-xl p-1 bg-white/80 dark:bg-[#0b1322]/70">
+  <button class="tab" data-tab="sprint">Sprint</button>
+  <button class="tab active" data-tab="seven-day-sprint">7-Day Sprint</button>
+  <button class="tab" data-tab="contracts">Contracts</button>
+  <button class="tab" data-tab="pipeline">Pipeline</button>
+  <button class="tab" data-tab="agent-outreach">Agent Network</button>
+  <button class="tab" data-tab="extended-pipeline">Extended Pipeline</button>
+  <button class="tab" data-tab="signer">Sign</button>
+  <button class="tab" data-tab="buyers">Buyers</button>
+  <button class="tab" data-tab="kpi">KPI</button>
+  <button class="tab" data-tab="settings">Settings</button>
+</nav>
 
     <!-- 7-DAY SPRINT TAB -->
     <section id="tab-seven-day-sprint" class="">
@@ -621,6 +623,239 @@
       </div>
     </section>
 
+   <!-- AGENT NETWORK TAB -->
+<section id="tab-agent-outreach" class="hidden">
+  <div class="grid lg:grid-cols-3 gap-6">
+    <!-- Agent Management -->
+    <section class="card lg:col-span-2">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold">Agent Network Management</h2>
+        <button id="addAgentBtn" class="btn btn-primary"><i data-lucide="user-plus"></i>Add Agent</button>
+      </div>
+      
+      <div class="flex flex-wrap gap-2 mb-4">
+        <input id="agentSearch" class="rounded-xl border-gray-200 flex-1" placeholder="Search agents..." />
+        <select id="agentFilter" class="rounded-xl border-gray-200">
+          <option value="">All Agents</option>
+          <option value="active">Active</option>
+          <option value="warm">Warm</option>
+          <option value="cold">Cold</option>
+          <option value="exclusive">Exclusive Partner</option>
+        </select>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead class="text-left text-gray-500">
+            <tr>
+              <th class="py-2 pr-4">Agent</th>
+              <th class="py-2 pr-4">Brokerage</th>
+              <th class="py-2 pr-4">Area</th>
+              <th class="py-2 pr-4">Relationship</th>
+              <th class="py-2 pr-4">Deals</th>
+              <th class="py-2 pr-4">Last Contact</th>
+              <th class="py-2 pr-4">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="agentRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Agent Scripts & Outreach -->
+    <section class="card">
+      <h3 class="font-semibold mb-3">Agent Scripts & Templates</h3>
+      
+      <div class="space-y-3 text-sm">
+        <details class="border rounded-xl p-3 bg-white dark:bg-[#0b1322]" open>
+          <summary class="font-semibold cursor-pointer">Initial Agent Introduction</summary>
+          <p class="mt-2">Hi [Agent Name], this is [Your Name] with [Company]. I'm a local investor who closes 3-5 deals monthly. I'd love to discuss how we can work together on deals that need quick cash closes or creative financing. When's a good time to chat about potential partnerships?</p>
+          <div class="flex gap-2 mt-2"><button class="btn btn-outline text-xs" data-script-copy>Copy</button></div>
+        </details>
+
+        <details class="border rounded-xl p-3 bg-white dark:bg-[#0b1322]">
+          <summary class="font-semibold cursor-pointer">Referral Request</summary>
+          <p class="mt-2">Hey [Agent Name], hope you're doing well! I'm looking for distressed properties or sellers who need quick closes in [Area]. Anything 20%+ below market that needs work. I can close in 7-14 days cash or offer subject-to terms. Commission protected. Any leads?</p>
+          <div class="flex gap-2 mt-2"><button class="btn btn-outline text-xs" data-script-copy>Copy</button></div>
+        </details>
+
+        <details class="border rounded-xl p-3 bg-white dark:bg-[#0b1322]">
+          <summary class="font-semibold cursor-pointer">Follow-Up After Deal</summary>
+          <p class="mt-2">Thanks again for the [Property Address] deal! Quick $[Amount] close as promised. I'm always looking for more opportunities like this. Mind if I send you my buying criteria sheet? I have cash ready for the right deals.</p>
+          <div class="flex gap-2 mt-2"><button class="btn btn-outline text-xs" data-script-copy>Copy</button></div>
+        </details>
+
+        <details class="border rounded-xl p-3 bg-white dark:bg-[#0b1322]">
+          <summary class="font-semibold cursor-pointer">MLS Access Request</summary>
+          <p class="mt-2">Hi [Agent Name], I've been analyzing the [Area] market and see some opportunities for quick flips. Would you be open to setting up MLS access so I can identify properties that fit my criteria? I typically close 1-2 deals per month and always protect your commission.</p>
+          <div class="flex gap-2 mt-2"><button class="btn btn-outline text-xs" data-script-copy>Copy</button></div>
+        </details>
+      </div>
+
+      <!-- Bulk Agent Outreach -->
+      <div class="mt-6 p-3 rounded-xl border bg-white dark:bg-[#0b1322]">
+        <h4 class="font-semibold mb-3">Bulk Agent Outreach</h4>
+        <div class="space-y-3">
+          <select id="bulkMessageTemplate" class="w-full rounded-xl border-gray-200">
+            <option value="">Select template...</option>
+            <option value="intro">Initial Introduction</option>
+            <option value="referral">Referral Request</option>
+            <option value="market_update">Market Update</option>
+            <option value="deal_alert">Deal Alert</option>
+          </select>
+          <textarea id="customBulkMessage" rows="4" class="w-full rounded-xl border-gray-200" placeholder="Custom message..."></textarea>
+          <div class="flex gap-2">
+            <button id="sendBulkEmailBtn" class="btn btn-primary text-xs">Send Bulk Email</button>
+            <button id="scheduleBulkBtn" class="btn btn-outline text-xs">Schedule</button>
+          </div>
+          <p class="text-xs text-gray-500">Select agents above, then send targeted messages</p>
+        </div>
+      </div>
+    </section>
+  </div>
+</section>
+    <!-- EXTENDED PIPELINE TAB -->
+<section id="tab-extended-pipeline" class="hidden">
+  <div class="grid gap-6">
+    <!-- Pipeline Overview -->
+    <section class="card">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold">Extended Pipeline Management</h2>
+        <div class="flex items-center gap-2">
+          <select id="pipelineTimeframe" class="rounded-xl border-gray-200">
+            <option value="30">30 Days</option>
+            <option value="60">60 Days</option>
+            <option value="90" selected>90 Days</option>
+            <option value="120">120 Days</option>
+          </select>
+          <span class="text-sm text-gray-500" id="extendedPipelineCount">0 deals</span>
+        </div>
+      </div>
+
+      <!-- Pipeline Categories -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="p-4 rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+          <div class="text-sm text-blue-600 dark:text-blue-400">MLS Opportunities</div>
+          <div class="text-2xl font-bold text-blue-700 dark:text-blue-300" id="mlsCount">0</div>
+          <div class="text-xs text-blue-500">Avg 45 days</div>
+        </div>
+        <div class="p-4 rounded-xl border bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20">
+          <div class="text-sm text-green-600 dark:text-green-400">Agent Referrals</div>
+          <div class="text-2xl font-bold text-green-700 dark:text-green-300" id="referralCount">0</div>
+          <div class="text-xs text-green-500">Avg 30 days</div>
+        </div>
+        <div class="p-4 rounded-xl border bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20">
+          <div class="text-sm text-purple-600 dark:text-purple-400">Complex Deals</div>
+          <div class="text-2xl font-bold text-purple-700 dark:text-purple-300" id="complexCount">0</div>
+          <div class="text-xs text-purple-500">Avg 75 days</div>
+        </div>
+        <div class="p-4 rounded-xl border bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20">
+          <div class="text-sm text-orange-600 dark:text-orange-400">Joint Ventures</div>
+          <div class="text-2xl font-bold text-orange-700 dark:text-orange-300" id="jvCount">0</div>
+          <div class="text-xs text-orange-500">Avg 60 days</div>
+        </div>
+      </div>
+
+      <!-- Extended Pipeline Board -->
+      <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
+        <div class="kanban-column">
+          <div class="text-xs font-semibold mb-2 text-gray-600">Research</div>
+          <div id="col-research" class="kanban-col min-h-[300px]" data-status="research"></div>
+        </div>
+        <div class="kanban-column">
+          <div class="text-xs font-semibold mb-2 text-gray-600">Agent Contact</div>
+          <div id="col-agent-contact" class="kanban-col min-h-[300px]" data-status="agent-contact"></div>
+        </div>
+        <div class="kanban-column">
+          <div class="text-xs font-semibold mb-2 text-gray-600">Negotiation</div>
+          <div id="col-negotiation" class="kanban-col min-h-[300px]" data-status="negotiation"></div>
+        </div>
+        <div class="kanban-column">
+          <div class="text-xs font-semibold mb-2 text-gray-600">Due Diligence</div>
+          <div id="col-due-diligence" class="kanban-col min-h-[300px]" data-status="due-diligence"></div>
+        </div>
+        <div class="kanban-column">
+          <div class="text-xs font-semibold mb-2 text-gray-600">Ready to Contract</div>
+          <div id="col-ready-contract" class="kanban-col min-h-[300px]" data-status="ready-contract"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Extended Deal Form -->
+    <section class="card">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-semibold">Add Extended Pipeline Deal</h3>
+        <button id="moveSprintToExtendedBtn" class="btn btn-outline text-sm">Move from Sprint</button>
+      </div>
+      
+      <form id="extendedDealForm" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-sm font-medium mb-1">Property Address</label>
+          <input id="extPropertyAddress" class="w-full rounded-xl border-gray-200" required />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Deal Type</label>
+          <select id="extDealType" class="w-full rounded-xl border-gray-200" required>
+            <option value="mls">MLS Opportunity</option>
+            <option value="agent-referral">Agent Referral</option>
+            <option value="complex">Complex/Probate/Divorce</option>
+            <option value="joint-venture">Joint Venture</option>
+            <option value="wholesale">Wholesale Assignment</option>
+            <option value="fix-flip">Fix & Flip</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Expected Timeline</label>
+          <select id="extTimeline" class="w-full rounded-xl border-gray-200">
+            <option value="30">30 Days</option>
+            <option value="60">60 Days</option>
+            <option value="90">90 Days</option>
+            <option value="120">120+ Days</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">List Price</label>
+          <input id="extListPrice" type="number" class="w-full rounded-xl border-gray-200" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">ARV Estimate</label>
+          <input id="extARV" type="number" class="w-full rounded-xl border-gray-200" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Repair Estimate</label>
+          <input id="extRepairs" type="number" class="w-full rounded-xl border-gray-200" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Agent Name</label>
+          <input id="extAgentName" class="w-full rounded-xl border-gray-200" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Commission %</label>
+          <input id="extCommission" type="number" step="0.5" value="3" class="w-full rounded-xl border-gray-200" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Priority</label>
+          <select id="extPriority" class="w-full rounded-xl border-gray-200">
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high" selected>High</option>
+            <option value="urgent">Urgent</option>
+          </select>
+        </div>
+        <div class="md:col-span-3">
+          <label class="block text-sm font-medium mb-1">Deal Notes</label>
+          <textarea id="extNotes" rows="3" class="w-full rounded-xl border-gray-200" placeholder="Special circumstances, key contacts, negotiation notes..."></textarea>
+        </div>
+        <div class="md:col-span-3 flex gap-3">
+          <button type="submit" class="btn btn-primary">Add to Extended Pipeline</button>
+          <button type="button" id="analyzeExtDealBtn" class="btn btn-outline">Analyze Deal</button>
+          <button type="button" id="scheduleFollowUpBtn" class="btn btn-outline">Schedule Follow-up</button>
+        </div>
+      </form>
+    </section>
+  </div>
+</section>
+    
     <!-- KPI -->
     <section id="tab-kpi" class="hidden">
       <div class="grid lg:grid-cols-3 gap-6">
@@ -927,7 +1162,10 @@
       },
       selectedLeadId: null
     };
-
+    
+    state.agents = JSON.parse(localStorage.getItem('agents') || '[]');
+    state.extendedDeals = JSON.parse(localStorage.getItem('extendedDeals') || '[]');
+    
     if (!state.sprintTasks) {
       state.sprintTasks = sprintTasks.map((task, index) => ({
         ...task,
@@ -1097,16 +1335,18 @@
     });
 
     // ========= NAV =========
-    const sections = {
-      sprint:'#tab-sprint',
-      'seven-day-sprint':'#tab-seven-day-sprint',
-      contracts:'#tab-contracts',
-      pipeline:'#tab-pipeline',
-      signer:'#tab-signer',
-      buyers:'#tab-buyers',
-      kpi:'#tab-kpi',
-      settings:'#tab-settings'
-    };
+   const sections = {
+  sprint:'#tab-sprint',
+  'seven-day-sprint':'#tab-seven-day-sprint',
+  contracts:'#tab-contracts',
+  pipeline:'#tab-pipeline',
+  'agent-outreach':'#tab-agent-outreach',
+  'extended-pipeline':'#tab-extended-pipeline',
+  signer:'#tab-signer',
+  buyers:'#tab-buyers',
+  kpi:'#tab-kpi',
+  settings:'#tab-settings'
+};
 
     document.querySelectorAll('.tab').forEach(t=>
       t.addEventListener('click',()=>{
@@ -2294,7 +2534,8 @@ Seller: ____________________________ Date: ____________`;
             if (backup.calls) { state.calls = backup.calls; save('calls', state.calls); }
             if (backup.goals) { state.goals = backup.goals; save('goals', state.goals); }
             if (backup.sprintTasks) { state.sprintTasks = backup.sprintTasks; saveSprintTasks(); }
-            if (backup.sprintStartDate) { state.sprintStartDate = backup.sprintStartDate; localStorage.setItem('sprintStartDate', backup.sprintStartDate); }
+            if (backup.sprintStartDate) { state.sprintStartDate = backup.sprintStartDate; localStorage.setItem('sprintStartDate', backup.sprintStartDate)
+                    
             renderAll();
             alert('Data restored successfully');
           }
@@ -2570,16 +2811,301 @@ Seller: ____________________________ Date: ____________`;
       }
     });
 
-    // ========= Initialize App =========
-    function renderAll(){
-      renderLeads();
-      renderDealsTable();
-      renderPipeline();
-      renderBuyersTable();
-      updateKPI();
-      loadSettingsUI();
-      renderSevenDaySprint();
-    }
+<script>
+// Add these state extensions to your existing state object
+state.agents = JSON.parse(localStorage.getItem('agents') || '[]');
+state.extendedDeals = JSON.parse(localStorage.getItem('extendedDeals') || '[]');
+
+// Agent management functions
+function renderAgentsTable() {
+  const tbody = document.getElementById('agentRows');
+  if (!tbody) return;
+  
+  const search = (document.getElementById('agentSearch')?.value || '').toLowerCase();
+  const filter = document.getElementById('agentFilter')?.value;
+  
+  tbody.innerHTML = '';
+  
+  state.agents
+    .filter(agent => !filter || agent.relationship === filter)
+    .filter(agent => !search || 
+      agent.name.toLowerCase().includes(search) ||
+      (agent.brokerage || '').toLowerCase().includes(search) ||
+      (agent.area || '').toLowerCase().includes(search)
+    )
+    .forEach((agent, idx) => {
+      const tr = document.createElement('tr');
+      const lastContact = agent.lastContact ? new Date(agent.lastContact).toLocaleDateString() : 'Never';
+      const relationshipColors = {
+        active: 'badge-signed',
+        warm: 'badge-offer', 
+        cold: 'badge-lead',
+        exclusive: 'badge-closed'
+      };
+      
+      tr.innerHTML = `
+        <td class="py-2 pr-4">
+          <div class="font-medium">${agent.name}</div>
+          <div class="text-xs text-gray-500">${agent.phone || ''} | ${agent.email || ''}</div>
+        </td>
+        <td class="py-2 pr-4">${agent.brokerage || ''}</td>
+        <td class="py-2 pr-4">${agent.area || ''}</td>
+        <td class="py-2 pr-4">
+          <span class="badge ${relationshipColors[agent.relationship] || 'badge-lead'}">${agent.relationship || 'Cold'}</span>
+        </td>
+        <td class="py-2 pr-4">${agent.dealsCompleted || 0}</td>
+        <td class="py-2 pr-4 text-xs">${lastContact}</td>
+        <td class="py-2 pr-4">
+          <div class="flex gap-1">
+            <button class="btn btn-outline text-xs px-2 py-1 contact-agent" data-idx="${idx}">Contact</button>
+            <button class="btn btn-outline text-xs px-2 py-1 edit-agent" data-idx="${idx}">Edit</button>
+            <button class="btn btn-outline text-xs px-2 py-1 delete-agent" data-idx="${idx}">Del</button>
+          </div>
+        </td>
+      `;
+      
+      tbody.appendChild(tr);
+    });
+    
+  // Add event listeners
+  tbody.querySelectorAll('.contact-agent').forEach(btn => {
+    btn.addEventListener('click', () => contactAgent(btn.dataset.idx));
+  });
+  
+  tbody.querySelectorAll('.edit-agent').forEach(btn => {
+    btn.addEventListener('click', () => editAgent(btn.dataset.idx));
+  });
+  
+  tbody.querySelectorAll('.delete-agent').forEach(btn => {
+    btn.addEventListener('click', () => deleteAgent(btn.dataset.idx));
+  });
+}
+
+function contactAgent(idx) {
+  const agent = state.agents[idx];
+  if (!agent) return;
+  
+  agent.lastContact = Date.now();
+  agent.contactCount = (agent.contactCount || 0) + 1;
+  
+  save('agents', state.agents);
+  renderAgentsTable();
+  
+  // Log the contact
+  logConvo('agent_contact', { agentId: agent.id, agentName: agent.name });
+}
+
+function editAgent(idx) {
+  const agent = state.agents[idx];
+  if (!agent) return;
+  
+  const name = prompt('Agent name:', agent.name);
+  if (name === null) return;
+  
+  const brokerage = prompt('Brokerage:', agent.brokerage || '');
+  const area = prompt('Primary area:', agent.area || '');
+  const phone = prompt('Phone:', agent.phone || '');
+  const email = prompt('Email:', agent.email || '');
+  const relationship = prompt('Relationship (active/warm/cold/exclusive):', agent.relationship || 'cold');
+  
+  agent.name = name;
+  agent.brokerage = brokerage;
+  agent.area = area;
+  agent.phone = phone;
+  agent.email = email;
+  agent.relationship = relationship;
+  
+  save('agents', state.agents);
+  renderAgentsTable();
+}
+
+function deleteAgent(idx) {
+  if (confirm('Delete this agent?')) {
+    state.agents.splice(idx, 1);
+    save('agents', state.agents);
+    renderAgentsTable();
+  }
+}
+
+// Extended pipeline functions
+function renderExtendedPipeline() {
+  const timeframe = Number(document.getElementById('pipelineTimeframe')?.value || 90);
+  const cutoff = Date.now() - (timeframe * 24 * 60 * 60 * 1000);
+  
+  const recentDeals = state.extendedDeals.filter(deal => deal.createdAt >= cutoff);
+  
+  // Update counts
+  document.getElementById('extendedPipelineCount').textContent = `${recentDeals.length} deals`;
+  
+  const mlsDeals = recentDeals.filter(d => d.type === 'mls').length;
+  const referralDeals = recentDeals.filter(d => d.type === 'agent-referral').length;
+  const complexDeals = recentDeals.filter(d => d.type === 'complex').length;
+  const jvDeals = recentDeals.filter(d => d.type === 'joint-venture').length;
+  
+  document.getElementById('mlsCount').textContent = mlsDeals;
+  document.getElementById('referralCount').textContent = referralDeals;
+  document.getElementById('complexCount').textContent = complexDeals;
+  document.getElementById('jvCount').textContent = jvDeals;
+  
+  // Render pipeline cards
+  const statuses = ['research', 'agent-contact', 'negotiation', 'due-diligence', 'ready-contract'];
+  
+  statuses.forEach(status => {
+    const col = document.getElementById(`col-${status}`);
+    if (!col) return;
+    
+    col.innerHTML = '';
+    
+    recentDeals.filter(deal => deal.status === status).forEach(deal => {
+      const card = document.createElement('div');
+      card.className = 'bg-white dark:bg-[#0b1322] rounded-xl border p-3 text-sm space-y-2 draggable';
+      card.draggable = true;
+      card.dataset.dealId = deal.id;
+      
+      const priorityColors = {
+        urgent: 'badge-pending',
+        high: 'badge-offer',
+        medium: 'badge-lead',
+        low: 'badge-lead opacity-60'
+      };
+      
+      const typeLabels = {
+        'mls': 'MLS',
+        'agent-referral': 'Referral',
+        'complex': 'Complex',
+        'joint-venture': 'JV',
+        'wholesale': 'Wholesale',
+        'fix-flip': 'Fix & Flip'
+      };
+      
+      card.innerHTML = `
+        <div class="font-medium text-xs">${deal.address}</div>
+        <div class="flex items-center justify-between">
+          <span class="badge ${priorityColors[deal.priority] || 'badge-lead'}">${typeLabels[deal.type] || deal.type}</span>
+          <span class="text-xs text-gray-500">${deal.timeline}d</span>
+        </div>
+        <div class="text-xs text-gray-600">
+          List: ${money(deal.listPrice)} | ARV: ${money(deal.arv)}
+        </div>
+        <div class="text-xs text-gray-500">${deal.agentName || 'No agent'}</div>
+        <div class="flex items-center gap-2 pt-2">
+          <button class="btn btn-outline text-xs px-2 py-1 flex-1 edit-ext-deal">Edit</button>
+          <button class="btn btn-outline text-xs px-2 py-1 flex-1 analyze-ext-deal">Analyze</button>
+        </div>
+      `;
+      
+      // Add drag and drop
+      card.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', deal.id);
+        card.classList.add('opacity-50');
+      });
+      
+      card.addEventListener('dragend', () => {
+        card.classList.remove('opacity-50');
+      });
+      
+      col.appendChild(card);
+    });
+  });
+  
+  // Add drop zones
+  statuses.forEach(status => {
+    const col = document.getElementById(`col-${status}`);
+    if (!col) return;
+    
+    col.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      col.classList.add('bg-blue-100', 'dark:bg-blue-900/20');
+    });
+    
+    col.addEventListener('dragleave', () => {
+      col.classList.remove('bg-blue-100', 'dark:bg-blue-900/20');
+    });
+    
+    col.addEventListener('drop', (e) => {
+      e.preventDefault();
+      col.classList.remove('bg-blue-100', 'dark:bg-blue-900/20');
+      
+      const dealId = e.dataTransfer.getData('text/plain');
+      const deal = state.extendedDeals.find(d => d.id === dealId);
+      
+      if (deal) {
+        deal.status = status;
+        save('extendedDeals', state.extendedDeals);
+        renderExtendedPipeline();
+      }
+    });
+  });
+}
+
+// Event listeners
+document.getElementById('addAgentBtn')?.addEventListener('click', () => {
+  const name = prompt('Agent name:');
+  if (!name) return;
+  
+  const agent = {
+    id: 'A' + Date.now(),
+    name,
+    brokerage: prompt('Brokerage:') || '',
+    area: prompt('Primary area:') || '',
+    phone: prompt('Phone:') || '',
+    email: prompt('Email:') || '',
+    relationship: prompt('Relationship (active/warm/cold/exclusive):') || 'cold',
+    dealsCompleted: 0,
+    contactCount: 0,
+    createdAt: Date.now()
+  };
+  
+  state.agents.push(agent);
+  save('agents', state.agents);
+  renderAgentsTable();
+});
+
+document.getElementById('extendedDealForm')?.addEventListener('submit', (e) => {
+  e.preventDefault();
+  
+  const deal = {
+    id: 'ED' + Date.now(),
+    address: document.getElementById('extPropertyAddress').value,
+    type: document.getElementById('extDealType').value,
+    timeline: Number(document.getElementById('extTimeline').value),
+    listPrice: Number(document.getElementById('extListPrice').value || 0),
+    arv: Number(document.getElementById('extARV').value || 0),
+    repairs: Number(document.getElementById('extRepairs').value || 0),
+    agentName: document.getElementById('extAgentName').value,
+    commission: Number(document.getElementById('extCommission').value || 3),
+    priority: document.getElementById('extPriority').value,
+    notes: document.getElementById('extNotes').value,
+    status: 'research',
+    createdAt: Date.now()
+  };
+  
+  state.extendedDeals.push(deal);
+  save('extendedDeals', state.extendedDeals);
+  
+  document.getElementById('extendedDealForm').reset();
+  renderExtendedPipeline();
+  alert('Deal added to extended pipeline');
+});
+
+// Search and filter events
+document.getElementById('agentSearch')?.addEventListener('input', renderAgentsTable);
+document.getElementById('agentFilter')?.addEventListener('change', renderAgentsTable);
+document.getElementById('pipelineTimeframe')?.addEventListener('change', renderExtendedPipeline);
+
+// Update your renderAll function to include these
+function renderAll(){
+  renderLeads();
+  renderDealsTable();
+  renderPipeline();
+  renderBuyersTable();
+  renderAgentsTable();
+  renderExtendedPipeline();
+  updateKPI();
+  loadSettingsUI();
+  renderSevenDaySprint();
+}
+</script>
 
     renderAll();
     lucide.createIcons();
