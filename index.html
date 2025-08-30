@@ -171,6 +171,7 @@
         <button id="backupBtn" class="btn btn-outline"><i data-lucide="database"></i>Backup</button>
         <input id="restoreInput" type="file" accept="application/json" class="hidden" />
         <button id="restoreBtn" class="btn btn-outline"><i data-lucide="rotate-ccw"></i>Restore</button>
+        <button id="installBtn" class="btn btn-outline hidden" title="Install app"><i data-lucide="download"></i><span class="hidden sm:inline">Install</span></button>
         <button id="themeToggle" class="btn btn-outline" title="Toggle dark mode"><i data-lucide="moon"></i><span class="hidden sm:inline">Dark</span></button>
       </div>
     </header>
@@ -3425,5 +3426,194 @@ function renderAll(){
     }
     
   </script>
+
+<script>
+(() => {
+  // Guard to avoid double run
+  if (window.__mbpsPatchApplied) return; window.__mbpsPatchApplied = true;
+
+  const $ = (s, r=document)=>r.querySelector(s);
+  const $$ = (s, r=document)=>Array.from(r.querySelectorAll(s));
+
+  // ---------- Missing Button Wiring ----------
+  const openAttachBtn = $('#openAttachBtn');
+  if (openAttachBtn) {
+    openAttachBtn.addEventListener('click', () => {
+      const input = $('#photoInput');
+      if (input) input.click();
+      else alert('Photo/Attachment input not found.');
+    });
+  }
+
+  const sendBulkEmailBtn = $('#sendBulkEmailBtn');
+  if (sendBulkEmailBtn) {
+    sendBulkEmailBtn.addEventListener('click', () => {
+      const rows = $$('#agentRows tr');
+      const emails = [];
+      rows.forEach(tr => {
+        const emailMatch = tr.textContent.match(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/);
+        if (emailMatch) emails.push(emailMatch[0]);
+      });
+      const template = $('#bulkMessageTemplate')?.value || '';
+      const custom = $('#customBulkMessage')?.value || '';
+      let subject = 'Investor Partnership Opportunity';
+      let body = custom || '';
+      if (!body && template === 'intro') body = "Hi, I'm a local investor closing 3-5 deals/month. Let's partner on distressed/quick-close opportunities.";
+      if (!body && template === 'referral') body = "Looking for distressed leads in our area. I can close quickly (cash) or on terms. Commission protected.";
+      if (!body && template === 'market_update') body = "Quick market update and our buy box this month. Open to JV on anything that fits.";
+      if (!body && template === 'deal_alert') body = "I have a deal that may fit your criteria. Reply if you'd like the details and photos.";
+
+      if (emails.length === 0) { alert('No agent emails found in the current view.'); return; }
+      const bcc = emails.join(',');
+      const mailto = `mailto:?subject=${encodeURIComponent(subject)}&bcc=${encodeURIComponent(bcc)}&body=${encodeURIComponent(body)}`;
+      if (confirm(`Open your email client with ${emails.length} BCC recipients?`)) {
+        location.href = mailto;
+      }
+    });
+  }
+
+  const scheduleBulkBtn = $('#scheduleBulkBtn');
+  if (scheduleBulkBtn) {
+    scheduleBulkBtn.addEventListener('click', () => {
+      const when = prompt('Enter follow-up date/time (e.g., 2025-09-02 09:00)');
+      if (!when) return;
+      const title = 'Bulk Agent Outreach';
+      const desc = ($('#customBulkMessage')?.value || 'Prepare and send outreach to agents.');
+      const start = new Date(when);
+      if (isNaN(start)) { alert('Invalid date/time.'); return; }
+      const end = new Date(start.getTime() + 30*60000);
+      const ics = [
+        'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//MBPS Deal Sprint//EN',
+        'BEGIN:VEVENT',
+        'UID:'+ Date.now() +'@mbps',
+        'DTSTAMP:'+ start.toISOString().replace(/[-:]/g,'').split('.')[0] + 'Z',
+        'DTSTART:'+ start.toISOString().replace(/[-:]/g,'').split('.')[0] + 'Z',
+        'DTEND:'+ end.toISOString().replace(/[-:]/g,'').split('.')[0] + 'Z',
+        'SUMMARY:'+ title.replace(/\n/g,' '),
+        'DESCRIPTION:'+ desc.replace(/\n/g,' '),
+        'END:VEVENT','END:VCALENDAR'
+      ].join('\\r\\n');
+      const blob = new Blob([ics], {type:'text/calendar'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'bulk-agent-outreach.ics';
+      a.click();
+      URL.revokeObjectURL(a.href);
+      alert('ICS calendar reminder downloaded. Add it to your calendar.');
+    });
+  }
+
+  const analyzeExtDealBtn = $('#analyzeExtDealBtn');
+  if (analyzeExtDealBtn) {
+    analyzeExtDealBtn.addEventListener('click', () => {
+      const arv = parseFloat($('#extARV')?.value || '0');
+      const repairs = parseFloat($('#extRepairs')?.value || '0');
+      const list = parseFloat($('#extListPrice')?.value || '0');
+      const mao = Math.max(0, 0.7 * arv - repairs);
+      const anchor = Math.floor(mao * 0.9);
+      const msg = `ARV: $${arv.toLocaleString()}\\nRepairs: $${repairs.toLocaleString()}\\nList: $${list.toLocaleString()}\\n\\nMAO (70% Rule): $${Math.round(mao).toLocaleString()}\\nSuggested Cash Anchor: $${anchor.toLocaleString()}`;
+      alert(msg);
+    });
+  }
+
+  const scheduleFollowUpBtn = $('#scheduleFollowUpBtn');
+  if (scheduleFollowUpBtn) {
+    scheduleFollowUpBtn.addEventListener('click', () => {
+      const addr = $('#extPropertyAddress')?.value || 'Deal Follow-up';
+      const when = prompt('Follow-up date/time (e.g., 2025-09-03 14:00)');
+      if (!when) return;
+      const start = new Date(when);
+      if (isNaN(start)) { alert('Invalid date/time.'); return; }
+      const end = new Date(start.getTime() + 30*60000);
+      const ics = [
+        'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//MBPS Deal Sprint//EN',
+        'BEGIN:VEVENT',
+        'UID:'+ Date.now() +'@mbps',
+        'DTSTAMP:'+ start.toISOString().replace(/[-:]/g,'').split('.')[0] + 'Z',
+        'DTSTART:'+ start.toISOString().replace(/[-:]/g,'').split('.')[0] + 'Z',
+        'DTEND:'+ end.toISOString().replace(/[-:]/g,'').split('.')[0] + 'Z',
+        'SUMMARY:Follow-up: ' + addr.replace(/\\n/g,' '),
+        'DESCRIPTION:Check in on deal status and next steps.',
+        'END:VEVENT','END:VCALENDAR'
+      ].join('\\r\\n');
+      const blob = new Blob([ics], {type:'text/calendar'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'follow-up.ics';
+      a.click();
+      URL.revokeObjectURL(a.href);
+      alert('ICS calendar reminder downloaded.');
+    });
+  }
+
+  const moveSprintToExtendedBtn = $('#moveSprintToExtendedBtn');
+  if (moveSprintToExtendedBtn) {
+    moveSprintToExtendedBtn.addEventListener('click', () => {
+      const address = prompt('Property Address to move from Sprint → Extended');
+      if (!address) return;
+      const deal = {
+        id: 'ext-' + Date.now(),
+        address,
+        type: $('#extDealType')?.value || 'wholesale',
+        status: 'research',
+        createdAt: Date.now(),
+        notes: $('#extNotes')?.value || ''
+      };
+      const key = 'extendedDeals';
+      const existing = JSON.parse(localStorage.getItem(key) || '[]');
+      existing.unshift(deal);
+      localStorage.setItem(key, JSON.stringify(existing));
+      alert('Moved into Extended Pipeline as "Research".');
+      // Try to re-render if app provides hooks
+      if (typeof renderExtendedPipeline === 'function') renderExtendedPipeline();
+    });
+  }
+
+  // ---------- PWA: beforeinstallprompt + SW registration ----------
+  let deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const btn = $('#installBtn');
+    if (btn) btn.classList.remove('hidden');
+  });
+
+  const installBtn = $('#installBtn');
+  if (installBtn) {
+    installBtn.addEventListener('click', async () => {
+      if (!deferredPrompt) { alert('Install prompt not available yet. Try after interacting for a bit.'); return; }
+      deferredPrompt.prompt();
+      const choice = await deferredPrompt.userChoice;
+      installBtn.dataset.outcome = choice?.outcome || '';
+      deferredPrompt = null;
+    });
+  }
+
+  // Hide install button if already installed
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  if (isStandalone) $('#installBtn')?.classList.add('hidden');
+
+  // Register Service Worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistration().then((reg) => {
+      if (!reg) {
+        navigator.serviceWorker.register('./service-worker.js')
+          .then(r => console.log('[SW] registered', r.scope))
+          .catch(err => console.warn('[SW] registration failed', err));
+      } else {
+        console.log('[SW] already registered', reg.scope);
+      }
+    });
+  }
+
+  // Manifest check (log only)
+  const m = document.querySelector('link[rel="manifest"]');
+  if (m) {
+    const url = new URL(m.getAttribute('href'), location.href).href;
+    fetch(url, {cache:'no-store'}).then(r => console.log('[Manifest]', r.status, r.url));
+  }
+})();
+</script>
+
 </body>
 </html>
