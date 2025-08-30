@@ -1786,67 +1786,44 @@ Seller: ____________________________ Date: ____________`;
       document.querySelector('.tab[data-tab="contracts"]')?.click();
     });
 
-    function renderDealsTable(rows, columns, tableRef) {
-  try {
-    // Resolve the table element from different kinds of inputs
-    let tableEl = tableRef;
-    if (typeof tableRef === 'string') {
-      tableEl = document.querySelector(tableRef);
+    function renderDealsTable(){
+      const tbody = document.getElementById('dealRows');
+      if(!tbody) return;
+      const q=(document.getElementById('search')?.value||'').toLowerCase();
+      const fs=document.getElementById('filterStatus')?.value;
+      tbody.innerHTML='';
+      state.deals
+        .filter(d=>!fs||d.status===fs)
+        .filter(d=> d.propertyAddress.toLowerCase().includes(q) || (d.sellerNames||'').toLowerCase().includes(q))
+        .forEach((d,idx)=>{
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="py-2 pr-4">${d.propertyAddress}</td>
+            <td class="py-2 pr-4">${d.sellerNames||''}</td>
+            <td class="py-2 pr-4">${money(d.purchasePrice)}</td>
+            <td class="py-2 pr-4">${money(d.fee||0)}</td>
+            <td class="py-2 pr-4"><span class="badge ${STATUS_MAP[d.status].cls}">${STATUS_MAP[d.status].label}</span></td>
+            <td class="py-2 pr-4 flex gap-2">
+              <button class="btn btn-outline text-xs px-2 py-1 gen">PDF</button>
+              <button class="btn btn-outline text-xs px-2 py-1 edit">Edit</button>
+              <button class="btn btn-outline text-xs px-2 py-1 del">Delete</button>
+            </td>
+          `;
+          tr.querySelector('.gen').onclick = async ()=>{
+            (await generatePdf(d, { templateKey: d.template||'standard' })).save(`Contract_${d.propertyAddress.replaceAll(' ','_')}.pdf`);
+          };
+          tr.querySelector('.edit').onclick = ()=> loadDealIntoForm(idx);
+          tr.querySelector('.del').onclick = ()=>{
+            if(confirm('Delete this deal?')){
+              state.deals.splice(idx,1);
+              save('deals',state.deals);
+              renderDealsTable();
+              renderPipeline();
+            }
+          };
+          tbody.appendChild(tr);
+        });
     }
-    if (!(tableEl instanceof HTMLTableElement)) {
-      // Try sensible fallbacks (common IDs/classes/attributes)
-      tableEl = document.querySelector('table#dealsTable, table.deals-table, table[data-table="deals"], table[data-role="deals"], table[data-table], table');
-    }
-    if (!(tableEl instanceof HTMLTableElement)) {
-      console.warn('[renderDealsTable] No valid <table> element found. Skipping render.');
-      return;
-    }
-
-    // Normalize columns
-    if (!Array.isArray(columns)) columns = [];
-    const cols = columns
-      .filter(Boolean)
-      .map(c => ({
-        key: c.key ?? c.id ?? c.name ?? '',
-        header: c.header ?? c.title ?? '',
-        cls: c.cls ?? c.className ?? '',
-        format: typeof c.format === 'function' ? c.format : (v) => (v ?? '')
-      }))
-      .filter(c => c.key);
-
-    // Build <thead>
-    let thead = tableEl.tHead;
-    if (!thead) thead = tableEl.createTHead();
-    thead.innerHTML = '';
-    const hr = thead.insertRow();
-    cols.forEach(col => {
-      const th = document.createElement('th');
-      th.textContent = col.header || col.key;
-      if (col.cls) th.className = col.cls;
-      hr.appendChild(th);
-    });
-
-    // Build <tbody>
-    let tbody = tableEl.tBodies[0];
-    if (!tbody) tbody = tableEl.createTBody();
-    tbody.innerHTML = '';
-
-    (rows || []).forEach((row) => {
-      const tr = tbody.insertRow();
-      cols.forEach((col) => {
-        const td = tr.insertCell();
-        const raw = row?.[col.key];
-        const val = col.format(raw, row, col);
-        td.textContent = (val === undefined || val === null) ? '' : String(val);
-        if (col.cls) td.className = col.cls;
-      });
-    });
-  } catch (err) {
-    console.warn('[renderDealsTable] guarded fallback:', err);
-  }
-}
-
-
 
     function loadDealIntoForm(idx){
       const d = state.deals[idx];
@@ -3448,557 +3425,245 @@ function renderAll(){
     }
     
   </script>
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  try { document.querySelectorAll('button:not([type])').forEach(b => b.setAttribute('type','button')); } catch(e){}
-});
-</script>
-
-  <script>
-(function () {
-  // ---------- helpers ----------
-  const $ = (s, r=document) => r.querySelector(s);
-  const num = (v, d=0) => {
-    if (typeof v === 'number') return v;
-    const n = parseFloat(String(v||'').replace(/[^\d.\-]/g,''));
-    return isFinite(n) ? n : d;
-  };
-  const fmt = (n) => n.toLocaleString(undefined,{maximumFractionDigits:0});
-  const pmti = (loan, ratePct, years) => {
-    const r = num(ratePct)/100/12, n = years*12;
-    if (!loan || !r || !n) return 0;
-    return loan * r * Math.pow(1+r, n) / (Math.pow(1+r, n)-1);
-  };
-
-  // ---------- core calcs ----------
-  function calcMAO({ arv, repairs, pct=0.70 }) {
-    return Math.max(0, arv * pct - repairs);
-  }
-
-  function analyzeBuyHold({
-    rentMonthly, taxesAnnual, insAnnual, hoaMonthly,
-    vacancyPct=5, mgmtPct=8, capexPct=5,
-    loanBalance, ratePct, termYears=30, pitiMonthly
-  }) {
-    const taxes = num(taxesAnnual)/12;
-    const ins   = num(insAnnual)/12;
-    const hoa   = num(hoaMonthly);
-    const rent  = num(rentMonthly);
-    const vacancy = rent * (num(vacancyPct)/100);
-    const mgmt   = rent * (num(mgmtPct)/100);
-    const capex  = rent * (num(capexPct)/100);
-
-    const opex   = taxes + ins + hoa + mgmt + capex + vacancy;
-
-    let debt = num(pitiMonthly);
-    if (!debt && loanBalance && ratePct) {
-      debt = pmti(num(loanBalance), num(ratePct), num(termYears||30)) + taxes + ins + hoa; // P&I + escrows
-    }
-
-    const noi = rent - (taxes + ins + hoa + mgmt + capex + vacancy);
-    const cashFlow = rent - (opex + debt);
-    const dscr = debt ? (noi / debt) : (noi > 0 ? Infinity : 0);
-    return { noi, cashFlow, dscr, opex, debt, rent };
-  }
-
-  function classifyDeal({ arv, repairs, asking,
-                          feeTarget=10000,
-                          existingRatePct, equityPct, arrearsMonthly,
-                          rentMonthly, taxesAnnual, insAnnual, hoaMonthly,
-                          vacancyPct, mgmtPct, capexPct,
-                          loanBalance, termYears, pitiMonthly }) {
-
-    const MAO = calcMAO({ arv, repairs, pct: 0.70 });
-    const wholesaleGood = num(asking) <= (MAO - num(feeTarget));
-
-    // Subject-To heuristic: cheap existing financing + low equity or arrears
-    const lowRate = num(existingRatePct) && num(existingRatePct) <= 4.5;
-    const thinEquity = num(equityPct) && num(equityPct) <= 10;
-    const arrears = num(arrearsMonthly) > 0;
-    const subjToGood = lowRate && (thinEquity || arrears);
-
-    // Buy & Hold: positive cash flow + DSCR >= 1.2 (or NOI>0 with strong rent)
-    const bh = analyzeBuyHold({
-      rentMonthly, taxesAnnual, insAnnual, hoaMonthly,
-      vacancyPct, mgmtPct, capexPct,
-      loanBalance, ratePct: existingRatePct, termYears, pitiMonthly
-    });
-    const buyHoldGood = (bh.cashFlow > 0 && bh.dscr >= 1.2) || (bh.noi > 0 && bh.dscr > 1.0);
-
-    // Ranking / pick best fit
-    let type = 'Needs Review';
-    let reasons = [];
-    if (wholesaleGood) { type = 'Wholesale'; reasons.push(`Asking ≤ MAO − fee (${fmt(asking)} ≤ ${fmt(MAO - num(feeTarget))})`); }
-    if (subjToGood && (!wholesaleGood || lowRate)) { // give Sub2 priority if financing is attractive
-      type = 'Subject-To';
-      reasons.push(`Existing rate ${existingRatePct || '?'}% with low equity/arrears`);
-    }
-    if (buyHoldGood && (!wholesaleGood && !subjToGood)) {
-      type = 'Buy & Hold';
-      reasons.push(`Cash flow $${fmt(bh.cashFlow)} / DSCR ${bh.dscr.toFixed(2)}`);
-    }
-
-    return { type, reasons, MAO, bh };
-  }
-
-  function resultHTML(r) {
-    const lines = [
-      `<div class="text-xl font-semibold mb-2">Recommended: ${r.type}</div>`,
-      `<div class="mb-2">MAO (70% rule): <b>$${fmt(r.MAO)}</b></div>`,
-      (r.bh ? `<div>Cash Flow: <b>$${fmt(r.bh.cashFlow)}</b>, DSCR: <b>${isFinite(r.bh.dscr)?r.bh.dscr.toFixed(2):'—'}</b></div>` : ''),
-      (r.reasons.length ? `<ul class="list-disc ml-5 mt-2">${r.reasons.map(x=>`<li>${x}</li>`).join('')}</ul>` : '')
-    ].join('');
-    return `<div class="p-4">${lines}</div>`;
-  }
-
-  // ---------- modal (auto-created, minimal styles, no layout changes) ----------
-  function ensureModal() {
-    let m = document.getElementById('dealEvalModal');
-    if (m) return m;
-    m = document.createElement('div');
-    m.id = 'dealEvalModal';
-    m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;z-index:9999;';
-    m.innerHTML = `
-      <div id="dealEvalCard" style="max-width:680px;margin:5vh auto;background:#fff;border-radius:12px;overflow:hidden;">
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#0ea5e9;color:#fff;">
-          <div style="font-weight:700">Property Evaluation</div>
-          <button id="dealEvalClose" style="border:0;background:transparent;color:#fff;font-size:20px;cursor:pointer;" aria-label="Close">×</button>
-        </div>
-        <div id="dealEvalBody" style="padding:12px 16px;"></div>
-      </div>`;
-    document.body.appendChild(m);
-    $('#dealEvalClose', m).addEventListener('click', ()=> m.style.display='none');
-    m.addEventListener('click', (e)=>{ if(e.target===m) m.style.display='none'; });
-    return m;
-  }
-  function showModal(html) { const m = ensureModal(); $('#dealEvalBody', m).innerHTML = html; m.style.display='block'; }
-
-  // ---------- wire EXISTING "Analyze Deal" button ----------
-  // Adjust these selectors to match your current form IDs (kept generic for drop-in)
-  const selectors = {
-    arv:        '#arvInput, [name="arv"], #arv',
-    repairs:    '#repairsInput, [name="repairs"], #repairs',
-    asking:     '#askingInput, [name="asking"], #asking',
-    rent:       '#rentInput, [name="rent"], #rent',
-    taxes:      '#taxesInput, [name="taxes"], #taxes',
-    ins:        '#insuranceInput, [name="insurance"], #insurance',
-    hoa:        '#hoaInput, [name="hoa"], #hoa',
-    vacancy:    '#vacancyPct, [name="vacancyPct"]',
-    mgmt:       '#mgmtPct, [name="mgmtPct"]',
-    capex:      '#capexPct, [name="capexPct"]',
-    rate:       '#existingRate, [name="existingRate"]',
-    loan:       '#loanBalance, [name="loanBalance"]',
-    term:       '#termYears, [name="termYears"]',
-    piti:       '#pitiMonthly, [name="pitiMonthly"]',
-    equityPct:  '#equityPct, [name="equityPct"]',
-    arrears:    '#arrearsMonthly, [name="arrearsMonthly"]'
-  };
-  function pick(sel){ const el = document.querySelector(sel); return el ? el.value : ''; }
-
-  function runAnalyzeFromPage() {
-    const r = classifyDeal({
-      arv:          num(pick(selectors.arv)),
-      repairs:      num(pick(selectors.repairs)),
-      asking:       num(pick(selectors.asking)),
-      rentMonthly:  num(pick(selectors.rent)),
-      taxesAnnual:  num(pick(selectors.taxes)),
-      insAnnual:    num(pick(selectors.ins)),
-      hoaMonthly:   num(pick(selectors.hoa)),
-      vacancyPct:   num(pick(selectors.vacancy) || 5),
-      mgmtPct:      num(pick(selectors.mgmt) || 8),
-      capexPct:     num(pick(selectors.capex) || 5),
-      existingRatePct: num(pick(selectors.rate)),
-      loanBalance:  num(pick(selectors.loan)),
-      termYears:    num(pick(selectors.term) || 30),
-      pitiMonthly:  num(pick(selectors.piti)),
-      equityPct:    num(pick(selectors.equityPct)),
-      arrearsMonthly: num(pick(selectors.arrears)),
-      feeTarget: 10000
-    });
-    showModal(resultHTML(r));
-  }
-
-  // Attach to your existing button (choose one that exists)
-  const analyzeBtn = document.querySelector('#analyzeDealBtn, [data-action="analyze-deal"], #analyzeExtDealBtn');
-  if (analyzeBtn) analyzeBtn.addEventListener('click', runAnalyzeFromPage);
-
-  // ---------- add QUICK ENTRY "Property Evaluation" button (non-destructive) ----------
-  // It injects a small button next to the existing Analyze button if none exists with #propertyEvalBtn
-  function ensureEvalButton() {
-    if (document.getElementById('propertyEvalBtn')) return;
-    const btn = document.createElement('button');
-    btn.id = 'propertyEvalBtn';
-    btn.type = 'button';
-    btn.textContent = 'Property Evaluation';
-    btn.style.cssText = 'margin-left:8px;padding:8px 12px;border-radius:8px;border:0;background:#10b981;color:#fff;cursor:pointer;';
-    (analyzeBtn?.parentElement || document.body).appendChild(btn);
-    btn.addEventListener('click', openQuickEntry);
-  }
-
-  function openQuickEntry() {
-    const form = `
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;">
-        <label>ARV <input id="qe_arv" type="number" inputmode="decimal" placeholder="e.g. 250000"></label>
-        <label>Repairs <input id="qe_repairs" type="number" inputmode="decimal" placeholder="e.g. 35000"></label>
-        <label>Asking <input id="qe_asking" type="number" inputmode="decimal" placeholder="e.g. 180000"></label>
-        <label>Rent (mo) <input id="qe_rent" type="number" inputmode="decimal" placeholder="e.g. 1900"></label>
-        <label>Taxes (yr) <input id="qe_taxes" type="number" inputmode="decimal" placeholder="e.g. 2400"></label>
-        <label>Insurance (yr) <input id="qe_ins" type="number" inputmode="decimal" placeholder="e.g. 1200"></label>
-        <label>HOA (mo) <input id="qe_hoa" type="number" inputmode="decimal" placeholder="0"></label>
-        <label>Vacancy % <input id="qe_vac" type="number" inputmode="decimal" placeholder="5" value="5"></label>
-        <label>Mgmt % <input id="qe_mgmt" type="number" inputmode="decimal" placeholder="8" value="8"></label>
-        <label>CapEx % <input id="qe_capex" type="number" inputmode="decimal" placeholder="5" value="5"></label>
-        <label>Existing Rate % <input id="qe_rate" type="number" inputmode="decimal" placeholder="e.g. 3.0"></label>
-        <label>Loan Balance <input id="qe_loan" type="number" inputmode="decimal" placeholder="e.g. 210000"></label>
-        <label>Term (yrs) <input id="qe_term" type="number" inputmode="numeric" placeholder="30" value="30"></label>
-        <label>Current PITI (mo) <input id="qe_piti" type="number" inputmode="decimal" placeholder="if known"></label>
-        <label>Equity % <input id="qe_equity" type="number" inputmode="decimal" placeholder="e.g. 5"></label>
-        <label>Arrears (mo) <input id="qe_arrears" type="number" inputmode="decimal" placeholder="0"></label>
-      </div>
-      <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;">
-        <button id="qe_run" style="padding:8px 12px;border:0;border-radius:8px;background:#0ea5e9;color:#fff;cursor:pointer;">Analyze</button>
-      </div>
-    `;
-    showModal(form);
-    $('#qe_run').addEventListener('click', () => {
-      const r = classifyDeal({
-        arv: num($('#qe_arv').value),
-        repairs: num($('#qe_repairs').value),
-        asking: num($('#qe_asking').value),
-        rentMonthly: num($('#qe_rent').value),
-        taxesAnnual: num($('#qe_taxes').value),
-        insAnnual: num($('#qe_ins').value),
-        hoaMonthly: num($('#qe_hoa').value),
-        vacancyPct: num($('#qe_vac').value||5),
-        mgmtPct: num($('#qe_mgmt').value||8),
-        capexPct: num($('#qe_capex').value||5),
-        existingRatePct: num($('#qe_rate').value),
-        loanBalance: num($('#qe_loan').value),
-        termYears: num($('#qe_term').value||30),
-        pitiMonthly: num($('#qe_piti').value),
-        equityPct: num($('#qe_equity').value),
-        arrearsMonthly: num($('#qe_arrears').value),
-        feeTarget: 10000
-      });
-      showModal(resultHTML(r));
-    });
-  }
-  ensureEvalButton();
-})();
-</script>
-
-  <script>
-(() => {
-  // ---------- tiny helpers ----------
-  const $ = (s, r=document) => r.querySelector(s);
-  const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
-  const num = (v, d=0) => {
-    if (typeof v === 'number') return v;
-    const n = parseFloat(String(v||'').replace(/[^\d.\-]/g,''));
-    return isFinite(n) ? n : d;
-  };
-  const fmt = (n) => Number(n||0).toLocaleString(undefined,{maximumFractionDigits:0});
-  const pmti = (loan, ratePct, years) => {
-    const r = num(ratePct)/100/12, n = years*12;
-    if (!loan || !r || !n) return 0;
-    return loan * r * Math.pow(1+r, n) / (Math.pow(1+r, n)-1);
-  };
-
-  // ---------- storage (local) ----------
-  const STORE_KEY = 'mbpsDeals';
-  const Store = {
-    load() {
-      try { return JSON.parse(localStorage.getItem(STORE_KEY) || '[]'); } catch { return []; }
-    },
-    save(deals) {
-      localStorage.setItem(STORE_KEY, JSON.stringify(deals||[]));
-    },
-    add(deal) {
-      const deals = Store.load();
-      deals.unshift({...deal, _id: crypto.randomUUID?.() || String(Date.now())});
-      Store.save(deals);
-      return deals[0];
-    }
-  };
-
-  // ---------- core calcs ----------
-  function calcMAO({ arv, repairs, pct=0.70 }) {
-    return Math.max(0, arv * pct - repairs);
-  }
-  function analyzeBuyHold({
-    rentMonthly, taxesAnnual, insAnnual, hoaMonthly,
-    vacancyPct=5, mgmtPct=8, capexPct=5,
-    loanBalance, ratePct, termYears=30, pitiMonthly
-  }) {
-    const taxes = num(taxesAnnual)/12;
-    const ins   = num(insAnnual)/12;
-    const hoa   = num(hoaMonthly);
-    const rent  = num(rentMonthly);
-    const vacancy = rent * (num(vacancyPct)/100);
-    const mgmt   = rent * (num(mgmtPct)/100);
-    const capex  = rent * (num(capexPct)/100);
-    const opex   = taxes + ins + hoa + mgmt + capex + vacancy;
-
-    let debt = num(pitiMonthly);
-    if (!debt && loanBalance && ratePct) {
-      debt = pmti(num(loanBalance), num(ratePct), num(termYears||30)) + taxes + ins + hoa;
-    }
-
-    const noi = rent - (taxes + ins + hoa + mgmt + capex + vacancy);
-    const cashFlow = rent - (opex + debt);
-    const dscr = debt ? (noi / debt) : (noi > 0 ? Infinity : 0);
-    return { noi, cashFlow, dscr, opex, debt, rent };
-  }
-  function classifyDeal({ arv, repairs, asking,
-                          feeTarget=10000,
-                          existingRatePct, equityPct, arrearsMonthly,
-                          rentMonthly, taxesAnnual, insAnnual, hoaMonthly,
-                          vacancyPct, mgmtPct, capexPct,
-                          loanBalance, termYears, pitiMonthly }) {
-    const MAO = calcMAO({ arv, repairs, pct: 0.70 });
-    const wholesaleGood = num(asking) <= (MAO - num(feeTarget));
-
-    const lowRate = num(existingRatePct) && num(existingRatePct) <= 4.5;
-    const thinEquity = num(equityPct) && num(equityPct) <= 10;
-    const arrears = num(arrearsMonthly) > 0;
-    const subjToGood = lowRate && (thinEquity || arrears);
-
-    const bh = analyzeBuyHold({
-      rentMonthly, taxesAnnual, insAnnual, hoaMonthly,
-      vacancyPct, mgmtPct, capexPct,
-      loanBalance, ratePct: existingRatePct, termYears, pitiMonthly
-    });
-    const buyHoldGood = (bh.cashFlow > 0 && bh.dscr >= 1.2) || (bh.noi > 0 && bh.dscr > 1.0);
-
-    let type = 'Needs Review';
-    const reasons = [];
-    if (wholesaleGood) { type = 'Wholesale'; reasons.push(`Asking ≤ MAO − fee (${fmt(asking)} ≤ ${fmt(MAO - num(feeTarget))})`); }
-    if (subjToGood && (!wholesaleGood || lowRate)) {
-      type = 'Subject-To'; reasons.push(`Existing rate ${existingRatePct || '?'}% with low equity/arrears`);
-    }
-    if (buyHoldGood && (!wholesaleGood && !subjToGood)) {
-      type = 'Buy-and-Hold'; reasons.push(`Cash flow $${fmt(bh.cashFlow)} / DSCR ${isFinite(bh.dscr)?bh.dscr.toFixed(2):'—'}`);
-    }
-
-    return { type, reasons, MAO, bh };
-  }
-  function resultHTML(r) {
-    const lines = [
-      `<div class="text-xl font-semibold mb-2">Recommended: ${r.type}</div>`,
-      `<div class="mb-1">MAO (70% rule): <b>$${fmt(r.MAO)}</b></div>`,
-      r.bh ? `<div class="mb-1">Cash Flow: <b>$${fmt(r.bh.cashFlow)}</b> | DSCR: <b>${isFinite(r.bh.dscr)?r.bh.dscr.toFixed(2):'—'}</b></div>` : '',
-      r.reasons.length ? `<ul class="list-disc ml-5 mt-2">${r.reasons.map(x=>`<li>${x}</li>`).join('')}</ul>` : ''
-    ].join('');
-    return `<div class="p-4">${lines}</div>`;
-  }
-
-  // ---------- modal (simple, no layout change) ----------
-  function ensureModal() {
-    let m = document.getElementById('dealEvalModal');
-    if (m) return m;
-    m = document.createElement('div');
-    m.id = 'dealEvalModal';
-    m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;z-index:9999;';
-    m.innerHTML = `
-      <div id="dealEvalCard" style="max-width:720px;margin:5vh auto;background:var(--card-bg,#fff);border-radius:12px;overflow:hidden;">
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#0ea5e9;color:#fff;">
-          <div style="font-weight:700">Property Evaluation</div>
-          <button id="dealEvalClose" style="border:0;background:transparent;color:#fff;font-size:20px;cursor:pointer;" aria-label="Close">×</button>
-        </div>
-        <div id="dealEvalBody" style="padding:12px 16px;"></div>
-      </div>`;
-    document.body.appendChild(m);
-    $('#dealEvalClose', m).addEventListener('click', ()=> m.style.display='none');
-    m.addEventListener('click', (e)=>{ if(e.target===m) m.style.display='none'; });
-    return m;
-  }
-  function showModal(html) { const m = ensureModal(); $('#dealEvalBody', m).innerHTML = html; m.style.display='block'; }
-
-  // ---------- quick entry form ----------
-  function openQuickEntry() {
-    const form = `
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;">
-        <label>Address <input id="qe_addr" placeholder="123 Main St"></label>
-        <label>ARV <input id="qe_arv" type="number" inputmode="decimal" placeholder="250000"></label>
-        <label>Repairs <input id="qe_repairs" type="number" inputmode="decimal" placeholder="35000"></label>
-        <label>Asking <input id="qe_asking" type="number" inputmode="decimal" placeholder="180000"></label>
-        <label>Rent (mo) <input id="qe_rent" type="number" inputmode="decimal" placeholder="1900"></label>
-        <label>Taxes (yr) <input id="qe_taxes" type="number" inputmode="decimal" placeholder="2400"></label>
-        <label>Insurance (yr) <input id="qe_ins" type="number" inputmode="decimal" placeholder="1200"></label>
-        <label>HOA (mo) <input id="qe_hoa" type="number" inputmode="decimal" placeholder="0"></label>
-        <label>Vacancy % <input id="qe_vac" type="number" inputmode="decimal" placeholder="5" value="5"></label>
-        <label>Mgmt % <input id="qe_mgmt" type="number" inputmode="decimal" placeholder="8" value="8"></label>
-        <label>CapEx % <input id="qe_capex" type="number" inputmode="decimal" placeholder="5" value="5"></label>
-        <label>Existing Rate % <input id="qe_rate" type="number" inputmode="decimal" placeholder="3.0"></label>
-        <label>Loan Balance <input id="qe_loan" type="number" inputmode="decimal" placeholder="210000"></label>
-        <label>Term (yrs) <input id="qe_term" type="number" inputmode="numeric" placeholder="30" value="30"></label>
-        <label>Current PITI (mo) <input id="qe_piti" type="number" inputmode="decimal" placeholder="if known"></label>
-        <label>Equity % <input id="qe_equity" type="number" inputmode="decimal" placeholder="5"></label>
-        <label>Arrears (mo) <input id="qe_arrears" type="number" inputmode="decimal" placeholder="0"></label>
-      </div>
-      <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;">
-        <button id="qe_save" style="padding:8px 12px;border:0;border-radius:8px;background:#10b981;color:#fff;cursor:pointer;">Analyze & Save</button>
-        <button id="qe_run"  style="padding:8px 12px;border:0;border-radius:8px;background:#0ea5e9;color:#fff;cursor:pointer;">Analyze</button>
-      </div>
-    `;
-    showModal(form);
-    $('#qe_run').addEventListener('click', () => runEvalFromModal(false));
-    $('#qe_save').addEventListener('click', () => runEvalFromModal(true));
-  }
-  function runEvalFromModal(saveIt) {
-    const data = {
-      address: $('#qe_addr').value,
-      arv: num($('#qe_arv').value),
-      repairs: num($('#qe_repairs').value),
-      asking: num($('#qe_asking').value),
-      rentMonthly: num($('#qe_rent').value),
-      taxesAnnual: num($('#qe_taxes').value),
-      insAnnual: num($('#qe_ins').value),
-      hoaMonthly: num($('#qe_hoa').value),
-      vacancyPct: num($('#qe_vac').value||5),
-      mgmtPct: num($('#qe_mgmt').value||8),
-      capexPct: num($('#qe_capex').value||5),
-      existingRatePct: num($('#qe_rate').value),
-      loanBalance: num($('#qe_loan').value),
-      termYears: num($('#qe_term').value||30),
-      pitiMonthly: num($('#qe_piti').value),
-      equityPct: num($('#qe_equity').value),
-      arrearsMonthly: num($('#qe_arrears').value),
-      feeTarget: 10000
-    };
-    const r = classifyDeal(data);
-    if (saveIt) {
-      Store.add({ createdAt: new Date().toISOString(), ...data, result: r });
-    }
-    showModal(resultHTML(r));
-  }
-
-  // ---------- wire your EXISTING Analyze button (if present) ----------
-  const selectors = {
-    arv: '#arvInput, [name="arv"], #arv',
-    repairs: '#repairsInput, [name="repairs"], #repairs',
-    asking: '#askingInput, [name="asking"], #asking',
-    rent: '#rentInput, [name="rent"], #rent',
-    taxes: '#taxesInput, [name="taxes"], #taxes',
-    ins: '#insuranceInput, [name="insurance"], #insurance',
-    hoa: '#hoaInput, [name="hoa"], #hoa',
-    vacancy: '#vacancyPct, [name="vacancyPct"]',
-    mgmt: '#mgmtPct, [name="mgmtPct"]',
-    capex: '#capexPct, [name="capexPct"]',
-    rate: '#existingRate, [name="existingRate"]',
-    loan: '#loanBalance, [name="loanBalance"]',
-    term: '#termYears, [name="termYears"]',
-    piti: '#pitiMonthly, [name="pitiMonthly"]',
-    equityPct: '#equityPct, [name="equityPct"]',
-    arrears: '#arrearsMonthly, [name="arrearsMonthly"]'
-  };
-  const pick = (sel) => (document.querySelector(sel)?.value ?? '');
-  function runAnalyzeFromPage() {
-    const r = classifyDeal({
-      arv: num(pick(selectors.arv)),
-      repairs: num(pick(selectors.repairs)),
-      asking: num(pick(selectors.asking)),
-      rentMonthly: num(pick(selectors.rent)),
-      taxesAnnual: num(pick(selectors.taxes)),
-      insAnnual: num(pick(selectors.ins)),
-      hoaMonthly: num(pick(selectors.hoa)),
-      vacancyPct: num(pick(selectors.vacancy) || 5),
-      mgmtPct: num(pick(selectors.mgmt) || 8),
-      capexPct: num(pick(selectors.capex) || 5),
-      existingRatePct: num(pick(selectors.rate)),
-      loanBalance: num(pick(selectors.loan)),
-      termYears: num(pick(selectors.term) || 30),
-      pitiMonthly: num(pick(selectors.piti)),
-      equityPct: num(pick(selectors.equityPct)),
-      arrearsMonthly: num(pick(selectors.arrears)),
-      feeTarget: 10000
-    });
-    showModal(resultHTML(r));
-  }
-  const analyzeBtn = $('#analyzeDealBtn, [data-action="analyze-deal"], #analyzeExtDealBtn');
-  if (analyzeBtn) analyzeBtn.addEventListener('click', runAnalyzeFromPage);
-
-  // ---------- place "Property Evaluation" button next to Export/Backup/Restore/Dark ----------
-  function findToolbar() {
-    // find a common parent of existing toolbar buttons
-    const refs = [
-      $('#exportCsvBtn, [data-action="export-csv"]'),
-      $('#backupBtn, [data-action="backup"]'),
-      $('#restoreBtn, [data-action="restore"]'),
-      $('#darkModeBtn, [data-action="toggle-dark"]')
-    ].filter(Boolean);
-    return refs.length ? (refs[0].parentElement) : document.body;
-  }
-  function ensureEvalButton() {
-    if ($('#propertyEvalBtn')) return;
-    const host = findToolbar();
-    const btn = document.createElement('button');
-    btn.id = 'propertyEvalBtn'; btn.type = 'button';
-    btn.textContent = 'Property Evaluation';
-    btn.style.cssText = 'margin-left:8px;padding:8px 12px;border-radius:8px;border:0;background:#10b981;color:#fff;cursor:pointer;';
-    host.appendChild(btn);
-    btn.addEventListener('click', openQuickEntry);
-  }
-  ensureEvalButton();
-
-  // ---------- Calls / Texts: wire to phone apps ----------
-  // For any "[data-call]" or "[data-text]" buttons, use tel:/sms: handlers
-  document.addEventListener('click', (e) => {
-    const b = e.target.closest('[data-call],[data-text]');
-    if (!b) return;
-    e.preventDefault();
-    const phone = (b.dataset.call || b.dataset.text || '').replace(/[^\d+]/g,'');
-    if (!phone) return;
-    if (b.dataset.call) location.href = `tel:${phone}`;
-    if (b.dataset.text) location.href = `sms:${phone}?&body=${encodeURIComponent(b.dataset.body||'')}`;
-  });
-
-})();
-</script>
-<script>
-const API_BASE = "https://pocy3byloc.execute-api.us-east-1.amazonaws.com/prod";
-const USER_ID  = "owner"; // use same value on phone/desktop to share data
-
-async function presign(path, file="deals.json") {
-  const r = await fetch(`${API_BASE}${path}?userId=${encodeURIComponent(USER_ID)}&file=${encodeURIComponent(file)}`);
-  if (!r.ok) throw new Error("presign failed");
-  return (await r.json()).url;
-}
-
-async function syncSave() {
-  const deals = JSON.parse(localStorage.getItem("mbpsDeals")||"[]");
-  const url = await presign("/putUrl");
-  const res = await fetch(url, { method:"PUT", headers:{ "content-type":"application/json" }, body: JSON.stringify(deals) });
-  if (!res.ok) throw new Error("Upload failed");
-  alert("Backed up to S3");
-}
-
-async function syncLoad() {
-  const url = await presign("/getUrl");
-  const res = await fetch(url);
-  if (!res.ok) { alert("No remote file yet"); return; }
-  const deals = await res.json();
-  localStorage.setItem("mbpsDeals", JSON.stringify(deals));
-  // TODO: call your renderAll() or equivalent
-  alert("Loaded from S3");
-}
-
-// Add a toolbar button if you don't have one yet
-document.addEventListener("DOMContentLoaded", () => {
-  const toolbar = document.querySelector('#restoreBtn')?.parentElement || document.body;
-  if (!document.getElementById('syncBtn')) {
-    const b = document.createElement('button');
-    b.id = 'syncBtn';
-    b.textContent = 'Sync (S3)';
-    b.type = 'button';
-    b.style.cssText = 'margin-left:8px;padding:8px 12px;border-radius:8px;border:0;background:#6366f1;color:#fff;cursor:pointer;';
-    b.addEventListener('click', async () => {
-      const save = confirm('OK = Save to S3, Cancel = Load from S3');
-      try { save ? await syncSave() : await syncLoad(); } catch (e) { alert(e.message); }
-    });
-    toolbar.appendChild(b);
-  }
-});
-</script>
 </body>
 </html>
+
+
+<script id="mbps-s3-and-analyzer-patch">
+// ===== MBPS Patch: S3 sync, Analyzer, Gallery, and robust render fallback =====
+
+// -- Config --
+const MBPS_API_BASE = "https://pocy3byloc.execute-api.us-east-1.amazonaws.com/prod";
+const MBPS_USER_ID = (window.mbpsUserId || "owner");
+
+// -- Helpers --
+function mbpsGetDeals() {
+  try { return JSON.parse(localStorage.getItem('mbpsDeals')||'[]'); } catch(_) { return []; }
+}
+function mbpsSaveDeals(deals) {
+  try { localStorage.setItem('mbpsDeals', JSON.stringify(deals)); } catch(_) {}
+}
+function mbpsFmt(n) { if(n===null||n===undefined||isNaN(n)) return '-'; return Number(n).toLocaleString(); }
+
+// -- Presign helpers --
+async function mbpsPresign(path, file='deals.json') {
+  const u = MBPS_API_BASE + path + "?userId=" + encodeURIComponent(MBPS_USER_ID) + "&file=" + encodeURIComponent(file);
+  const r = await fetch(u);
+  if (!r.ok) throw new Error('presign failed');
+  const j = await r.json();
+  return j.url;
+}
+async function mbpsSyncSave() {
+  const deals = mbpsGetDeals();
+  const url = await mbpsPresign('/putUrl');
+  const res = await fetch(url, { method:'PUT', headers:{'content-type':'application/json'}, body: JSON.stringify(deals) });
+  if (!res.ok) throw new Error('upload failed');
+  alert('Backed up to S3');
+}
+async function mbpsSyncLoad() {
+  const url = await mbpsPresign('/getUrl');
+  const res = await fetch(url);
+  if (!res.ok) { alert('No remote file yet'); return; }
+  const deals = await res.json();
+  mbpsSaveDeals(deals);
+  if (window.renderDealsTable) try { window.renderDealsTable(); } catch(_) {}
+  alert('Loaded from S3');
+}
+
+// -- Analyzer --
+function mbpsAnalyze(inputs) {
+  const arv = +inputs.arv||0, repairs = +inputs.repairs||0, fee= +inputs.fee||0;
+  const holdPct = (+inputs.holdPct||10)/100;
+  const rent = +inputs.rent||0, piti = +inputs.piti||0;
+  const maxOfferWholesale = Math.max(0, arv*0.7 - repairs - fee);
+  const carrying = arv * holdPct;
+  const cashflow = rent - piti;
+  let strat = 'Wholesale';
+  if (cashflow >= 300) strat = 'Buy & Hold';
+  if (piti>0 && cashflow>0 && maxOfferWholesale<=0) strat = 'Subject-To';
+  return { maxOfferWholesale, carrying, cashflow, strat };
+}
+
+// -- Photo uploads --
+function mbpsUpsertAttachmentKey(dealId, key) {
+  const deals = mbpsGetDeals();
+  const d = deals.find(x=>x._id===dealId);
+  if (!d) return;
+  if (!Array.isArray(d.attachments)) d.attachments = [];
+  if (!d.attachments.includes(key)) d.attachments.push(key);
+  d.updatedAt = Date.now();
+  mbpsSaveDeals(deals);
+}
+async function mbpsUploadDealPhoto(dealId) {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = 'image/*'; input.click();
+  input.onchange = async () => {
+    const file = input.files?.[0]; if(!file) return;
+    const ext = (file.type && file.type.split('/')[1]) || 'jpg';
+    const key = `deals/${dealId}/photos/${crypto.randomUUID()}.${ext}`;
+    try {
+      const putUrl = await mbpsPresign('/putUrl', key);
+      const r = await fetch(putUrl, { method:'PUT', headers:{'content-type':file.type||'image/jpeg'}, body:file });
+      if(!r.ok) throw new Error('Upload failed');
+      mbpsUpsertAttachmentKey(dealId, key);
+      const gal = document.querySelector(`[data-gallery="${dealId}"]`);
+      if (gal) mbpsRenderDealGallery(dealId, gal);
+      alert('Photo uploaded');
+    } catch(e){ alert(e.message); }
+  };
+}
+async function mbpsRenderDealGallery(dealId, container) {
+  const deals = mbpsGetDeals();
+  const d = deals.find(x=>x._id===dealId);
+  const keys = (d && d.attachments)||[];
+  if (!keys.length) { container.innerHTML = '<div style="color:#6b7280">No photos yet.</div>'; return; }
+  const grid = document.createElement('div');
+  grid.className = 'mbps-gallery-grid';
+  for (const key of keys) {
+    try {
+      const url = await mbpsPresign('/getUrl', key);
+      const fig = document.createElement('figure');
+      fig.className = 'mbps-gallery-item';
+      const img = new Image();
+      img.loading='lazy'; img.decoding='async'; img.src=url; img.alt=dealId+' photo';
+      const cap = document.createElement('figcaption');
+      cap.textContent = key.split('/').slice(-1)[0];
+      fig.append(img, cap);
+      grid.append(fig);
+    } catch(e) { /* skip */ }
+  }
+  container.replaceChildren(grid);
+}
+
+// -- Robust renderDealsTable fallback --
+(function() {
+  const orig = window.renderDealsTable;
+  window.renderDealsTable = function(...args) {
+    try {
+      if (typeof orig === 'function') return orig.apply(this, args);
+    } catch(e) {
+      console.warn('[renderDealsTable] guarded fallback:', e);
+    }
+    // Fallback minimal renderer using localStorage
+    const deals = mbpsGetDeals();
+    const tbody = document.querySelector('#dealsTbody') || document.querySelector('tbody');
+    if (!tbody) return;
+    tbody.innerHTML='';
+    deals.forEach(d=>{
+      const tr = document.createElement('tr');
+      const tdAddr = document.createElement('td');
+      tdAddr.innerHTML = `<div>${d.address||'-'}</div><div style="color:#6b7280">${d._id||''}</div>`;
+      const tdOffer = Object.assign(document.createElement('td'), {className:'right'});
+      tdOffer.textContent = '$ ' + mbpsFmt(d.offerPrice);
+      const tdArv = Object.assign(document.createElement('td'), {className:'right'});
+      tdArv.textContent = '$ ' + mbpsFmt(d.arv);
+      const tdRep = Object.assign(document.createElement('td'), {className:'right'});
+      tdRep.textContent = '$ ' + mbpsFmt(d.repairs);
+      const tdStage = document.createElement('td');
+      tdStage.textContent = d.stage || 'Lead';
+      const tdPhotos = document.createElement('td');
+      const gal = document.createElement('div');
+      gal.setAttribute('data-gallery', d._id);
+      tdPhotos.append(gal);
+      const tdAct = document.createElement('td');
+      const btnUp = document.createElement('button'); btnUp.className='btn'; btnUp.textContent='Upload Photo'; btnUp.onclick=()=>mbpsUploadDealPhoto(d._id);
+      const btnAn = document.createElement('button'); btnAn.className='btn'; btnAn.textContent='Analyze'; btnAn.onclick=()=>window.mbpsOpenAnalyzerPrefill && window.mbpsOpenAnalyzerPrefill(d);
+      tdAct.append(btnUp, btnAn);
+      tr.append(tdAddr, tdOffer, tdArv, tdRep, tdStage, tdPhotos, tdAct);
+      tbody.append(tr);
+      mbpsRenderDealGallery(d._id, gal);
+    });
+  };
+})();
+
+// -- Toolbar augmentation (adds buttons if missing) --
+document.addEventListener('DOMContentLoaded', () => {
+  const toolbar = document.querySelector('.toolbar') || document.body;
+  function addBtn(id, label, onClick, cls='btn') {
+    if (document.getElementById(id)) return;
+    const b = document.createElement('button');
+    b.id = id; b.className = cls; b.type='button'; b.textContent = label; b.style.marginLeft = '6px';
+    b.addEventListener('click', onClick);
+    toolbar.appendChild(b);
+  }
+  addBtn('syncBtn', 'Sync (S3)', async ()=>{
+    const save = confirm('OK = Save to S3, Cancel = Load from S3');
+    try { save ? await mbpsSyncSave() : await mbpsSyncLoad(); } catch(e) { alert(e.message); }
+  });
+  addBtn('evalBtn', 'Property Evaluation', ()=>{ const dlg=document.getElementById('analyzer'); if(dlg) dlg.showModal(); } , 'btn primary');
+  addBtn('analyzeBtn', 'Analyze Deal', ()=>{ const dlg=document.getElementById('analyzer'); if(dlg) dlg.showModal(); } , 'btn brand');
+});
+
+// -- Analyzer modal injection if not present --
+document.addEventListener('DOMContentLoaded', () => {
+  if (!document.getElementById('analyzer')) {
+    const tpl = document.createElement('template');
+    tpl.innerHTML = `
+<dialog id="analyzer" style="border:0;border-radius:18px;padding:0;width:min(960px,94vw);">
+  <div style="padding:14px 16px;border-bottom:1px solid rgba(148,163,184,.25);display:flex;justify-content:space-between;align-items:center;">
+    <strong>Deal Analyzer</strong>
+    <button id="closeAnalyzer" class="btn">Close</button>
+  </div>
+  <div style="padding:16px;max-height:70vh;overflow:auto;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div class="card">
+        <h4>Inputs</h4>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+          <div class="field"><label>ARV</label><input id="anArv" type="number" placeholder="220000" /></div>
+          <div class="field"><label>Repairs</label><input id="anRepairs" type="number" placeholder="35000" /></div>
+          <div class="field"><label>Assignment Fee</label><input id="anFee" type="number" placeholder="10000" value="10000" /></div>
+          <div class="field"><label>Holding %</label><input id="anHoldPct" type="number" placeholder="10" value="10" /></div>
+          <div class="field"><label>Buy & Hold Rent</label><input id="anRent" type="number" placeholder="1800" /></div>
+          <div class="field"><label>Sub2 PITI</label><input id="anPITI" type="number" placeholder="1350" /></div>
+        </div>
+        <div style="margin-top:10px"><button id="runAnalyze" class="btn">Analyze</button></div>
+      </div>
+      <div class="card">
+        <h4>Results</h4>
+        <div id="anResults" style="color:#64748b">Enter inputs and click Analyze.</div>
+      </div>
+    </div>
+  </div>
+</dialog>`;
+    document.body.appendChild(tpl.content);
+  }
+  function openAnalyzerPrefill(d) {
+    document.getElementById('anArv').value = d.arv || '';
+    document.getElementById('anRepairs').value = d.repairs || '';
+    document.getElementById('anFee').value = 10000;
+    document.getElementById('anHoldPct').value = 10;
+    document.getElementById('anRent').value = d.estimatedRent || '';
+    document.getElementById('anPITI').value = d.piti || '';
+    document.getElementById('analyzer').showModal();
+  }
+  window.mbpsOpenAnalyzerPrefill = openAnalyzerPrefill;
+  document.getElementById('closeAnalyzer')?.addEventListener('click', ()=> document.getElementById('analyzer').close());
+  document.getElementById('runAnalyze')?.addEventListener('click', ()=> {
+    const vals = {
+      arv: document.getElementById('anArv').value,
+      repairs: document.getElementById('anRepairs').value,
+      fee: document.getElementById('anFee').value,
+      holdPct: document.getElementById('anHoldPct').value,
+      rent: document.getElementById('anRent').value,
+      piti: document.getElementById('anPITI').value
+    };
+    const r = mbpsAnalyze(vals);
+    document.getElementById('anResults').innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+        <div class="field"><label>Max Offer (Wholesale)</label><div class="tag">$ ${mbpsFmt(r.maxOfferWholesale)}</div></div>
+        <div class="field"><label>Carrying Reserve</label><div class="tag">$ ${mbpsFmt(r.carrying)}</div></div>
+        <div class="field"><label>Cashflow (rent - PITI)</label><div class="tag">$ ${mbpsFmt(r.cashflow)}</div></div>
+      </div>
+      <div style="margin-top:12px"><strong>Suggested Strategy:</strong> ${r.strat}</div>`;
+  });
+});
+
+// ===== End MBPS Patch =====
+</script>
+<style>
+/* minimal gallery styles in case project CSS doesn't have them */
+.mbps-gallery-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap:10px; align-items:start; }
+.mbps-gallery-item { border:1px solid rgba(148,163,184,.25); border-radius:10px; padding:6px; background:#fff; }
+.mbps-gallery-item img { width:100%; height:120px; object-fit:cover; border-radius:6px; display:block; }
+.mbps-gallery-item figcaption { font-size:12px; color:#6b7280; margin-top:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+</style>
