@@ -3955,5 +3955,50 @@ document.addEventListener('DOMContentLoaded', () => {
 
 })();
 </script>
+<script>
+const API_BASE = "https://pocy3byloc.execute-api.us-east-1.amazonaws.com/prod";
+const USER_ID  = "owner"; // use same value on phone/desktop to share data
+
+async function presign(path, file="deals.json") {
+  const r = await fetch(`${API_BASE}${path}?userId=${encodeURIComponent(USER_ID)}&file=${encodeURIComponent(file)}`);
+  if (!r.ok) throw new Error("presign failed");
+  return (await r.json()).url;
+}
+
+async function syncSave() {
+  const deals = JSON.parse(localStorage.getItem("mbpsDeals")||"[]");
+  const url = await presign("/putUrl");
+  const res = await fetch(url, { method:"PUT", headers:{ "content-type":"application/json" }, body: JSON.stringify(deals) });
+  if (!res.ok) throw new Error("Upload failed");
+  alert("Backed up to S3");
+}
+
+async function syncLoad() {
+  const url = await presign("/getUrl");
+  const res = await fetch(url);
+  if (!res.ok) { alert("No remote file yet"); return; }
+  const deals = await res.json();
+  localStorage.setItem("mbpsDeals", JSON.stringify(deals));
+  // TODO: call your renderAll() or equivalent
+  alert("Loaded from S3");
+}
+
+// Add a toolbar button if you don't have one yet
+document.addEventListener("DOMContentLoaded", () => {
+  const toolbar = document.querySelector('#restoreBtn')?.parentElement || document.body;
+  if (!document.getElementById('syncBtn')) {
+    const b = document.createElement('button');
+    b.id = 'syncBtn';
+    b.textContent = 'Sync (S3)';
+    b.type = 'button';
+    b.style.cssText = 'margin-left:8px;padding:8px 12px;border-radius:8px;border:0;background:#6366f1;color:#fff;cursor:pointer;';
+    b.addEventListener('click', async () => {
+      const save = confirm('OK = Save to S3, Cancel = Load from S3');
+      try { save ? await syncSave() : await syncLoad(); } catch (e) { alert(e.message); }
+    });
+    toolbar.appendChild(b);
+  }
+});
+</script>
 </body>
 </html>
