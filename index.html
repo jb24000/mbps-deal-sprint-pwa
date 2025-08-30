@@ -1786,8 +1786,23 @@ Seller: ____________________________ Date: ____________`;
       document.querySelector('.tab[data-tab="contracts"]')?.click();
     });
 
-    function renderDealsTable(rows, columns, tableEl) {
+    function renderDealsTable(rows, columns, tableRef) {
   try {
+    // Resolve the table element from different kinds of inputs
+    let tableEl = tableRef;
+    if (typeof tableRef === 'string') {
+      tableEl = document.querySelector(tableRef);
+    }
+    if (!(tableEl instanceof HTMLTableElement)) {
+      // Try sensible fallbacks (common IDs/classes/attributes)
+      tableEl = document.querySelector('table#dealsTable, table.deals-table, table[data-table="deals"], table[data-role="deals"], table[data-table], table');
+    }
+    if (!(tableEl instanceof HTMLTableElement)) {
+      console.warn('[renderDealsTable] No valid <table> element found. Skipping render.');
+      return;
+    }
+
+    // Normalize columns
     if (!Array.isArray(columns)) columns = [];
     const cols = columns
       .filter(Boolean)
@@ -1799,7 +1814,9 @@ Seller: ____________________________ Date: ____________`;
       }))
       .filter(c => c.key);
 
-    const thead = tableEl.tHead || tableEl.createTHead();
+    // Build <thead>
+    let thead = tableEl.tHead;
+    if (!thead) thead = tableEl.createTHead();
     thead.innerHTML = '';
     const hr = thead.insertRow();
     cols.forEach(col => {
@@ -1809,7 +1826,9 @@ Seller: ____________________________ Date: ____________`;
       hr.appendChild(th);
     });
 
-    const tbody = tableEl.tBodies[0] || tableEl.createTBody();
+    // Build <tbody>
+    let tbody = tableEl.tBodies[0];
+    if (!tbody) tbody = tableEl.createTBody();
     tbody.innerHTML = '';
 
     (rows || []).forEach((row) => {
@@ -1826,6 +1845,7 @@ Seller: ____________________________ Date: ____________`;
     console.warn('[renderDealsTable] guarded fallback:', err);
   }
 }
+
 
 
     function loadDealIntoForm(idx){
