@@ -2994,7 +2994,25 @@ function renderExtendedPipeline() {
           <button class="btn btn-outline text-xs px-2 py-1 flex-1 analyze-ext-deal">Analyze</button>
         </div>
       `;
+
+      // Add event listeners for the buttons
+      const editBtn = card.querySelector('.edit-ext-deal');
+      const analyzeBtn = card.querySelector('.analyze-ext-deal');
       
+      if (editBtn) {
+        editBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          editExtendedDeal(deal.id);
+        });
+      }
+      
+      if (analyzeBtn) {
+        analyzeBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          analyzeDeal(deal);
+        });
+      }
+
       // Add drag and drop
       card.addEventListener('dragstart', (e) => {
         e.dataTransfer.setData('text/plain', deal.id);
@@ -3117,6 +3135,295 @@ function renderAll(){
         lucide.createIcons();
       }
     });
+    
+    // ========= ANALYZE DEAL FUNCTION =========
+    function analyzeDeal(deal) {
+      // Calculate key metrics
+      const purchasePrice = deal.listPrice || 0;
+      const arv = deal.arv || 0;
+      const repairs = deal.repairs || 0;
+      const commission = (deal.commission || 3) / 100;
+      
+      // Calculate using 70% rule
+      const seventyPercentARV = arv * 0.7;
+      const maxAllowableOffer = seventyPercentARV - repairs;
+      
+      // Calculate potential profits for different strategies
+      const wholesaleFee = 10000; // Typical wholesale fee
+      const wholesaleProfit = maxAllowableOffer - purchasePrice;
+      
+      // Fix & Flip calculations
+      const holdingCosts = purchasePrice * 0.06; // 6% for 6 months typical
+      const closingCosts = arv * 0.03; // 3% closing costs
+      const sellingCosts = arv * commission; // Agent commission
+      const flipProfit = arv - purchasePrice - repairs - holdingCosts - closingCosts - sellingCosts;
+      
+      // ROI calculations
+      const totalInvestment = purchasePrice + repairs;
+      const flipROI = totalInvestment > 0 ? (flipProfit / totalInvestment * 100) : 0;
+      const wholesaleROI = purchasePrice > 0 ? (wholesaleFee / purchasePrice * 100) : 0;
+      
+      // Determine deal quality
+      const dealQuality = purchasePrice <= maxAllowableOffer ? 'good' : 'risky';
+      const dealIcon = dealQuality === 'good' ? '✅' : '⚠️';
+      
+      // Create modal overlay
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+      modal.style.backdropFilter = 'blur(4px)';
+      
+      // Create modal content
+      const modalContent = document.createElement('div');
+      modalContent.className = 'bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-slideIn';
+      modalContent.style.animation = 'slideIn 0.3s ease-out';
+      
+      modalContent.innerHTML = `
+        <div class="sticky top-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 rounded-t-2xl">
+          <div class="flex justify-between items-start">
+            <div>
+              <h2 class="text-2xl font-bold mb-2">Deal Analysis ${dealIcon}</h2>
+              <p class="text-blue-100">${deal.address}</p>
+            </div>
+            <button class="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition-colors" id="closeModal">
+              <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M6 6l12 12M18 6l-12 12"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        
+        <div class="p-6 space-y-4">
+          <!-- Input Summary -->
+          <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
+            <h3 class="font-semibold text-gray-700 dark:text-gray-200 mb-3 flex items-center">
+              <span class="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-2">1</span>
+              Input Numbers
+            </h3>
+            <div class="grid grid-cols-2 gap-3 text-sm">
+              <div class="flex justify-between">
+                <span class="text-gray-600 dark:text-gray-400">List Price:</span>
+                <span class="font-medium">${money(purchasePrice)}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600 dark:text-gray-400">ARV:</span>
+                <span class="font-medium">${money(arv)}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600 dark:text-gray-400">Est. Repairs:</span>
+                <span class="font-medium">${money(repairs)}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600 dark:text-gray-400">Commission:</span>
+                <span class="font-medium">${(commission * 100).toFixed(1)}%</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 70% Rule Analysis -->
+          <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4">
+            <h3 class="font-semibold text-gray-700 dark:text-gray-200 mb-3 flex items-center">
+              <span class="bg-yellow-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-2">2</span>
+              70% Rule Analysis
+            </h3>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between items-center">
+                <span class="text-gray-600 dark:text-gray-400">70% of ARV:</span>
+                <span class="font-medium">${money(seventyPercentARV)}</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-gray-600 dark:text-gray-400">Less Repairs:</span>
+                <span class="font-medium text-red-600">-${money(repairs)}</span>
+              </div>
+              <div class="border-t pt-2 mt-2">
+                <div class="flex justify-between items-center">
+                  <span class="font-semibold">Max Allowable Offer:</span>
+                  <span class="font-bold text-lg ${dealQuality === 'good' ? 'text-green-600' : 'text-orange-600'}">
+                    ${money(maxAllowableOffer)}
+                  </span>
+                </div>
+                <div class="mt-2 p-2 rounded-lg ${dealQuality === 'good' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">
+                  ${dealQuality === 'good' 
+                    ? `✅ Deal meets 70% rule (${money(maxAllowableOffer - purchasePrice)} under MAO)`
+                    : `⚠️ Deal exceeds 70% rule by ${money(purchasePrice - maxAllowableOffer)}`}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Strategy Comparison -->
+          <div class="grid md:grid-cols-2 gap-4">
+            <!-- Wholesale Strategy -->
+            <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4">
+              <h3 class="font-semibold text-gray-700 dark:text-gray-200 mb-3 flex items-center">
+                <span class="bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-2">3</span>
+                Wholesale Strategy
+              </h3>
+              <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                  <span class="text-gray-600 dark:text-gray-400">Purchase:</span>
+                  <span>${money(purchasePrice)}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600 dark:text-gray-400">Sell to Investor:</span>
+                  <span>${money(maxAllowableOffer)}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600 dark:text-gray-400">Assignment Fee:</span>
+                  <span>${money(wholesaleFee)}</span>
+                </div>
+                <div class="border-t pt-2 mt-2">
+                  <div class="flex justify-between items-center">
+                    <span class="font-semibold">Profit:</span>
+                    <span class="font-bold text-green-600">${money(wholesaleProfit)}</span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="font-semibold">ROI:</span>
+                    <span class="font-bold">${wholesaleROI.toFixed(1)}%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Fix & Flip Strategy -->
+            <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+              <h3 class="font-semibold text-gray-700 dark:text-gray-200 mb-3 flex items-center">
+                <span class="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-2">4</span>
+                Fix & Flip Strategy
+              </h3>
+              <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                  <span class="text-gray-600 dark:text-gray-400">Purchase:</span>
+                  <span>${money(purchasePrice)}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600 dark:text-gray-400">Repairs:</span>
+                  <span>${money(repairs)}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600 dark:text-gray-400">Holding (6mo):</span>
+                  <span>${money(holdingCosts)}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600 dark:text-gray-400">Closing:</span>
+                  <span>${money(closingCosts)}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600 dark:text-gray-400">Selling:</span>
+                  <span>${money(sellingCosts)}</span>
+                </div>
+                <div class="border-t pt-2 mt-2">
+                  <div class="flex justify-between items-center">
+                    <span class="font-semibold">Profit:</span>
+                    <span class="font-bold text-blue-600">${money(flipProfit)}</span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="font-semibold">ROI:</span>
+                    <span class="font-bold">${flipROI.toFixed(1)}%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Recommendation -->
+          <div class="bg-gradient-to-r ${flipProfit > wholesaleFee ? 'from-blue-500 to-blue-600' : 'from-green-500 to-green-600'} text-white rounded-xl p-4">
+            <h3 class="font-semibold mb-2">💡 Recommendation</h3>
+            <p class="text-sm">
+              ${flipProfit > wholesaleFee 
+                ? `Fix & Flip offers ${money(flipProfit - wholesaleFee)} more profit than wholesaling. With ${flipROI.toFixed(1)}% ROI, this property has strong flip potential if you have the capital and time.`
+                : `Wholesale this deal for a quick ${money(wholesaleFee)} profit. The margins are too thin for flipping, but it's perfect for a cash buyer looking for a rental.`}
+            </p>
+          </div>
+          
+          <!-- Action Buttons -->
+          <div class="flex gap-3 pt-2">
+            <button onclick="this.closest('.fixed').remove()" class="flex-1 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 py-2 px-4 rounded-lg transition-colors">
+              Close
+            </button>
+            <button onclick="editExtendedDeal('${deal.id}')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors">
+              Edit Deal
+            </button>
+            <button onclick="window.print()" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg transition-colors">
+              Print Analysis
+            </button>
+          </div>
+        </div>
+      `;
+      
+      // Add animation styles if not already present
+      if (!document.getElementById('analyzeModalStyles')) {
+        const style = document.createElement('style');
+        style.id = 'analyzeModalStyles';
+        style.textContent = `
+          @keyframes slideIn {
+            from {
+              opacity: 0;
+              transform: translateY(-20px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+      
+      modal.appendChild(modalContent);
+      document.body.appendChild(modal);
+      
+      // Event listeners
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.remove();
+        }
+      });
+      
+      modalContent.querySelector('#closeModal').addEventListener('click', () => {
+        modal.remove();
+      });
+      
+      // Keyboard escape to close
+      const escapeHandler = (e) => {
+        if (e.key === 'Escape') {
+          modal.remove();
+          document.removeEventListener('keydown', escapeHandler);
+        }
+      };
+      document.addEventListener('keydown', escapeHandler);
+    }
+    
+    // ========= EDIT EXTENDED DEAL FUNCTION =========
+    function editExtendedDeal(dealId) {
+      // Close the modal if it's open
+      document.querySelector('.fixed')?.remove();
+      
+      const deal = state.extendedDeals.find(d => d.id === dealId);
+      if (!deal) return;
+      
+      const newAddress = prompt('Property Address:', deal.address);
+      if (newAddress === null) return;
+      
+      const newListPrice = prompt('List Price:', deal.listPrice);
+      const newARV = prompt('ARV:', deal.arv);
+      const newRepairs = prompt('Repair Costs:', deal.repairs);
+      const newTimeline = prompt('Timeline (days):', deal.timeline);
+      const newCommission = prompt('Commission %:', deal.commission || 3);
+      
+      deal.address = newAddress || deal.address;
+      deal.listPrice = Number(newListPrice) || deal.listPrice;
+      deal.arv = Number(newARV) || deal.arv;
+      deal.repairs = Number(newRepairs) || deal.repairs;
+      deal.timeline = Number(newTimeline) || deal.timeline;
+      deal.commission = Number(newCommission) || deal.commission;
+      
+      save('extendedDeals', state.extendedDeals);
+      renderExtendedPipeline();
+      
+      // Re-open the analysis with updated data
+      analyzeDeal(deal);
+    }
+    
   </script>
 </body>
 </html>
