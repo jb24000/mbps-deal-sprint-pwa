@@ -1,16 +1,11 @@
-/* eslint-disable no-restricted-globals */
-const VERSION = 'v1.1.1'; // bump so clients get the new cache
+const VERSION = 'v1.1.1';
 const CACHE = `mbps-ds-${VERSION}`;
-
-// EXACT files that exist in your repo:
 const ASSETS = [
   'index.html',
   'style.css',
   'app.js',
   'pwa.js',
   'manifest.json',
-
-  // icons/ (all present per your list)
   'icons/icon-72.png',
   'icons/icon-96.png',
   'icons/icon-128.png',
@@ -22,6 +17,7 @@ const ASSETS = [
   'icons/icon-512.png',
   'icons/icon-512-maskable.png'
 ];
+
 
 // keep the rest of your SW the same:
 self.addEventListener('install', (event) => {
