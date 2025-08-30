@@ -1786,44 +1786,47 @@ Seller: ____________________________ Date: ____________`;
       document.querySelector('.tab[data-tab="contracts"]')?.click();
     });
 
-    function renderDealsTable(){
-      const tbody = document.getElementById('dealRows');
-      if(!tbody) return;
-      const q=(document.getElementById('search')?.value||'').toLowerCase();
-      const fs=document.getElementById('filterStatus')?.value;
-      tbody.innerHTML='';
-      state.deals
-        .filter(d=>!fs||d.status===fs)
-        .filter(d=> d.propertyAddress.toLowerCase().includes(q) || (d.sellerNames||'').toLowerCase().includes(q))
-        .forEach((d,idx)=>{
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td class="py-2 pr-4">${d.propertyAddress}</td>
-            <td class="py-2 pr-4">${d.sellerNames||''}</td>
-            <td class="py-2 pr-4">${money(d.purchasePrice)}</td>
-            <td class="py-2 pr-4">${money(d.fee||0)}</td>
-            <td class="py-2 pr-4"><span class="badge ${STATUS_MAP[d.status].cls}">${STATUS_MAP[d.status].label}</span></td>
-            <td class="py-2 pr-4 flex gap-2">
-              <button class="btn btn-outline text-xs px-2 py-1 gen">PDF</button>
-              <button class="btn btn-outline text-xs px-2 py-1 edit">Edit</button>
-              <button class="btn btn-outline text-xs px-2 py-1 del">Delete</button>
-            </td>
-          `;
-          tr.querySelector('.gen').onclick = async ()=>{
-            (await generatePdf(d, { templateKey: d.template||'standard' })).save(`Contract_${d.propertyAddress.replaceAll(' ','_')}.pdf`);
-          };
-          tr.querySelector('.edit').onclick = ()=> loadDealIntoForm(idx);
-          tr.querySelector('.del').onclick = ()=>{
-            if(confirm('Delete this deal?')){
-              state.deals.splice(idx,1);
-              save('deals',state.deals);
-              renderDealsTable();
-              renderPipeline();
-            }
-          };
-          tbody.appendChild(tr);
-        });
-    }
+    function renderDealsTable(rows, columns, tableEl) {
+  try {
+    if (!Array.isArray(columns)) columns = [];
+    const cols = columns
+      .filter(Boolean)
+      .map(c => ({
+        key: c.key ?? c.id ?? c.name ?? '',
+        header: c.header ?? c.title ?? '',
+        cls: c.cls ?? c.className ?? '',
+        format: typeof c.format === 'function' ? c.format : (v) => (v ?? '')
+      }))
+      .filter(c => c.key);
+
+    const thead = tableEl.tHead || tableEl.createTHead();
+    thead.innerHTML = '';
+    const hr = thead.insertRow();
+    cols.forEach(col => {
+      const th = document.createElement('th');
+      th.textContent = col.header || col.key;
+      if (col.cls) th.className = col.cls;
+      hr.appendChild(th);
+    });
+
+    const tbody = tableEl.tBodies[0] || tableEl.createTBody();
+    tbody.innerHTML = '';
+
+    (rows || []).forEach((row) => {
+      const tr = tbody.insertRow();
+      cols.forEach((col) => {
+        const td = tr.insertCell();
+        const raw = row?.[col.key];
+        const val = col.format(raw, row, col);
+        td.textContent = (val === undefined || val === null) ? '' : String(val);
+        if (col.cls) td.className = col.cls;
+      });
+    });
+  } catch (err) {
+    console.warn('[renderDealsTable] guarded fallback:', err);
+  }
+}
+
 
     function loadDealIntoForm(idx){
       const d = state.deals[idx];
@@ -3425,13 +3428,10 @@ function renderAll(){
     }
     
   </script>
-
 <script>
-// Minimal safety: set type="button" on buttons without type
 document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('button:not([type])').forEach(b => b.setAttribute('type','button'));
+  try { document.querySelectorAll('button:not([type])').forEach(b => b.setAttribute('type','button')); } catch(e){}
 });
 </script>
-
 </body>
 </html>
