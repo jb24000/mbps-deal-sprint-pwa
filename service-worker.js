@@ -1,20 +1,46 @@
 /* eslint-disable no-restricted-globals */
-const VERSION = 'v1.1.0';
+const VERSION = 'v1.1.1'; // bump so clients get the new cache
 const CACHE = `mbps-ds-${VERSION}`;
+
+// EXACT files that exist in your repo:
 const ASSETS = [
-  'index.html','style.css','app.js','pwa.js','manifest.json',
-  'icons/icon-192.png','icons/icon-512.png','icons/apple-180.png','icons/logo-192.png'
+  'index.html',
+  'style.css',
+  'app.js',
+  'pwa.js',
+  'manifest.json',
+
+  // icons/ (all present per your list)
+  'icons/icon-72.png',
+  'icons/icon-96.png',
+  'icons/icon-128.png',
+  'icons/icon-144.png',
+  'icons/icon-152.png',
+  'icons/icon-192.png',
+  'icons/icon-192-maskable.png',
+  'icons/icon-384.png',
+  'icons/icon-512.png',
+  'icons/icon-512-maskable.png'
 ];
 
+// keep the rest of your SW the same:
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE).then(cache => cache.addAll(ASSETS.map(a => new URL(a, self.registration.scope)))).then(()=>self.skipWaiting())
+    caches
+      .open(CACHE)
+      .then(cache => cache.addAll(ASSETS.map(a => new URL(a, self.registration.scope))))
+      .then(() => self.skipWaiting())
   );
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.filter(k => k.startsWith('mbps-ds-') && k !== CACHE).map(k => caches.delete(k))))
+    caches.keys().then(keys =>
+      Promise.all(keys
+        .filter(k => k.startsWith('mbps-ds-') && k !== CACHE)
+        .map(k => caches.delete(k))
+      )
+    )
   );
   self.clients.claim();
 });
@@ -22,10 +48,8 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   const url = new URL(req.url);
-  // Only handle GET and same-origin
   if (req.method !== 'GET' || url.origin !== self.location.origin) return;
 
-  // Cache-first; fallback to index for navigations
   event.respondWith(
     caches.match(req).then(cached => {
       if (cached) return cached;
@@ -36,10 +60,11 @@ self.addEventListener('fetch', (event) => {
         }
         return res;
       }).catch(() => {
-        if (req.mode === 'navigate' || (req.headers.get('accept')||'').includes('text/html')) {
+        const accept = req.headers.get('accept') || '';
+        if (req.mode === 'navigate' || accept.includes('text/html')) {
           return caches.match(new URL('index.html', self.registration.scope));
         }
-        return new Response('', {status: 504});
+        return new Response('', { status: 504 });
       });
     })
   );
