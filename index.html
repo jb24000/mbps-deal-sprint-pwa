@@ -5741,20 +5741,20 @@ function renderKanban() {
       });
     });
 
-    board.querySelectorAll('.kb-call').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        const id = btn.dataset.id;
-        const d = (getLocal().deals||[]).find(x => x && x._id===id);
-        if (d && d.phone) location.href = \`tel:\${d.phone}\`; else alert('No phone on this deal.');
-      });
-    });
-    board.querySelectorAll('.kb-sms').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        const id = btn.dataset.id;
-        const d = (getLocal().deals||[]).find(x => x && x._id===id);
-        if (d && d.phone) location.href = \`sms:\${d.phone}\`; else alert('No phone on this deal.');
-      });
-    });
+ board.querySelectorAll('.kb-call').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const id = btn.dataset.id;
+    const d = (getLocal().deals||[]).find(x => x && x._id===id);
+    if (d && d.phone) location.href = `tel:${d.phone}`; else alert('No phone on this deal.');
+  });
+});
+board.querySelectorAll('.kb-sms').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const id = btn.dataset.id;
+    const d = (getLocal().deals||[]).find(x => x && x._id===id);
+    if (d && d.phone) location.href = `sms:${d.phone}`; else alert('No phone on this deal.');
+  });
+});
     board.querySelectorAll('.kb-nextaction').forEach(btn=>{
       btn.addEventListener('click', ()=>{
         const id = btn.dataset.id;
