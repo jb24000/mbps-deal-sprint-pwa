@@ -5755,24 +5755,25 @@ board.querySelectorAll('.kb-sms').forEach(btn=>{
     if (d && d.phone) location.href = `sms:${d.phone}`; else alert('No phone on this deal.');
   });
 });
-    board.querySelectorAll('.kb-nextaction').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        const id = btn.dataset.id;
-        const state = getLocal();
-        const deals = JSON.parse(localStorage.getItem('deals') || '[]');
-        const d = deals.find(x => x && x._id===id);
-        if (!d) return;
-        const action = prompt('Next Action (e.g., Call, Send Offer, Follow-up):', d.nextAction || '');
-        if (action===null) return;
-        const when = prompt('Next Action Date (YYYY-MM-DD):', d.nextActionDate ? new Date(d.nextActionDate).toISOString().slice(0,10) : '');
-        d.nextAction = (action||'').trim();
-        if (when) d.nextActionDate = new Date(when).getTime();
-        d.updatedAt = Date.now();
-      });
-    });
-  }
+board.querySelectorAll('.kb-nextaction').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const id = btn.dataset.id;
+    const state = getLocal();
+    const deals = JSON.parse(localStorage.getItem('deals') || '[]');
+    const d = deals.find(x => x && x._id===id);
+    if (!d) return;
+    const action = prompt('Next Action (e.g., Call, Send Offer, Follow-up):', d.nextAction || '');
+    if (action===null) return;
+    const when = prompt('Next Action Date (YYYY-MM-DD):', d.nextActionDate ? new Date(d.nextActionDate).toISOString().slice(0,10) : '');
+    d.nextAction = (action||'').trim();
+    if (when) d.nextActionDate = new Date(when).getTime();
+    d.updatedAt = Date.now();
+  });
+});
+} // <-- Make sure this closing brace exists for renderKanban function
 
- document.addEventListener('DOMContentLoaded', async ()=>{
+document.addEventListener('DOMContentLoaded', async ()=>{
+
   // Initialize S3 Sync
   if (typeof S3Sync !== 'undefined') {
     S3Sync.init();
