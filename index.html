@@ -5092,18 +5092,41 @@ function updateLiveAnalysis() {
   }
 
   // Tabs behavior
-  function showTab(name){
-    document.querySelectorAll('#propertyEvaluation .pe-pane').forEach(p=>p.hidden=true);
-    document.getElementById('pe-'+name).hidden=false;
-    document.querySelectorAll('#propertyEvaluation .pe-tabs .tab').forEach(b=>{
-      b.classList.toggle('active', b.dataset.tab===name);
-      b.setAttribute('aria-selected', b.dataset.tab===name ? 'true' : 'false');
-    });
+// Find this section around line 5097 and replace the showTab function:
+<script id="mbps-durable-showtab">
+(function(){
+  function safeActivate(id){
+    try{
+      const panels = document.querySelectorAll('[data-tab-panel], .tab-panel, section.tab-panel');
+      panels.forEach(p => { 
+        try{ 
+          if(p) p.hidden = true; // Add null check here
+        }catch(_){} 
+      });
+      const target = document.getElementById(id) || document.querySelector(`[data-tab-panel="${id}"]`) || null;
+      if (!target) { 
+        console.warn('[showTab] target not found:', id); 
+        return; 
+      }
+      target.hidden = false;
+      const tabs = document.querySelectorAll('[data-tab], .tab, [role="tab"]');
+      tabs.forEach(btn => {
+        if (!btn) return; // Add null check
+        const match = (btn.getAttribute('data-tab') === id) ||
+                      (btn.getAttribute('href') === `#${id}`) ||
+                      (btn.id && btn.id === id);
+        btn.classList.toggle('active', !!match);
+      });
+    }catch(e){ 
+      console.warn('[showTab] safeActivate error:', e); 
+    }
   }
-  document.querySelectorAll('#propertyEvaluation .pe-tabs .tab').forEach(btn=>{
-    btn.addEventListener('click', ()=> showTab(btn.dataset.tab));
-  });
-  showTab('single');
+  
+  window.showTab = function(id){ 
+    safeActivate(id); 
+  };
+})();
+</script>
 
   // ---------- Single-family (MAO) ----------
   function analyzeSF(){
@@ -5656,9 +5679,13 @@ function updateLiveAnalysis() {
     location.reload(); // Reload to apply new user context
 };
 
- function renderKanban() {
+function renderKanban() {
     const board = document.getElementById('kanbanBoard') || document.querySelector('.kanban');
     if (!board) return;
+    
+    // Get deals from localStorage
+    const deals = JSON.parse(localStorage.getItem('deals') || '[]');
+    
     board.innerHTML = STAGES.map(s => `
       <div class="kb-col" data-stage="${s}">
         <div class="kb-hd"><span>${s}</span><span class="kb-count">${deals.filter(d=> (d.stage||'New Lead')===s).length}</span></div>
@@ -5667,35 +5694,37 @@ function updateLiveAnalysis() {
     `).join("");
 
     STAGES.forEach(stage => {
-      const list = board.querySelector(`.kb-list[data-drop="\${stage}"]`);
+      const list = board.querySelector(`.kb-list[data-drop="${stage}"]`);
+      if (!list) return; // Add safety check
+      
       deals.filter(d=> (d.stage||'New Lead')===stage).forEach(d => {
         const card = document.createElement('div');
         card.className = 'kb-card';
         card.draggable = true;
         card.dataset.id = d._id;
         const badges = [];
-        if (d.offerPrice) badges.push(\`<span class="kb-badge">$\${isFinite(d.offerPrice)? Math.round(d.offerPrice).toLocaleString() : d.offerPrice}</span>\`);
-        if (d.arv) badges.push(\`<span class="kb-badge">ARV $\${isFinite(d.arv)? Math.round(d.arv).toLocaleString() : d.arv}</span>\`);
-        if (d.multi?.dscr) badges.push(\`<span class="kb-badge">DSCR \${Number(d.multi.dscr).toFixed(2)}</span>\`);
-        if (d.arbitrage?.profit) badges.push(\`<span class="kb-badge">Profit $\${isFinite(d.arbitrage.profit)? Math.round(d.arbitrage.profit).toLocaleString() : d.arbitrage.profit}</span>\`);
+        if (d.offerPrice) badges.push(`<span class="kb-badge">$${isFinite(d.offerPrice)? Math.round(d.offerPrice).toLocaleString() : d.offerPrice}</span>`);
+        if (d.arv) badges.push(`<span class="kb-badge">ARV $${isFinite(d.arv)? Math.round(d.arv).toLocaleString() : d.arv}</span>`);
+        if (d.multi?.dscr) badges.push(`<span class="kb-badge">DSCR ${Number(d.multi.dscr).toFixed(2)}</span>`);
+        if (d.arbitrage?.profit) badges.push(`<span class="kb-badge">Profit $${isFinite(d.arbitrage.profit)? Math.round(d.arbitrage.profit).toLocaleString() : d.arbitrage.profit}</span>`);
         const nextDt = d.nextActionDate ? new Date(d.nextActionDate).toLocaleDateString() : '';
-        card.innerHTML = \`
-          <div class="kb-title"><div class="kb-pri">\${d.title || d.address || d.propertyAddress || 'Untitled'}</div><div class="kb-next">\${nextDt}</div></div>
-          <div class="kb-addr">\${d.address || d.propertyAddress || ''}</div>
-          <div class="kb-meta">\${badges.join(' ')}</div>
+        card.innerHTML = `
+          <div class="kb-title"><div class="kb-pri">${d.title || d.address || d.propertyAddress || 'Untitled'}</div><div class="kb-next">${nextDt}</div></div>
+          <div class="kb-addr">${d.address || d.propertyAddress || ''}</div>
+          <div class="kb-meta">${badges.join(' ')}</div>
           <div class="kb-actions">
-            <button class="btn kb-call" data-id="\${d._id}">Call</button>
-            <button class="btn kb-sms" data-id="\${d._id}">Text</button>
-            <button class="btn kb-nextaction" data-id="\${d._id}">\${d.nextAction || 'Next Action'}</button>
+            <button class="btn kb-call" data-id="${d._id}">Call</button>
+            <button class="btn kb-sms" data-id="${d._id}">Text</button>
+            <button class="btn kb-nextaction" data-id="${d._id}">${d.nextAction || 'Next Action'}</button>
           </div>
           <div class="kb-gloss"><strong>Helper:</strong> ARV=After Repair Value · MAO=Max Allowable Offer · NOI=Net Operating Income · Cap=Cap Rate · DSCR=Debt Service Coverage Ratio · CoC=Cash-on-Cash Return · ADR=Avg Daily Rate · PITI=Principal+Interest+Taxes+Insurance · EGI=Effective Gross Income · LTV=Loan-to-Value.</div>
-        \`;
+        `;
         card.addEventListener('dragstart', e => { card.classList.add('dragging'); e.dataTransfer.setData('text/plain', d._id); });
         card.addEventListener('dragend', ()=> card.classList.remove('dragging'));
         list.appendChild(card);
       });
     });
-
+}
     board.querySelectorAll('.kb-list').forEach(zone => {
       zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.background='#f8fafc'; });
       zone.addEventListener('dragleave', () => { zone.style.background=''; });
