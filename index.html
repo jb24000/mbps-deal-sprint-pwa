@@ -1,6 +1,35 @@
 <!DOCTYPE html>
 <html lang="en" class="">
 <head>
+<script id="mbps-early-shim">
+(function(){
+  const pending = [];
+  let domReady = false;
+  function safeShow(id){
+    try{
+      const panels = document.querySelectorAll('[data-tab-panel], .tab-panel, section.tab-panel');
+      panels.forEach(p => { try{ p.hidden = true; }catch(_){} });
+      const target = document.getElementById(id) || document.querySelector(`[data-tab-panel="${id}"]`) || null;
+      if (!target) { if (!domReady) pending.push(id); return; }
+      target.hidden = false;
+      const tabs = document.querySelectorAll('[data-tab], .tab, [role="tab"]');
+      tabs.forEach(btn => {
+        const match = (btn.getAttribute('data-tab') === id) ||
+                      (btn.getAttribute('href') === `#${id}`) ||
+                      (btn.id && btn.id === id);
+        btn.classList.toggle('active', !!match);
+      });
+    }catch(e){ console.warn('[early showTab] guarded:', e); }
+  }
+  window.showTab = safeShow;
+  document.addEventListener('DOMContentLoaded', ()=>{
+    domReady = true;
+    const seen = new Set();
+    pending.forEach(id => { if (!seen.has(id)) { seen.add(id); safeShow(id); } });
+  });
+})();
+</script>
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MB Property Solutions - Deal Sprint</title>
@@ -192,6 +221,25 @@ body.dark th, body.dark td, [data-theme="dark"] th, [data-theme="dark"] td {
 body.dark .kb-gloss, [data-theme="dark"] .kb-gloss {
   color: #b6bcc8;
   border-top-color: rgba(231,233,239,0.15);
+}
+</style>
+
+
+<style id="mbps-ui-hotfix-style">
+/* Agent search alignment + responsiveness */
+.agent-search-input{
+  min-width: 240px;
+  max-width: 320px;
+  width: 28ch;
+  float: right;
+  margin-left: auto;
+}
+@media (max-width: 768px){
+  .agent-search-input{ float:none; width: 100%; max-width: 100%; }
+}
+/* Ensure the blank PE button (now labeled) uses the blue primary style if available */
+button#btnPropertyEvaluation, .btn#btnPropertyEvaluation{
+  border-color: rgba(0,168,255,.25);
 }
 </style>
 
@@ -5205,6 +5253,87 @@ Notes:
         };
       }
     } catch(_) {}
+  });
+})();
+</script>
+
+
+<script id="mbps-late-guards">
+(function(){
+  try {
+    const tryWrap = ()=>{
+      if (!window.renderDealsTable) return false;
+      if (window.renderDealsTable._wrapped) return true;
+      const orig = window.renderDealsTable;
+      window.renderDealsTable = function(){
+        try {
+          const tbl = document.getElementById('dealsTable') || document.querySelector('table#dealsTable, .deals-table');
+          if (tbl && !tbl.tHead) try{ tbl.createTHead(); }catch(_){}
+          if (Array.isArray(window.dealColumns)) {
+            window.dealColumns = window.dealColumns.filter(Boolean).map(c => {
+              if (typeof c !== 'object') return { key:String(c), title:String(c), cls:'' };
+              if (!('cls' in c)) c.cls = '';
+              if (!('key' in c) && c.title) c.key = String(c.title).toLowerCase().replace(/\s+/g,'_');
+              return c;
+            });
+          }
+          return orig.apply(this, arguments);
+        } catch (e) {
+          console.warn('[renderDealsTable] guarded fallback:', e);
+        }
+      };
+      window.renderDealsTable._wrapped = true;
+      return true;
+    };
+    if (!tryWrap()) { document.addEventListener('DOMContentLoaded', tryWrap); }
+  } catch(_) {}
+})();
+</script>
+
+
+<script id="mbps-ui-hotfix-PE-and-agent-search">
+(function(){
+  document.addEventListener('DOMContentLoaded', () => {
+    // -------- Wire/label the blank button to Property Evaluation --------
+    const peModal = document.getElementById('peModal') || document.getElementById('propertyEvalModal');
+    function openPE(){
+      if (!peModal || !peModal.showModal) return alert('Property Evaluation panel not found.');
+      // close any open dialogs first
+      document.querySelectorAll('dialog[open]').forEach(d => { if (d !== peModal) try{ d.close(); }catch(_){} });
+      peModal.showModal();
+    }
+    // Find any blank button sitting next to "Analyze Deal" and "Schedule Follow-up"
+    const analyzeLabels = ['Analyze Deal','Analyze','Analyze Property','Analyze This Deal'];
+    const followLabels  = ['Schedule Follow-up','Follow-up','Schedule'];
+    const btns = Array.from(document.querySelectorAll('.btn, button')).filter(b => (b.textContent||'').trim() === '');
+    btns.forEach(b => {
+      const sibs = Array.from(b.parentElement ? b.parentElement.querySelectorAll('button,.btn') : [])
+                       .map(x => (x.textContent||'').trim());
+      const hasAnalyze = sibs.some(t => analyzeLabels.includes(t));
+      const hasFollow  = sibs.some(t => followLabels.includes(t));
+      if (hasAnalyze && hasFollow) {
+        b.textContent = 'Property Evaluation';
+        b.id = b.id || 'btnPropertyEvaluation';
+        b.addEventListener('click', (e)=>{ e.preventDefault(); openPE(); }, { once:false });
+      }
+    });
+    // Also catch any explicit placeholder buttons by aria-label or data-action
+    document.querySelectorAll('button[aria-label="property-evaluation"], button[data-action="property-evaluation"]').forEach(b=>{
+      if (!(b.textContent||'').trim()) b.textContent = 'Property Evaluation';
+      b.addEventListener('click', (e)=>{ e.preventDefault(); openPE(); }, { once:false });
+    });
+
+    // -------- Agent Network search input alignment --------
+    // Try to style the search input with a consistent class and width
+    const agentScope = document.getElementById('agentNetwork') || document.querySelector('#agentNetworkTab, [data-tab-panel="agents"], #agents');
+    if (agentScope){
+      // Heuristically find a search input in the agent header area
+      const searchInput = agentScope.querySelector('input[placeholder*="Search agent"], input[placeholder*="Search"]') ||
+                          agentScope.querySelector('input[type="search"]');
+      if (searchInput){
+        searchInput.classList.add('agent-search-input');
+      }
+    }
   });
 })();
 </script>
