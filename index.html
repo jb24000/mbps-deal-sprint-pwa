@@ -1521,47 +1521,47 @@ const S3Sync = {
     this.updateIndicator();
   },
   
-  async push() {
-    if (!this.isDirty) return true;
+async push() {
+  if (!this.isDirty) return true;
+  
+  try {
+    const url = await this.getPresignedUrl('put');
     
-    try {
-      const url = await this.getPresignedUrl('put');
-      
-      // Collect ALL data from your various state objects
-      const fullData = {
-        deals: state.deals || [],
-        leads: state.leads || [],
-        buyers: state.buyers || [],
-        agents: state.agents || [],
-        contracts: state.contracts || [],
-        extendedDeals: state.extendedDeals || [],
-        sprintTasks: state.sprintTasks || [],
-        settings: state.settings || {},
-        goals: state.goals || {},
-        timestamp: Date.now()
-      };
-      
-      const response = await fetch(url, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(fullData)
-      });
-      
-      if (response.ok) {
-        this.isDirty = false;
-        this.lastSync = Date.now();
-        localStorage.setItem('lastS3Sync', this.lastSync);
-        localStorage.removeItem('hasUnsyncedChanges');
-        console.log('✅ Synced to S3');
-        this.updateIndicator();
-      }
-      
-      return response.ok;
-    } catch (error) {
-      console.error('S3 sync error:', error);
-      return false;
+    // Pull data from localStorage instead of undefined 'state'
+    const fullData = {
+      deals: JSON.parse(localStorage.getItem('deals') || '[]'),
+      leads: JSON.parse(localStorage.getItem('leads') || '[]'),
+      buyers: JSON.parse(localStorage.getItem('buyers') || '[]'),
+      agents: JSON.parse(localStorage.getItem('agents') || '[]'),
+      extendedDeals: JSON.parse(localStorage.getItem('extendedDeals') || '[]'),
+      sprintTasks: JSON.parse(localStorage.getItem('sprintTasks') || '[]'),
+      settings: JSON.parse(localStorage.getItem('settings') || '{}'),
+      goals: JSON.parse(localStorage.getItem('goals') || '{}'),
+      calls: JSON.parse(localStorage.getItem('calls') || '[]'),
+      timestamp: Date.now()
+    };
+    
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(fullData)
+    });
+    
+    if (response.ok) {
+      this.isDirty = false;
+      this.lastSync = Date.now();
+      localStorage.setItem('lastS3Sync', this.lastSync);
+      localStorage.removeItem('hasUnsyncedChanges');
+      console.log('✅ Synced to S3');
+      this.updateIndicator();
     }
-  },
+    
+    return response.ok;
+  } catch (error) {
+    console.error('S3 sync error:', error);
+    return false;
+  }
+},
   
   async pull() {
     try {
@@ -4349,28 +4349,30 @@ function saveWithSync(key, value) {
   // ======================================================================
   // UPLOADS: PHOTOS + ANY FILES
   // ======================================================================
-  async function uploadBlobWithKey(key, mime, blob){
-    const putUrl = await presign('/putUrl', key);
-    const r = await fetch(putUrl, { method:'PUT', headers:{'content-type': mime}, body: blob });
-    if(!r.ok) throw new Error('Upload failed');
-  }
-
-  function ensureMeta(d){
-    if(!d.attachmentsMeta || typeof d.attachmentsMeta !== 'object'){ d.attachmentsMeta = {}; }
-  }
-
-  function upsertAttachmentKey(dealId, key){
-    const deals = getDeals();
-    const d = deals.find(x=>x._id===dealId);
-    if(!d) return;
-    if(!Array.isArray(d.attachments)) d.attachments = [];
-    if(!d.attachments.includes(key)) d.attachments.push(key);
-    ensureMeta(d);
-    if(!d.attachmentsMeta[key]) d.attachmentsMeta[key] = { name: key.split('/').slice(-1)[0], ts: Date.now() };
-    d.updatedAt = Date.now();
-    saveDeals(deals);
-  }
-
+ async function uploadBlobWithKey(key, mime, blob){
+    // Define constants locally to avoid dependency issues
+    const API_BASE = "https://pocy3byloc.execute-api.us-east-1.amazonaws.com/prod";
+    const userId = localStorage.getItem('mbpsCurrentUser') || 'owner';
+    
+    try {
+        // Get presigned URL for upload
+        const presignResponse = await fetch(`${API_BASE}/putUrl?userId=${userId}&file=${encodeURIComponent(key)}`);
+        if (!presignResponse.ok) throw new Error(`Failed to get presigned URL: ${presignResponse.status}`);
+        const presignData = await presignResponse.json();
+        const putUrl = presignData.url;
+        
+        // Upload the blob
+        const uploadResponse = await fetch(putUrl, { 
+            method: 'PUT', 
+            headers: {'content-type': mime}, 
+            body: blob 
+        });
+        if(!uploadResponse.ok) throw new Error('Upload failed');
+    } catch(error) {
+        console.error('Upload error:', error);
+        throw error;
+    }
+}
   async function uploadDealPhoto(dealId){
     const input = document.createElement('input');
     input.type='file'; input.accept='image/*'; input.click();
@@ -4444,22 +4446,36 @@ function saveWithSync(key, value) {
         const fig = document.createElement('figure'); fig.className='mbps-gallery-item';
         try{
           if(isImageKey(key)){
-            const url = await presign('/getUrl', key);
+            const API_BASE = "https://pocy3byloc.execute-api.us-east-1.amazonaws.com/prod";
+            const userId = localStorage.getItem('mbpsCurrentUser') || 'owner';
+            const presignResponse = await fetch(`${API_BASE}/getUrl?userId=${userId}&file=${encodeURIComponent(key)}`);
+            if (!presignResponse.ok) throw new Error('Failed to get URL');
+            const presignData = await presignResponse.json();
+            const url = presignData.url;
             const img = new Image();
             img.loading='lazy'; img.decoding='async'; img.src=url; img.alt=dealId+' file';
             img.addEventListener('click', ()=> openLightbox(url));
             const cap = document.createElement('figcaption'); cap.textContent = key.split('/').slice(-1)[0];
             fig.append(img, cap);
           }else{
-            const ext = key.split('.').pop().toUpperCase();
-            const chip = document.createElement('div'); chip.className='doc-chip';
-            chip.textContent = ext + ' ';
-            const a = document.createElement('a'); a.href='#'; a.textContent = key.split('/').slice(-1)[0];
-            a.addEventListener('click', async (e)=>{ e.preventDefault(); const url = await presign('/getUrl', key); window.open(url, '_blank');});
-            const wrap = document.createElement('div'); wrap.style.padding='8px';
-            wrap.append(chip, a);
-            fig.append(wrap);
-          }
+          const ext = key.split('.').pop().toUpperCase();
+        const chip = document.createElement('div'); chip.className='doc-chip';
+        chip.textContent = ext + ' ';
+        const a = document.createElement('a'); a.href='#'; a.textContent = key.split('/').slice(-1)[0];
+        a.addEventListener('click', async (e)=>{ 
+        e.preventDefault(); 
+        const API_BASE = "https://pocy3byloc.execute-api.us-east-1.amazonaws.com/prod";
+        const userId = localStorage.getItem('mbpsCurrentUser') || 'owner';
+        const presignResponse = await fetch(`${API_BASE}/getUrl?userId=${userId}&file=${encodeURIComponent(key)}`);
+        if (!presignResponse.ok) throw new Error('Failed to get URL');
+        const presignData = await presignResponse.json();
+        const url = presignData.url;
+        window.open(url, '_blank');
+    });
+    const wrap = document.createElement('div'); wrap.style.padding='8px';
+    wrap.append(chip, a);
+    fig.append(wrap);
+}
         }catch(e){
           fig.innerHTML = '<div style="color:#ef4444;padding:8px">Failed to load item</div>';
         }
@@ -5622,77 +5638,27 @@ function updateLiveAnalysis() {
   const $ = (sel, root=document) => root.querySelector(sel);
   const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
   const money = (n) => (isFinite(n)? Math.round(n) : 0).toLocaleString();
-  const safeParse = (s, fallback) => { try { return JSON.parse(s) } catch(_) { return fallback } };
   const debounce = (fn, wait=600) => { let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), wait); } };
   function toast(msg, ok=true){ try{ console[ok?'log':'warn'](msg);}catch(_){} }
 
   const STAGES = ["New Lead","Warm","Hot","Offer Sent","Under Contract","Assigning","Closed / Dead"];
   const FILE_NAME = "deals.json";
 
-  function getLocal(){ return safeParse(localStorage.getItem('mbpsState'), emptyState()); }
-  function setLocal(state){ localStorage.setItem('mbpsState', JSON.stringify(state)); }
-
-  function mergeStates(remote, local){
-    const out = emptyState();
-    const mergeArrayById = (ra=[], la=[]) => {
-      const by = new Map();
-      la.forEach(x => x && x._id && by.set(x._id, x));
-      ra.forEach(x => x && x._id && by.set(x._id, x));
-      return Array.from(by.values());
-    };
-    out.deals      = mergeArrayById(remote.deals, local.deals);
-    out.agents     = mergeArrayById(remote.agents, local.agents);
-    out.buyers     = mergeArrayById(remote.buyers, local.buyers);
-    out.properties = mergeArrayById(remote.properties, local.properties);
-    out.contracts  = mergeArrayById(remote.contracts, local.contracts);
-    out.meta.updatedAt = Math.max(remote.meta?.updatedAt||0, local.meta?.updatedAt||0, Date.now());
-    return out;
-  }
-
-  async function pullState(){
-    try{
-      const getUrl = await presign('/getUrl', FILE_NAME);
-      const r = await fetch(getUrl, { cache:'no-store' });
-      if (r.status === 404) return emptyState();
-      const remote = await r.json();
-      const merged = mergeStates(remote||emptyState(), getLocal());
-      setLocal(merged);
-      return merged;
-    }catch(e){
-      return getLocal();
-    }
-  }
-
-  function getOutbox(){ return safeParse(localStorage.getItem('mbpsOutbox'), []); }
-  function pushOutbox(state){ const q = getOutbox(); q.push(state); localStorage.setItem('mbpsOutbox', JSON.stringify(q)); }
-  async function flushOutbox(){
-    const q = getOutbox(); if (!q.length) return;
-    const next = q[0];
-    try{ await pushState(next); q.shift(); localStorage.setItem('mbpsOutbox', JSON.stringify(q)); if (q.length) flushOutbox(); } catch(e){}
-  }
-  async function pushState(state){
-    const putUrl = await presign('/putUrl', FILE_NAME);
-    const r = await fetch(putUrl, { method:'PUT', headers:{ 'content-type':'application/json' }, body: JSON.stringify(state) });
-    if (!r.ok) throw new Error(`PUT failed: ${r.status}`);
-  }
-  const saveDebounced = debounce(async ()=>{
-    const state = getLocal();
-    state.meta = state.meta || {}; state.meta.updatedAt = Date.now(); setLocal(state);
-    try{ await pushState(state); } catch(e){ pushOutbox(state); }
-  }, 800);
-
   window.setUserId = function(newId){
-    USER_ID = (newId||'').trim() || 'owner';
+    const USER_ID = (newId||'').trim() || 'owner';
     localStorage.setItem('mbpsUserId', USER_ID);
-    pullState().then(renderKanban).catch(()=>renderKanban(getLocal()));
-  };
+    localStorage.setItem('mbpsCurrentUser', USER_ID);  // Also update current user
+    
+    // Just re-render, don't try to sync
+    if (typeof renderKanban === 'function') {
+        renderKanban();
+    }
+    location.reload(); // Reload to apply new user context
+};
 
-  function renderKanban(state){
-    state = state || getLocal();
-    const deals = (state.deals||[]).filter(d => d && !d.archived);
+  function renderKanban
     const board = document.getElementById('kanbanBoard') || document.querySelector('.kanban');
     if (!board) return;
-
     board.innerHTML = STAGES.map(s => `
       <div class="kb-col" data-stage="${s}">
         <div class="kb-hd"><span>${s}</span><span class="kb-count">${deals.filter(d=> (d.stage||'New Lead')===s).length}</span></div>
@@ -5738,15 +5704,12 @@ function updateLiveAnalysis() {
         const id = e.dataTransfer.getData('text/plain');
         const stage = zone.getAttribute('data-drop');
         const state = getLocal();
-        const deals = state.deals || [];
+       const deals = JSON.parse(localStorage.getItem('deals') || '[]');
         const idx = deals.findIndex(x => x && x._id === id);
         if (idx >= 0){
           deals[idx].stage = stage;
-          deals[idx].updatedAt = Date.now();
-          setLocal(state);
-          renderKanban(state);
-          saveDebounced();
-          if (window.renderDealsTable) { try{ window.renderDealsTable(); }catch(_){ } }
+          deals[idx].updatedAt = Date();
+        if (window.renderDealsTable) { try{ window.renderDealsTable(); }catch(_){ } }
         }
       });
     });
@@ -5769,7 +5732,8 @@ function updateLiveAnalysis() {
       btn.addEventListener('click', ()=>{
         const id = btn.dataset.id;
         const state = getLocal();
-        const d = (state.deals||[]).find(x => x && x._id===id);
+        const deals = JSON.parse(localStorage.getItem('deals') || '[]');
+        const d = deals.find(x => x && x._id===id);
         if (!d) return;
         const action = prompt('Next Action (e.g., Call, Send Offer, Follow-up):', d.nextAction || '');
         if (action===null) return;
@@ -5777,9 +5741,6 @@ function updateLiveAnalysis() {
         d.nextAction = (action||'').trim();
         if (when) d.nextActionDate = new Date(when).getTime();
         d.updatedAt = Date.now();
-        setLocal(state);
-        renderKanban(state);
-        saveDebounced();
       });
     });
   }
@@ -5795,12 +5756,10 @@ function updateLiveAnalysis() {
     renderDashboard();
   }
   
-  // Original kanban code
-  try {
-    const state = await pullState();
-    renderKanban(state);
-    flushOutbox();
-  } catch(_) {}
+  // Render kanban without the deleted sync functions
+  if (typeof renderKanban === 'function') {
+    renderKanban();  // No state parameter, no pullState()
+  }
   
   // Make dashboard the default tab
   setTimeout(() => {
