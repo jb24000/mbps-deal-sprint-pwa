@@ -243,6 +243,41 @@ button#btnPropertyEvaluation, .btn#btnPropertyEvaluation{
 }
 </style>
 
+
+<script id="mbps-durable-showtab">
+(function(){
+  // A safe function that never throws on missing targets
+  function safeActivate(id){
+    try{
+      const panels = document.querySelectorAll('[data-tab-panel], .tab-panel, section.tab-panel');
+      panels.forEach(p => { try{ p.hidden = true; }catch(_){} });
+      const target = document.getElementById(id) || document.querySelector(`[data-tab-panel="${id}"]`) || null;
+      if (!target) { console.warn('[showTab] target not found:', id); return; }
+      target.hidden = false;
+      const tabs = document.querySelectorAll('[data-tab], .tab, [role="tab"]');
+      tabs.forEach(btn => {
+        const match = (btn.getAttribute('data-tab') === id) ||
+                      (btn.getAttribute('href') === `#${id}`) ||
+                      (btn.id && btn.id === id);
+        btn.classList.toggle('active', !!match);
+      });
+    }catch(e){ console.warn('[showTab] safeActivate error:', e); }
+  }
+  // Wrap any assignment to window.showTab so it always calls safeActivate first
+  try{
+    let _impl = window.showTab || function(id){ safeActivate(id); };
+    Object.defineProperty(window, 'showTab', {
+      configurable: true,
+      get(){ return function(id){ safeActivate(id); try{ return _impl && _impl(id); }catch(e){ console.warn('[showTab inner]', e); } }; },
+      set(v){ _impl = v; }
+    });
+  }catch(e){
+    // Fallback: just set the safe version
+    window.showTab = function(id){ safeActivate(id); };
+  }
+})();
+</script>
+
 </head>
 <body class="bg-gradient-to-br from-brand-50 via-white to-accent-50 text-gray-800 min-h-screen">
   <!-- ONE-METRIC BAR -->
