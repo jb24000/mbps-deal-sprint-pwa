@@ -139,6 +139,62 @@
     .dark .sprint-day { background: linear-gradient(135deg, #1f2937 0%, #374151 100%); border-color: #4b5563; }
     .dark .sprint-task { background: rgba(15, 23, 42, 0.8); color: #e5e7eb; }
   </style>
+
+<style id="mbps-dark-contrast-fix">
+/* High-contrast dark theme overrides */
+body.dark, [data-theme="dark"] {
+  color: #e6e9ef;
+  background: #0b1220;
+}
+body.dark .btn, [data-theme="dark"] .btn {
+  color: #e6e9ef;
+  border-color: rgba(231, 233, 239, 0.25);
+  background: #111827;
+}
+body.dark .btn.primary, [data-theme="dark"] .btn.primary,
+body.dark .btn.blue, [data-theme="dark"] .btn.blue {
+  background: #00a8ff;
+  border-color: #00a8ff;
+  color: #fff;
+}
+body.dark .card, body.dark .panel, body.dark .kb-card, body.dark .kb-col,
+[data-theme="dark"] .card, [data-theme="dark"] .panel, [data-theme="dark"] .kb-card, [data-theme="dark"] .kb-col {
+  background: #0f172a;
+  border-color: rgba(231,233,239,0.15);
+  color: #e6e9ef;
+}
+body.dark .kb-hd, [data-theme="dark"] .kb-hd {
+  border-bottom-color: rgba(231,233,239,0.15);
+  color: #fff;
+}
+body.dark .kb-badge, [data-theme="dark"] .kb-badge {
+  border-color: rgba(231,233,239,0.25);
+  color: #e6e9ef;
+}
+body.dark dialog, [data-theme="dark"] dialog {
+  background: #0f172a;
+  color: #e6e9ef;
+}
+body.dark dialog .hd, body.dark dialog .modal-hd, [data-theme="dark"] dialog .hd, [data-theme="dark"] dialog .modal-hd {
+  border-bottom-color: rgba(231,233,239,0.15);
+}
+body.dark input, [data-theme="dark"] input, 
+body.dark select, [data-theme="dark"] select, 
+body.dark textarea, [data-theme="dark"] textarea {
+  color: #e6e9ef;
+  background: #111827;
+  border-color: rgba(231,233,239,0.25);
+}
+body.dark table, [data-theme="dark"] table { color: #e6e9ef; }
+body.dark th, body.dark td, [data-theme="dark"] th, [data-theme="dark"] td {
+  border-color: rgba(231,233,239,0.15);
+}
+body.dark .kb-gloss, [data-theme="dark"] .kb-gloss {
+  color: #b6bcc8;
+  border-top-color: rgba(231,233,239,0.15);
+}
+</style>
+
 </head>
 <body class="bg-gradient-to-br from-brand-50 via-white to-accent-50 text-gray-800 min-h-screen">
   <!-- ONE-METRIC BAR -->
@@ -5044,6 +5100,110 @@ Notes:
       const state = await pullState();
       renderKanban(state);
       flushOutbox();
+    } catch(_) {}
+  });
+})();
+</script>
+
+
+<script id="mbps-fixes">
+(function(){
+  document.addEventListener('DOMContentLoaded', () => {
+    // 1) Safe showTab wrapper (prevents null .hidden errors)
+    try {
+      const prevShowTab = window.showTab;
+      window.showTab = function(id){
+        try {
+          const panels = document.querySelectorAll('[data-tab-panel], .tab-panel, section.tab-panel');
+          panels.forEach(p => { if (p) p.hidden = true; });
+          const target = document.getElementById(id) || document.querySelector(`[data-tab-panel="${id}"]`) || document.querySelector(id);
+          if (!target) { console.warn('[showTab] target not found:', id); return; }
+          target.hidden = false;
+          const tabs = document.querySelectorAll('[data-tab], .tab');
+          tabs.forEach(btn => {
+            const matches = (btn.getAttribute('data-tab') === id) || (btn.getAttribute('href') === `#${id}`);
+            btn.classList.toggle('active', !!matches);
+          });
+        } catch (e) {
+          console.warn('[showTab] guarded fallback:', e);
+        }
+      };
+    } catch(_) {}
+
+    // 2) Property Evaluation double-close fix + modal focus (one-at-a-time)
+    try {
+      const peModal = document.getElementById('peModal') || document.getElementById('propertyEvalModal');
+      const evalBtn = document.getElementById('evalBtn') || document.querySelector("button#evalBtn, .btn.eval, button[aria-controls='property-evaluation']");
+      function closeOthersExcept(dialog){
+        document.querySelectorAll('dialog[open]').forEach(d => { if (d !== dialog) { try { d.close(); } catch(_){} } });
+      }
+      if (peModal && typeof peModal.showModal === 'function' && !peModal.dataset._wrapped) {
+        const _show = peModal.showModal.bind(peModal);
+        peModal.showModal = function(){
+          closeOthersExcept(peModal);
+          return _show();
+        };
+        peModal.dataset._wrapped = '1';
+      }
+      if (evalBtn && peModal) {
+        evalBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          e.stopPropagation();
+          closeOthersExcept(peModal);
+          peModal.showModal();
+        }, true);
+      }
+      const peClose = document.getElementById('peClose') || document.querySelector("#peModal .btn.close, #propertyEvalModal .btn.close");
+      if (peClose && peModal){
+        peClose.addEventListener('click', (e)=>{ e.preventDefault(); try{ peModal.close(); }catch(_){} });
+      }
+    } catch(_) {}
+
+    // 3) Fix blank "Extended Pipeline" tab label or orphan tabs
+    try {
+      const candidates = [
+        "[data-tab='extended']",
+        "#extendedTab",
+        "button[aria-controls='extended-pipeline']",
+        "a[href='#extended-pipeline']",
+        "a[href='#extendedPipeline']"
+      ];
+      for (const sel of candidates) {
+        const el = document.querySelector(sel);
+        if (el && !(el.textContent||'').trim()) el.textContent = "Extended Pipeline";
+      }
+      // remove ghost tabs pointing to nowhere
+      document.querySelectorAll('.tab, [role="tab"]').forEach(t => {
+        const href = t.getAttribute('href');
+        const targetId = href && href.startsWith('#') ? href.slice(1) : (t.getAttribute('data-tab') || "");
+        if (href && href.startsWith('#') && targetId && !document.getElementById(targetId)) {
+          // If it points to no panel and has no text, hide it
+          if (!(t.textContent||'').trim()) t.style.display = 'none';
+        }
+      });
+    } catch(_) {}
+
+    // 4) Harden renderDealsTable (cls/tHead guards)
+    try {
+      if (window.renderDealsTable) {
+        const orig = window.renderDealsTable;
+        window.renderDealsTable = function(){
+          try {
+            const tbl = document.getElementById('dealsTable') || document.querySelector('table#dealsTable, .deals-table');
+            if (tbl && !tbl.tHead) tbl.createTHead();
+            if (window.dealColumns && Array.isArray(window.dealColumns)) {
+              window.dealColumns = window.dealColumns.map(c => {
+                if (c && typeof c === 'object' && !('cls' in c)) c.cls = '';
+                return c;
+              });
+            }
+            return orig.apply(this, arguments);
+          } catch (e) {
+            console.warn('[renderDealsTable] guarded fallback:', e);
+          }
+        };
+      }
     } catch(_) {}
   });
 })();
