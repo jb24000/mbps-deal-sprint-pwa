@@ -5770,10 +5770,9 @@ board.querySelectorAll('.kb-nextaction').forEach(btn=>{
     d.updatedAt = Date.now();
   });
 });
-} // <-- Make sure this closing brace exists for renderKanban function
+} // Closes renderKanban function
 
 document.addEventListener('DOMContentLoaded', async ()=>{
-
   // Initialize S3 Sync
   if (typeof S3Sync !== 'undefined') {
     S3Sync.init();
@@ -5795,9 +5794,8 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     if (dashboardTab) dashboardTab.click();
   }, 100);
 });
-})();
+})(); // <-- This closes the IIFE
 </script>
-
 
 <script id="mbps-fixes">
 (function(){
