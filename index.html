@@ -3426,19 +3426,67 @@ function renderAll(){
     
   </script>
 
-<!-- MBPS Sprint v1.1 Patch: Merge Sync, Analyzer Set Offer, Offline Queue, Status Bar -->
+<!-- =======================================================================
+MBPS Deal Sprint — v1.3 FULL PATCH
+Adds:
+ - Status bar + Sync to S3 (merge load/save)
+ - Offline Outbox for uploads
+ - Property Analyzer (with Set Offer Price)
+ - Photo & File uploads, Gallery + Lightbox
+ - Health modal (API, Bucket, SW, storage)
+ - Install App prompt helper
+ - Dynamic Users (owner control + optional PIN)
+ - Restore Versions modal (list via /listVersions; fallback by VersionId)
+Notes:
+ - Keeps your existing manifest, service worker, and icons.
+ - Uses your deployed API: https://pocy3byloc.execute-api.us-east-1.amazonaws.com/prod
+ - Uses dynamic userId from localStorage 'mbpsCurrentUser' (defaults to 'owner')
+======================================================================== -->
 <style>
-  .mbps-statusbar{position:sticky;top:0;z-index:20;padding:6px 12px;background:rgba(0,168,255,.08);
-  border-bottom:1px solid rgba(0,168,255,.25);display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-  .mbps-statusbar .badge{font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid rgba(148,163,184,.4)}
-  .mbps-status-ok{color:#065f46;border-color:#34d399;background:#d1fae5}
-  .mbps-status-warn{color:#92400e;border-color:#fbbf24;background:#fffbeb}
-  .mbps-outbox-pill{color:#1f2937;border-color:#a7f3d0;background:#ecfccb}
-  .mbps-gallery-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap:10px; align-items:start; }
-  .mbps-gallery-item { border:1px solid rgba(148,163,184,.25); border-radius:10px; padding:6px; background:#fff; }
-  .mbps-gallery-item img { width:100%; height:120px; object-fit:cover; border-radius:6px; display:block; }
-  .mbps-gallery-item figcaption { font-size:12px; color:#6b7280; margin-top:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+/* -------- Toolbar helpers -------- */
+.btn { display:inline-flex; align-items:center; gap:.5rem; padding:.5rem .75rem; border:1px solid rgba(148,163,184,.4); border-radius:10px; background:#fff; cursor:pointer; }
+.btn.primary { background:#00a8ff; color:#fff; border-color:#00a8ff; }
+.btn.brand { background:#10b981; color:#fff; border-color:#10b981; }
+.btn:disabled { opacity:.55; cursor:not-allowed; }
+
+.card { border:1px solid rgba(148,163,184,.35); border-radius:12px; padding:12px; background:#fff; }
+.field label { display:block; font-size:12px; color:#6b7280; margin-bottom:4px; }
+.tag { display:inline-block; padding:2px 8px; border-radius:999px; border:1px solid rgba(148,163,184,.4); }
+
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+
+.muted { color:#6b7280; }
+.danger { color:#b91c1c; }
+
+.right { text-align:right; }
+
+/* -------- Status bar -------- */
+.mbps-statusbar { position:sticky; top:0; z-index:20; padding:6px 12px; background:rgba(0,168,255,.08);
+  border-bottom:1px solid rgba(0,168,255,.25); display:flex; gap:12px; align-items:center; flex-wrap:wrap }
+.mbps-statusbar .badge { font-size:12px; padding:2px 8px; border-radius:999px; border:1px solid rgba(148,163,184,.4) }
+.mbps-status-ok { color:#065f46; border-color:#34d399; background:#d1fae5 }
+.mbps-status-warn { color:#92400e; border-color:#fbbf24; background:#fffbeb }
+.mbps-outbox-pill { color:#1f2937; border-color:#a7f3d0; background:#ecfccb }
+
+/* -------- Gallery -------- */
+.mbps-gallery-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap:10px; align-items:start; }
+.mbps-gallery-item { border:1px solid rgba(148,163,184,.25); border-radius:10px; padding:6px; background:#fff; }
+.mbps-gallery-item img { width:100%; height:120px; object-fit:cover; border-radius:6px; display:block; }
+.mbps-gallery-item figcaption { font-size:12px; color:#6b7280; margin-top:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+/* -------- Lightbox -------- */
+#mbpsLightbox { border:0; background:transparent; }
+#mbpsLightbox .inner { background:#000; padding:0; max-width:94vw; max-height:90vh; overflow:auto; border-radius:12px; }
+#mbpsLightbox img { display:block; max-width:94vw; max-height:88vh; }
+
+/* -------- Responsive polish -------- */
+@media (max-width:900px){
+  table td, table th { white-space:normal; word-break:break-word; }
+  .btn{ min-height:44px; }
+}
 </style>
+
 <div id="mbpsStatus" class="mbps-statusbar" role="status" aria-live="polite" hidden>
   <span id="mbpsSyncState" class="badge">Sync</span>
   <span id="mbpsSyncTime" class="badge">—</span>
@@ -3447,28 +3495,67 @@ function renderAll(){
 
 <script>
 (function(){
-  // ===== Config =====
+  // ======================================================================
+  // CONFIG & CONSTANTS
+  // ======================================================================
   const API_BASE = "https://pocy3byloc.execute-api.us-east-1.amazonaws.com/prod";
-  const USER_ID = window.mbpsUserId || "owner";
-  const LS_DEALS = 'mbpsDeals';
-  const LS_THEME = 'mbpsTheme';
+  const BUCKET   = "mbps-deal-sprint-sync-1756585879";
+
+  // Users are dynamic; default to 'owner' if not set
+  const LS_USERS = 'mbpsUsers';
+  const LS_CURR  = 'mbpsCurrentUser';
+  const LS_OWNER_PIN = 'mbpsOwnerPin';
+
+  function getUsers(){
+    try{
+      const arr = JSON.parse(localStorage.getItem(LS_USERS)||'["owner"]');
+      if(!Array.isArray(arr) || !arr.includes('owner')) return ['owner'];
+      return arr;
+    }catch(_){ return ['owner']; }
+  }
+  function saveUsers(list){ localStorage.setItem(LS_USERS, JSON.stringify(Array.from(new Set(['owner', ...list])))); }
+  function getCurrentUser(){ return localStorage.getItem(LS_CURR) || 'owner'; }
+  function setCurrentUser(u){ localStorage.setItem(LS_CURR, u || 'owner'); }
+
+  const USER_ID = getCurrentUser();
+
+  // Local storage keys
+  const LS_DEALS     = 'mbpsDeals';
   const LS_SYNCED_AT = 'mbpsSyncedAt';
-  const LS_OUTBOX = 'mbpsOutbox'; // [{dealId,key, mime, size, dataUrl?, ts}]
+  const LS_OUTBOX    = 'mbpsOutbox'; // array of queued uploads for offline
+
+  // Analyzer state
   let CURRENT_ANALYZE_DEAL_ID = null;
 
-  // ===== Helpers =====
-  function getDeals() { try { return JSON.parse(localStorage.getItem(LS_DEALS)||'[]'); } catch(_){ return []; } }
-  function saveDeals(deals) { localStorage.setItem(LS_DEALS, JSON.stringify(deals)); }
-  function fmt(n){ if(n===null||n===undefined||isNaN(n)) return '-'; return Number(n).toLocaleString(); }
-  function nowIso(){ return new Date().toISOString(); }
+  // ======================================================================
+  // UTILITIES
+  // ======================================================================
+  function getDeals(){
+    try { return JSON.parse(localStorage.getItem(LS_DEALS)||'[]'); }
+    catch(_){ return []; }
+  }
+  function saveDeals(deals){
+    localStorage.setItem(LS_DEALS, JSON.stringify(deals));
+  }
+  function fmt(n){
+    if(n===null||n===undefined||isNaN(n)) return '-';
+    return Number(n).toLocaleString();
+  }
+  function fmtMoney(n){
+    const v = Number(n||0);
+    return v.toLocaleString(undefined, { minimumFractionDigits: 0 });
+  }
   function dedupe(arr){ return Array.from(new Set(arr)); }
   function pickNewer(a,b){ return (+a.updatedAt||0) >= (+b.updatedAt||0) ? a : b; }
 
-  // ===== Status Bar =====
+  // ======================================================================
+  // STATUS BAR & CONNECTIVITY
+  // ======================================================================
   const statusEl = document.getElementById('mbpsStatus');
-  const stateEl = document.getElementById('mbpsSyncState');
-  const timeEl  = document.getElementById('mbpsSyncTime');
-  const outboxEl= document.getElementById('mbpsOutboxBadge');
+  const stateEl  = document.getElementById('mbpsSyncState');
+  const timeEl   = document.getElementById('mbpsSyncTime');
+  const outboxEl = document.getElementById('mbpsOutboxBadge');
+
   function setStatus(ok, msg){
     statusEl.hidden = false;
     stateEl.className = 'badge ' + (ok ? 'mbps-status-ok' : 'mbps-status-warn');
@@ -3478,25 +3565,33 @@ function renderAll(){
     if(!ts){ timeEl.textContent='—'; return; }
     timeEl.textContent = 'Last synced: ' + new Date(Number(ts)||ts).toLocaleString();
   }
+
+  window.addEventListener('online', ()=>{ setStatus(true,'Online'); retryOutbox(); });
+  window.addEventListener('offline', ()=> setStatus(false,'Offline'));
+
+  // ======================================================================
+  // OUTBOX (OFFLINE UPLOADS QUEUE)
+  // ======================================================================
+  function getOutbox(){
+    try { return JSON.parse(localStorage.getItem(LS_OUTBOX)||'[]'); }
+    catch(_){ return []; }
+  }
+  function saveOutbox(list){
+    localStorage.setItem(LS_OUTBOX, JSON.stringify(list));
+    refreshOutboxBadge();
+  }
   function refreshOutboxBadge(){
     const q = getOutbox();
     if(q.length){ outboxEl.hidden = false; outboxEl.textContent = 'Outbox: ' + q.length; }
     else { outboxEl.hidden = true; }
   }
-
-  window.addEventListener('online', ()=>{ setStatus(true,'Online'); retryOutbox(); });
-  window.addEventListener('offline', ()=> setStatus(false,'Offline'));
-
-  // ===== Outbox (offline uploads) =====
-  function getOutbox(){ try { return JSON.parse(localStorage.getItem(LS_OUTBOX)||'[]'); } catch(_){ return []; } }
-  function saveOutbox(list){ localStorage.setItem(LS_OUTBOX, JSON.stringify(list)); refreshOutboxBadge(); }
   async function retryOutbox(){
     const list = getOutbox();
     if(!list.length) return;
     const remaining = [];
     for(const item of list){
       try{
-        if(!item.dataUrl){ remaining.push(item); continue; } // cannot retry w/o data
+        if(!item.dataUrl){ remaining.push(item); continue; }
         const blob = await (await fetch(item.dataUrl)).blob();
         await uploadBlobWithKey(item.key, blob.type||item.mime||'application/octet-stream', blob);
       }catch(e){
@@ -3506,7 +3601,9 @@ function renderAll(){
     saveOutbox(remaining);
   }
 
-  // ===== Presign & Sync =====
+  // ======================================================================
+  // PRESIGN + S3 SYNC (SAVE / LOAD & MERGE)
+  // ======================================================================
   async function presign(path, file='deals.json'){
     const u = API_BASE + path + "?userId=" + encodeURIComponent(USER_ID) + "&file=" + encodeURIComponent(file);
     const r = await fetch(u);
@@ -3514,16 +3611,22 @@ function renderAll(){
     const j = await r.json();
     return j.url;
   }
+
   async function syncSave(){
     const deals = getDeals();
     const url = await presign('/putUrl');
-    const res = await fetch(url, { method:'PUT', headers:{'content-type':'application/json'}, body: JSON.stringify(deals) });
+    const res = await fetch(url, {
+      method:'PUT',
+      headers:{'content-type':'application/json'},
+      body: JSON.stringify(deals)
+    });
     if(!res.ok) throw new Error('upload failed');
     const ts = Date.now();
     localStorage.setItem(LS_SYNCED_AT, String(ts));
     setSyncedAt(ts);
-    alert('Backed up to S3');
+    alert('Backed up to S3 for user "' + USER_ID + '"');
   }
+
   function mergeDeals(localArr, remoteArr){
     const byId = new Map();
     [...localArr, ...remoteArr].forEach(d=>{
@@ -3537,34 +3640,47 @@ function renderAll(){
     });
     return Array.from(byId.values()).sort((a,b)=> (b.updatedAt||0)-(a.updatedAt||0));
   }
+
   async function syncLoad(){
     const url = await presign('/getUrl');
     const res = await fetch(url);
-    if(!res.ok){ alert('No remote file yet'); return; }
+    if(!res.ok){ alert('No remote file yet for "'+USER_ID+'".'); return; }
     const remote = await res.json();
     const local  = getDeals();
     const merged = Array.isArray(remote) ? mergeDeals(local, remote) : local;
     saveDeals(merged);
     if (window.renderDealsTable) try { window.renderDealsTable(); } catch(_){}
-    const ts = Date.now(); localStorage.setItem(LS_SYNCED_AT, String(ts)); setSyncedAt(ts);
-    alert('Loaded & merged from S3');
+    const ts = Date.now();
+    localStorage.setItem(LS_SYNCED_AT, String(ts));
+    setSyncedAt(ts);
+    alert('Loaded & merged from S3 for "'+USER_ID+'".');
   }
 
-  // ===== Photos / Gallery =====
+  // ======================================================================
+  // UPLOADS: PHOTOS + ANY FILES
+  // ======================================================================
   async function uploadBlobWithKey(key, mime, blob){
     const putUrl = await presign('/putUrl', key);
     const r = await fetch(putUrl, { method:'PUT', headers:{'content-type': mime}, body: blob });
     if(!r.ok) throw new Error('Upload failed');
   }
+
+  function ensureMeta(d){
+    if(!d.attachmentsMeta || typeof d.attachmentsMeta !== 'object'){ d.attachmentsMeta = {}; }
+  }
+
   function upsertAttachmentKey(dealId, key){
     const deals = getDeals();
     const d = deals.find(x=>x._id===dealId);
     if(!d) return;
     if(!Array.isArray(d.attachments)) d.attachments = [];
     if(!d.attachments.includes(key)) d.attachments.push(key);
+    ensureMeta(d);
+    if(!d.attachmentsMeta[key]) d.attachmentsMeta[key] = { name: key.split('/').slice(-1)[0], ts: Date.now() };
     d.updatedAt = Date.now();
     saveDeals(deals);
   }
+
   async function uploadDealPhoto(dealId){
     const input = document.createElement('input');
     input.type='file'; input.accept='image/*'; input.click();
@@ -3575,7 +3691,7 @@ function renderAll(){
       try{
         await uploadBlobWithKey(key, file.type||'image/jpeg', file);
         upsertAttachmentKey(dealId, key);
-        const gal = document.querySelector(`[data-gallery="${dealId}"]`);
+        const gal = document.querySelector(`[data-gallery="{dealId}"]`.replace('{dealId}', dealId));
         if (gal) renderDealGallery(dealId, gal);
         alert('Photo uploaded');
       }catch(e){
@@ -3586,7 +3702,7 @@ function renderAll(){
             list.push({dealId, key, mime: file.type||'image/jpeg', size: file.size, dataUrl: reader.result, ts: Date.now()});
             saveOutbox(list);
             upsertAttachmentKey(dealId, key);
-            const gal = document.querySelector(`[data-gallery="${dealId}"]`);
+            const gal = document.querySelector(`[data-gallery="{dealId}"]`.replace('{dealId}', dealId));
             if (gal) renderDealGallery(dealId, gal);
             alert('Offline — queued photo for retry');
           };
@@ -3597,25 +3713,108 @@ function renderAll(){
       }
     };
   }
+
+  async function pickAndUploadFile(dealId){
+    const input = document.createElement('input');
+    input.type='file'; input.accept='*/*'; input.click();
+    input.onchange = async () => {
+      const file = input.files?.[0]; if(!file) return;
+      const safeName = (file.name||'file').replace(/[^a-zA-Z0-9_.-]/g,'_');
+      const key = `deals/${dealId}/files/${Date.now()}-${safeName}`;
+      try{
+        await uploadBlobWithKey(key, file.type||'application/octet-stream', file);
+        upsertAttachmentKey(dealId, key);
+        const deals = getDeals();
+        const d = deals.find(x=>x._id===dealId);
+        if(d){ ensureMeta(d); d.attachmentsMeta[key] = { mime:file.type||'application/octet-stream', size:file.size||0, name:safeName, ts: Date.now() }; saveDeals(deals); }
+        const gal = document.querySelector(`[data-gallery="{dealId}"]`.replace('{dealId}', dealId));
+        if (gal) renderDealGallery(dealId, gal);
+        alert('File uploaded');
+      }catch(e){ alert('Upload failed: ' + e.message); }
+    };
+  }
+
+  function isImageKey(k){ return /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(k); }
+
   async function renderDealGallery(dealId, container){
     const deals = getDeals();
     const d = deals.find(x=>x._id===dealId);
     const keys = (d && d.attachments)||[];
-    if(!keys.length){ container.innerHTML = '<div style="color:#6b7280">No photos yet.</div>'; return; }
+    if(!keys.length){ container.innerHTML = '<div style="color:#6b7280">No files yet.</div>'; return; }
+    container.innerHTML = '';
     const grid = document.createElement('div'); grid.className='mbps-gallery-grid';
-    for(const key of keys){
-      try{
-        const url = await presign('/getUrl', key);
+    container.append(grid);
+
+    const LIMIT = 12;
+    let shown = 0;
+    async function renderChunk(){
+      const end = Math.min(shown + LIMIT, keys.length);
+      const slice = keys.slice(shown, end);
+      for(const key of slice){
         const fig = document.createElement('figure'); fig.className='mbps-gallery-item';
-        const img = new Image(); img.loading='lazy'; img.decoding='async'; img.src=url; img.alt=dealId+' photo';
-        const cap = document.createElement('figcaption'); cap.textContent = key.split('/').slice(-1)[0];
-        fig.append(img, cap); grid.append(fig);
-      }catch(e){ /* skip */ }
+        try{
+          if(isImageKey(key)){
+            const url = await presign('/getUrl', key);
+            const img = new Image();
+            img.loading='lazy'; img.decoding='async'; img.src=url; img.alt=dealId+' file';
+            img.addEventListener('click', ()=> openLightbox(url));
+            const cap = document.createElement('figcaption'); cap.textContent = key.split('/').slice(-1)[0];
+            fig.append(img, cap);
+          }else{
+            const ext = key.split('.').pop().toUpperCase();
+            const chip = document.createElement('div'); chip.className='doc-chip';
+            chip.textContent = ext + ' ';
+            const a = document.createElement('a'); a.href='#'; a.textContent = key.split('/').slice(-1)[0];
+            a.addEventListener('click', async (e)=>{ e.preventDefault(); const url = await presign('/getUrl', key); window.open(url, '_blank');});
+            const wrap = document.createElement('div'); wrap.style.padding='8px';
+            wrap.append(chip, a);
+            fig.append(wrap);
+          }
+        }catch(e){
+          fig.innerHTML = '<div style="color:#ef4444;padding:8px">Failed to load item</div>';
+        }
+        grid.append(fig);
+      }
+      shown = end;
     }
-    container.replaceChildren(grid);
+
+    await renderChunk();
+    if(keys.length > shown){
+      const showMore = document.createElement('button');
+      showMore.className = 'btn'; showMore.textContent = 'Load more… ('+(keys.length - shown)+')';
+      container.append(showMore);
+      showMore.addEventListener('click', async ()=>{
+        await renderChunk();
+        if(keys.length <= shown) showMore.remove();
+        else showMore.textContent = 'Load more… ('+(keys.length - shown)+')';
+      });
+    }
+  }
+  window.renderDealGallery = window.renderDealGallery || renderDealGallery;
+
+  // ======================================================================
+  // LIGHTBOX
+  // ======================================================================
+  document.addEventListener('DOMContentLoaded', ()=>{
+    if(!document.getElementById('mbpsLightbox')){
+      const dlg = document.createElement('dialog');
+      dlg.id = 'mbpsLightbox';
+      dlg.innerHTML = '<div class="inner"><img alt="Preview"/></div>';
+      document.body.appendChild(dlg);
+      dlg.addEventListener('click', ()=> dlg.close());
+      document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') dlg.close(); });
+    }
+  });
+  function openLightbox(src){
+    const dlg = document.getElementById('mbpsLightbox');
+    const img = dlg.querySelector('img');
+    img.src = src;
+    dlg.showModal();
   }
 
-  // ===== Analyzer with Set Offer =====
+  // ======================================================================
+  // ANALYZER (with Set Offer Price)
+  // ======================================================================
   function analyze(inputs){
     const arv = +inputs.arv||0, repairs = +inputs.repairs||0, fee= +inputs.fee||0;
     const holdPct = (+inputs.holdPct||10)/100;
@@ -3640,30 +3839,6 @@ function renderAll(){
     alert('Offer updated on deal');
   }
 
-  // ===== Toolbar augment + Buttons =====
-  document.addEventListener('DOMContentLoaded', ()=>{
-    const toolbar = document.querySelector('.toolbar') || document.body;
-    function addBtn(id, label, onClick, cls='btn'){
-      if(document.getElementById(id)) return;
-      const b = document.createElement('button');
-      b.id=id; b.className=cls; b.type='button'; b.textContent=label; b.style.marginLeft='6px';
-      b.addEventListener('click', onClick);
-      toolbar.appendChild(b);
-    }
-    addBtn('syncBtn', 'Sync (S3)', async ()=>{
-      const save = confirm('OK = Save to S3, Cancel = Load & Merge from S3');
-      try { save ? await syncSave() : await syncLoad(); } catch(e){ alert(e.message); }
-    });
-    addBtn('evalBtn', 'Property Evaluation', ()=>{ document.getElementById('analyzer')?.showModal(); }, 'btn primary');
-    addBtn('analyzeBtn', 'Analyze Deal', ()=>{ document.getElementById('analyzer')?.showModal(); }, 'btn brand');
-
-    // Status init
-    setStatus(navigator.onLine, navigator.onLine?'Online':'Offline');
-    setSyncedAt(localStorage.getItem(LS_SYNCED_AT));
-    refreshOutboxBadge();
-  });
-
-  // ===== Insert Analyzer modal if missing, wire Set Offer =====
   document.addEventListener('DOMContentLoaded', ()=>{
     if(!document.getElementById('analyzer')){
       const tpl = document.createElement('template');
@@ -3725,9 +3900,9 @@ function renderAll(){
       const r = analyze(vals);
       document.getElementById('anResults').innerHTML = `
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
-          <div class="field"><label>Max Offer (Wholesale)</label><div class="tag">$ ${fmt(r.maxOfferWholesale)}</div></div>
-          <div class="field"><label>Carrying Reserve</label><div class="tag">$ ${fmt(r.carrying)}</div></div>
-          <div class="field"><label>Cashflow (rent - PITI)</label><div class="tag">$ ${fmt(r.cashflow)}</div></div>
+          <div class="field"><label>Max Offer (Wholesale)</label><div class="tag">$ ${fmtMoney(r.maxOfferWholesale)}</div></div>
+          <div class="field"><label>Carrying Reserve</label><div class="tag">$ ${fmtMoney(r.carrying)}</div></div>
+          <div class="field"><label>Cashflow (rent - PITI)</label><div class="tag">$ ${fmtMoney(r.cashflow)}</div></div>
         </div>
         <div style="margin-top:12px"><strong>Suggested Strategy:</strong> ${r.strat}</div>`;
       const setBtn = document.getElementById('setOfferBtn');
@@ -3736,7 +3911,336 @@ function renderAll(){
     });
   });
 
-  // ===== Fallback guarded renderer (prevents crashes) =====
+  // ======================================================================
+  // TOOLBAR BUTTONS (Sync, Property Evaluation, Analyze, Users, Restore, Health, Install)
+  // ======================================================================
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const toolbar = document.querySelector('.toolbar') || document.body;
+    function addBtn(id, label, onClick, cls='btn'){
+      if(document.getElementById(id)) return;
+      const b = document.createElement('button');
+      b.id=id; b.className=cls; b.type='button'; b.textContent=label; b.style.marginLeft='6px';
+      b.addEventListener('click', onClick);
+      toolbar.appendChild(b);
+    }
+    addBtn('syncBtn', 'Sync (S3)', async ()=>{
+      const save = confirm('OK = Save to S3, Cancel = Load & Merge from S3');
+      try { save ? await syncSave() : await syncLoad(); } catch(e){ alert(e.message); }
+    });
+    addBtn('evalBtn', 'Property Evaluation', ()=>{ document.getElementById('analyzer')?.showModal(); }, 'btn primary');
+    addBtn('analyzeBtn', 'Analyze Deal', ()=>{ document.getElementById('analyzer')?.showModal(); }, 'btn brand');
+    addBtn('mbpsHealthBtn', 'Health', ()=> document.getElementById('mbpsHealth').showModal(), 'btn');
+
+    if(!document.getElementById('mbpsUserBtn')){
+      addBtn('mbpsUserBtn','Users', ()=> document.getElementById('mbpsUsersModal').showModal(), 'btn');
+    }
+    if(!document.getElementById('mbpsRestoreBtn')){
+      addBtn('mbpsRestoreBtn','Restore', ()=> openRestoreModal(), 'btn');
+    }
+
+    setStatus(navigator.onLine, navigator.onLine?'Online':'Offline');
+    setSyncedAt(localStorage.getItem(LS_SYNCED_AT));
+    refreshOutboxBadge();
+  });
+
+  // ======================================================================
+  // HEALTH MODAL
+  // ======================================================================
+  document.addEventListener('DOMContentLoaded', async ()=>{
+    if(!document.getElementById('mbpsHealth')){
+      const tpl = document.createElement('template');
+      tpl.innerHTML = `
+<dialog id="mbpsHealth" style="border:0;border-radius:14px;padding:0;width:min(720px,94vw);">
+  <div style="padding:12px 14px;border-bottom:1px solid rgba(148,163,184,.3);display:flex;justify-content:space-between;align-items:center;">
+    <strong>System Health</strong>
+    <button class="btn" onclick="document.getElementById('mbpsHealth').close()">Close</button>
+  </div>
+  <div style="padding:14px;">
+    <div class="grid-2">
+      <div class="card">
+        <h4>Backend</h4>
+        <div class="field"><label>API Base</label><div class="tag">https://pocy3byloc.execute-api.us-east-1.amazonaws.com/prod</div></div>
+        <div class="field"><label>Bucket</label><div class="tag">mbps-deal-sprint-sync-1756585879</div></div>
+        <div class="field"><label>Service Worker</label><div id="swStat" class="tag">—</div></div>
+      </div>
+      <div class="card">
+        <h4>Local</h4>
+        <div class="field"><label>Current User</label><div id="curUserTag" class="tag">—</div></div>
+        <div class="field"><label>Last Synced</label><div id="lastSyncTag" class="tag">—</div></div>
+        <div class="field"><label>Storage</label><div id="storTag" class="tag">—</div></div>
+      </div>
+    </div>
+  </div>
+</dialog>`;
+      document.body.appendChild(tpl.content);
+    }
+    const sw = navigator.serviceWorker && navigator.serviceWorker.controller ? 'Active' : 'Not controlling';
+    const swEl = document.getElementById('swStat'); if(swEl) swEl.textContent = sw;
+    const last = localStorage.getItem(LS_SYNCED_AT);
+    const lsEl = document.getElementById('lastSyncTag'); if(lsEl) lsEl.textContent = last ? new Date(Number(last)||last).toLocaleString() : '—';
+    const cuEl = document.getElementById('curUserTag'); if(cuEl) cuEl.textContent = USER_ID;
+    if(navigator.storage && navigator.storage.estimate){
+      try{
+        const est = await navigator.storage.estimate();
+        const used = Math.round((est.usage||0)/1024/1024);
+        const quota= Math.round((est.quota||0)/1024/1024);
+        const sEl = document.getElementById('storTag'); if(sEl) sEl.textContent = used + ' MB / ' + quota + ' MB';
+      }catch(_){}
+    }
+  });
+
+  // ======================================================================
+  // INSTALL BUTTON (simple helper; native prompt handled by browser)
+  // ======================================================================
+  let deferredPrompt = null;
+  function isiOS(){ return /iphone|ipad|ipod/i.test(navigator.userAgent); }
+  function isSafari(){ return /^((?!chrome|android).)*safari/i.test(navigator.userAgent); }
+  window.addEventListener('beforeinstallprompt', (e)=>{
+    e.preventDefault();
+    deferredPrompt = e;
+    showInstallButton();
+  });
+  function showInstallButton(){
+    if(document.getElementById('mbpsInstallBtn')) return;
+    const toolbar = document.querySelector('.toolbar') || document.body;
+    const b = document.createElement('button');
+    b.id='mbpsInstallBtn'; b.className='btn'; b.textContent='Install App';
+    toolbar.appendChild(b);
+    b.addEventListener('click', async ()=>{
+      if(deferredPrompt){
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt = null;
+      }else if(isiOS() && isSafari()){
+        alert('On iOS Safari: Share ▶ Add to Home Screen');
+      }else{
+        alert('Your browser may not support one-click install. Try Chrome on Android or Edge/Chrome on desktop.');
+      }
+    });
+  }
+  document.addEventListener('DOMContentLoaded', ()=>{
+    if(isiOS() && isSafari()){ showInstallButton(); }
+  });
+
+  // ======================================================================
+  // USERS MODAL (Owner control + optional PIN) + RESTORE MODAL
+  // ======================================================================
+  function isOwner(){
+    return getCurrentUser()==='owner' && verifyOwnerPinSilent();
+  }
+  function setOwnerPin(pin){
+    if(!pin){ localStorage.removeItem(LS_OWNER_PIN); return; }
+    localStorage.setItem(LS_OWNER_PIN, pin);
+  }
+  function verifyOwnerPinSilent(){
+    const pin = localStorage.getItem(LS_OWNER_PIN);
+    if(!pin) return true; // no pin set => pass
+    if(sessionStorage.getItem('mbpsOwnerOk')==='1') return true;
+    const entered = prompt('Enter owner PIN to manage users (set in Users modal):') || '';
+    const ok = (entered === pin);
+    if(ok) sessionStorage.setItem('mbpsOwnerOk','1');
+    return ok;
+  }
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    if(!document.getElementById('mbpsUsersModal')){
+      const tpl = document.createElement('template');
+      tpl.innerHTML = `
+<dialog id="mbpsUsersModal" style="border:0;border-radius:14px;padding:0;width:min(720px,94vw)">
+  <div style="padding:12px 14px;border-bottom:1px solid rgba(148,163,184,.3);display:flex;justify-content:space-between;align-items:center;">
+    <strong>Users & Profiles</strong>
+    <button class="btn" onclick="document.getElementById('mbpsUsersModal').close()">Close</button>
+  </div>
+  <div style="padding:14px" id="mbpsUsersBody"></div>
+</dialog>`;
+      document.body.appendChild(tpl.content);
+    }
+    if(!document.getElementById('mbpsRestoreModal')){
+      const tpl = document.createElement('template');
+      tpl.innerHTML = `
+<dialog id="mbpsRestoreModal" style="border:0;border-radius:14px;padding:0;width:min(860px,96vw)">
+  <div style="padding:12px 14px;border-bottom:1px solid rgba(148,163,184,.3);display:flex;justify-content:space-between;align-items:center;">
+    <strong>Restore Previous Version</strong>
+    <button class="btn" onclick="document.getElementById('mbpsRestoreModal').close()">Close</button>
+  </div>
+  <div style="padding:14px" id="mbpsRestoreBody">
+    <div class="muted">Fetching versions…</div>
+  </div>
+</dialog>`;
+      document.body.appendChild(tpl.content);
+    }
+    ensureUserToolbar();
+    renderUsersBody();
+  });
+
+  function ensureUserToolbar(){
+    const bar = document.querySelector('.toolbar') || document.body;
+    if(!document.getElementById('mbpsUserBtn')){
+      const btn = document.createElement('button');
+      btn.id='mbpsUserBtn'; btn.className='btn'; btn.textContent='Users';
+      btn.addEventListener('click', ()=> document.getElementById('mbpsUsersModal').showModal());
+      bar.appendChild(btn);
+    }
+    if(!document.getElementById('mbpsRestoreBtn')){
+      const btn = document.createElement('button');
+      btn.id='mbpsRestoreBtn'; btn.className='btn'; btn.textContent='Restore';
+      btn.addEventListener('click', ()=> openRestoreModal());
+      bar.appendChild(btn);
+    }
+  }
+
+  function renderUsersBody(){
+    const body = document.getElementById('mbpsUsersBody');
+    const users = getUsers();
+    const current = getCurrentUser();
+    body.innerHTML = '';
+    const wrap = document.createElement('div'); wrap.className='grid-2';
+
+    const left = document.createElement('div'); left.className='card';
+    left.innerHTML = '<h4>Profiles</h4>';
+    users.forEach(u=>{
+      const row = document.createElement('div'); row.style.display='flex'; row.style.justifyContent='space-between'; row.style.alignItems='center'; row.style.margin='8px 0';
+      const name = document.createElement('div');
+      name.innerHTML = '<strong>'+u+'</strong>' + (u==='owner' ? ' <span class="muted">(owner)</span>' : '');
+      const actions = document.createElement('div'); actions.style.display='flex'; actions.style.gap='8px';
+      const switchBtn = document.createElement('button'); switchBtn.className='btn'; switchBtn.textContent = (u===current?'Current':'Switch');
+      switchBtn.disabled = (u===current);
+      switchBtn.addEventListener('click', ()=>{ setCurrentUser(u); document.getElementById('mbpsUsersModal').close(); location.reload(); });
+      actions.appendChild(switchBtn);
+      if(u!=='owner'){
+        const del = document.createElement('button'); del.className='btn'; del.textContent='Remove';
+        del.addEventListener('click', ()=>{
+          if(!isOwner()) return;
+          if(confirm('Remove user '+u+'? Their S3 folder remains intact.')){
+            saveUsers(users.filter(x=>x!==u)); renderUsersBody();
+          }
+        });
+        actions.appendChild(del);
+      }
+      row.append(name, actions); left.appendChild(row);
+    });
+
+    const addRow = document.createElement('div'); addRow.style.marginTop='10px';
+    const input = document.createElement('input'); input.placeholder='new-user-id (a-z0-9-_)'; input.pattern='[a-zA-Z0-9_-]+';
+    const addBtn = document.createElement('button'); addBtn.className='btn'; addBtn.textContent='Add User';
+    addBtn.addEventListener('click', ()=>{
+      if(!isOwner()) return;
+      const v = input.value.trim();
+      if(!v) return alert('Enter a user id');
+      const list = getUsers();
+      if(list.includes(v)) return alert('User exists');
+      list.push(v); saveUsers(list); input.value=''; renderUsersBody();
+    });
+    addRow.append(input, addBtn);
+    left.appendChild(addRow);
+
+    const right = document.createElement('div'); right.className='card';
+    right.innerHTML = '<h4>Owner Controls</h4>';
+    const pinWrap = document.createElement('div');
+    pinWrap.innerHTML = '<div class="field"><label>Owner PIN (optional)</label><input type="password" id="mbpsPin" placeholder="set or change PIN"/></div>';
+    const setBtn = document.createElement('button'); setBtn.className='btn'; setBtn.textContent='Save PIN';
+    setBtn.addEventListener('click', ()=>{
+      if(getCurrentUser()!=='owner'){ alert('Switch to owner to change PIN.'); return; }
+      const pin = document.getElementById('mbpsPin').value;
+      setOwnerPin(pin);
+      alert(pin ? 'PIN set.' : 'PIN cleared.');
+    });
+    right.append(pinWrap, setBtn);
+
+    wrap.append(left, right);
+    body.appendChild(wrap);
+  }
+
+  // ======================================================================
+  // RESTORE VERSIONS (List via API, or fallback by VersionId input)
+  // ======================================================================
+  async function listVersions(file='deals.json', max=10){
+    const userId = getCurrentUser();
+    const url = API_BASE + "/listVersions?userId=" + encodeURIComponent(userId) + "&file=" + encodeURIComponent(file) + "&max=" + max;
+    const r = await fetch(url);
+    if(!r.ok) throw new Error('listVersions not available (update stack)');
+    return r.json();
+  }
+
+  async function getPresignedGetForVersion(file, versionId){
+    const userId = getCurrentUser();
+    const url = API_BASE + "/getUrl?userId=" + encodeURIComponent(userId) + "&file=" + encodeURIComponent(file) + "&versionId=" + encodeURIComponent(versionId);
+    const r = await fetch(url);
+    if(!r.ok) throw new Error('getUrl for version failed');
+    const j = await r.json();
+    return j.url;
+  }
+
+  async function openRestoreModal(){
+    const dlg = document.getElementById('mbpsRestoreModal');
+    const body = document.getElementById('mbpsRestoreBody');
+    dlg.showModal();
+    body.innerHTML = '<div class="muted">Fetching versions…</div>';
+    try{
+      const items = await listVersions('deals.json', 15);
+      if(!Array.isArray(items) || !items.length){
+        body.innerHTML = '<div>No versions found.</div>';
+        return;
+      }
+      const tbl = document.createElement('table'); tbl.style.width='100%';
+      const thead = document.createElement('thead'); thead.innerHTML = '<tr><th>Date</th><th>Size</th><th>Storage</th><th>Latest</th><th>Actions</th></tr>';
+      const tbody = document.createElement('tbody');
+      items.forEach(v=>{
+        const tr = document.createElement('tr');
+        const date = new Date(v.LastModified||v.LastModifiedISO||Date.now()).toLocaleString();
+        tr.innerHTML = `<td>${date}</td><td>${(v.Size||0).toLocaleString()} B</td><td>${v.StorageClass||'-'}</td><td>${v.IsLatest?'Yes':'No'}</td>`;
+        const act = document.createElement('td');
+        const restore = document.createElement('button'); restore.className='btn'; restore.textContent='Restore';
+        restore.addEventListener('click', async ()=>{
+          if(!confirm('Replace local deals with this version?')) return;
+          try{
+            const getUrl = await getPresignedGetForVersion('deals.json', v.VersionId);
+            const res = await fetch(getUrl); const deals = await res.json();
+            localStorage.setItem('mbpsDeals', JSON.stringify(deals));
+            if(window.renderDealsTable) try{ window.renderDealsTable(); }catch(_){}
+            alert('Restored from version ' + v.VersionId);
+          }catch(e){ alert('Restore failed: '+e.message); }
+        });
+        const dl = document.createElement('button'); dl.className='btn'; dl.textContent='Download';
+        dl.addEventListener('click', async ()=>{
+          try{
+            const getUrl = await getPresignedGetForVersion('deals.json', v.VersionId);
+            window.open(getUrl, '_blank');
+          }catch(e){ alert('Download failed: '+e.message); }
+        });
+        act.append(restore, dl);
+        tr.appendChild(act);
+        tbody.appendChild(tr);
+      });
+      tbl.append(thead, tbody);
+      body.innerHTML = '';
+      body.append(tbl);
+    }catch(e){
+      body.innerHTML = `<div class="danger">Version listing not available (update backend). You can still paste a VersionId to restore:</div>
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+          <input id="mbpsVid" placeholder="VersionId..." style="min-width:280px">
+          <button id="mbpsVidRestore" class="btn">Restore by VersionId</button>
+        </div>`;
+      document.getElementById('mbpsVidRestore').addEventListener('click', async ()=>{
+        const vid = document.getElementById('mbpsVid').value.trim();
+        if(!vid) return;
+        try{
+          const getUrl = await getPresignedGetForVersion('deals.json', vid);
+          const res = await fetch(getUrl); const deals = await res.json();
+          localStorage.setItem('mbpsDeals', JSON.stringify(deals));
+          if(window.renderDealsTable) try{ window.renderDealsTable(); }catch(_){}
+          alert('Restored from version.');
+        }catch(ex){ alert('Restore failed: '+ex.message); }
+      });
+    }
+  }
+
+  window.MBPS_USER = { getUsers, saveUsers, getCurrentUser, setCurrentUser, isOwner };
+  window.MBPS_RESTORE = { openRestoreModal };
+
+  // ======================================================================
+  // GUARDED TABLE RENDERER (prevents 'undefined cls' crash)
+  // ======================================================================
   (function(){
     const orig = window.renderDealsTable;
     window.renderDealsTable = function(...args){
@@ -3753,28 +4257,25 @@ function renderAll(){
         const tr = document.createElement('tr');
         const tdAddr = document.createElement('td');
         tdAddr.innerHTML = `<div>${d.address||'-'}</div><div style="color:#6b7280">${d._id||''}</div>`;
-        const mkR = (v)=>{ const td=document.createElement('td'); td.className='right'; td.textContent='$ '+fmt(v); return td; };
+        const mkR = (v)=>{ const td=document.createElement('td'); td.className='right'; td.textContent='$ '+fmtMoney(v); return td; };
         tr.append(
           tdAddr, mkR(d.offerPrice), mkR(d.arv), mkR(d.repairs),
           Object.assign(document.createElement('td'),{textContent: d.stage||'Lead'}),
           (function(){ const td=document.createElement('td'); const gal=document.createElement('div'); gal.setAttribute('data-gallery', d._id); td.append(gal); return td; })(),
           (function(){ const td=document.createElement('td'); const b1=document.createElement('button'); b1.className='btn'; b1.textContent='Upload Photo'; b1.onclick=()=>uploadDealPhoto(d._id);
-                       const b2=document.createElement('button'); b2.className='btn'; b2.textContent='Analyze'; b2.onclick=()=>window.mbpsOpenAnalyzerPrefill && window.mbpsOpenAnalyzerPrefill(d);
-                       td.append(b1,b2); return td; })()
+                       const b2=document.createElement('button'); b2.className='btn'; b2.textContent='Add File'; b2.onclick=()=>pickAndUploadFile(d._id);
+                       const b3=document.createElement('button'); b3.className='btn'; b3.textContent='Analyze'; b3.onclick=()=>window.mbpsOpenAnalyzerPrefill && window.mbpsOpenAnalyzerPrefill(d);
+                       td.append(b1,b2,b3); return td; })()
         );
         tbody.append(tr);
-        const cont = tr.querySelector(`[data-gallery="${d._id}"]`);
-        renderDealGallery(d._id, cont);
+        const cont = tr.querySelector(`[data-gallery="{{id}}"]`.replace('{{id}}', d._id));
+        renderDealGallery(d._id, tr.querySelector(`[data-gallery="{dealId}"]`.replace('{dealId}', d._id)) || cont);
       });
     };
   })();
-
-  // Expose minimal API
-  window.MBPS_SYNC = { save: syncSave, load: syncLoad };
-  window.MBPS_UPLOAD = { photo: uploadDealPhoto };
-  window.MBPS_STATUS = { retryOutbox };
-})();</script>
-<!-- /MBPS Sprint v1.1 Patch -->
+})();
+</script>
+<!-- ============================== /END v1.3 FULL PATCH ============================== -->
 
 </body>
 </html>
