@@ -139,67 +139,6 @@
     .dark .sprint-day { background: linear-gradient(135deg, #1f2937 0%, #374151 100%); border-color: #4b5563; }
     .dark .sprint-task { background: rgba(15, 23, 42, 0.8); color: #e5e7eb; }
   </style>
-
-<style id="mbps-dark-contrast-fix">
-/* Universal dark mode improvements */
-body.dark, [data-theme="dark"] {
-  color: #e6e9ef;
-  background: #0b1220;
-}
-body.dark .btn, [data-theme="dark"] .btn {
-  color: #e6e9ef;
-  border-color: rgba(231, 233, 239, 0.25);
-  background: #111827;
-}
-body.dark .btn.primary, [data-theme="dark"] .btn.primary {
-  background: #00a8ff;
-  border-color: #00a8ff;
-  color: #fff;
-}
-/* Cards / panels */
-body.dark .card, body.dark .panel, body.dark .kb-card, body.dark .kb-col,
-[data-theme="dark"] .card, [data-theme="dark"] .panel, [data-theme="dark"] .kb-card, [data-theme="dark"] .kb-col {
-  background: #0f172a;
-  border-color: rgba(231, 233, 239, 0.15);
-  color: #e6e9ef;
-}
-/* Kanban column headers, badges */
-body.dark .kb-hd, [data-theme="dark"] .kb-hd {
-  border-bottom-color: rgba(231,233,239,0.15);
-  color: #fff;
-}
-body.dark .kb-badge, [data-theme="dark"] .kb-badge {
-  border-color: rgba(231,233,239,0.25);
-  color: #e6e9ef;
-}
-/* Modal */
-body.dark dialog, [data-theme="dark"] dialog {
-  background: #0f172a;
-  color: #e6e9ef;
-}
-body.dark dialog .hd, body.dark dialog .modal-hd, [data-theme="dark"] dialog .hd, [data-theme="dark"] dialog .modal-hd {
-  border-bottom-color: rgba(231,233,239,0.15);
-}
-/* Inputs */
-body.dark input, [data-theme="dark"] input {
-  color: #e6e9ef;
-  background: #111827;
-  border-color: rgba(231,233,239,0.25);
-}
-/* Tables */
-body.dark table, [data-theme="dark"] table {
-  color: #e6e9ef;
-}
-body.dark th, body.dark td, [data-theme="dark"] th, [data-theme="dark"] td {
-  border-color: rgba(231,233,239,0.15);
-}
-/* Glossary helper text */
-body.dark .kb-gloss, [data-theme="dark"] .kb-gloss {
-  color: #b6bcc8;
-  border-top-color: rgba(231,233,239,0.15);
-}
-</style>
-
 </head>
 <body class="bg-gradient-to-br from-brand-50 via-white to-accent-50 text-gray-800 min-h-screen">
   <!-- ONE-METRIC BAR -->
@@ -4339,47 +4278,773 @@ Notes:
 <!-- ============================== /END v1.3 FULL PATCH ============================== -->
 
 
-<script id="mbps-fixes">
+<!-- ===================== MBPS: Property Evaluation (Replaced) ===================== -->
+<style>
+  #propertyEvaluation { border-top:1px solid rgba(148,163,184,.35); padding:16px; margin-top:16px; background:#fff;border-radius:14px;}
+  #propertyEvaluation h3 { margin:0 0 12px 0; }
+  .pe-tabs { display:flex; gap:8px; margin:8px 0 16px 0; flex-wrap:wrap; }
+  .pe-tabs .tab { padding:8px 12px; border:1px solid rgba(148,163,184,.4); border-radius:999px; cursor:pointer; }
+  .pe-tabs .tab.active { background:#00a8ff; color:#fff; border-color:#00a8ff; }
+  .pe-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; }
+  .pe-card { border:1px solid rgba(148,163,184,.35); border-radius:12px; padding:12px; background:#fff; }
+  .pe-field label { display:block; font-size:12px; color:#6b7280; margin-bottom:4px; }
+  .pe-field input { width:100%; padding:8px; border:1px solid rgba(148,163,184,.5); border-radius:8px; }
+  .pe-actions { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+  .btn { display:inline-flex; align-items:center; gap:.5rem; padding:.5rem .75rem; border:1px solid rgba(148,163,184,.4); border-radius:10px; background:#fff; cursor:pointer; }
+  .btn.primary { background:#00a8ff; color:#fff; border-color:#00a8ff; }
+  .tag { display:inline-block; padding:2px 8px; border-radius:999px; border:1px solid rgba(148,163,184,.4); }
+  @media (max-width:900px){ .pe-grid { grid-template-columns:1fr; } }
+</style>
+
+
+
+<script>
+(function(){
+  // Remove/hide any previous Property Evaluation blocks
+  document.addEventListener('DOMContentLoaded', () => {
+    const old = [
+      document.getElementById('property-evaluation'),
+      document.querySelector('#propertyEvaluationOld'),
+      document.querySelector('.property-evaluation')
+    ].filter(Boolean);
+    old.forEach(n => n.remove());
+  });
+
+  // Helpers to use or safely polyfill app storage hooks
+  function getDeals(){ try{return JSON.parse(localStorage.getItem('mbpsDeals')||'[]')}catch(_){return[]} }
+  function saveDeals(d){ localStorage.setItem('mbpsDeals', JSON.stringify(d)); }
+  function refreshTable(){ if (window.renderDealsTable) try{ window.renderDealsTable(); }catch(_){} }
+  function currentDealId(){
+    return (window.CURRENT_ANALYZE_DEAL_ID) || (window.currentDealId) || null;
+  }
+
+  // Tabs behavior
+  function showTab(name){
+    document.querySelectorAll('#propertyEvaluation .pe-pane').forEach(p=>p.hidden=true);
+    document.getElementById('pe-'+name).hidden=false;
+    document.querySelectorAll('#propertyEvaluation .pe-tabs .tab').forEach(b=>{
+      b.classList.toggle('active', b.dataset.tab===name);
+      b.setAttribute('aria-selected', b.dataset.tab===name ? 'true' : 'false');
+    });
+  }
+  document.querySelectorAll('#propertyEvaluation .pe-tabs .tab').forEach(btn=>{
+    btn.addEventListener('click', ()=> showTab(btn.dataset.tab));
+  });
+  showTab('single');
+
+  // ---------- Single-family (MAO) ----------
+  function analyzeSF(){
+    const arv = +document.getElementById('sfArv').value||0;
+    const repairs = +document.getElementById('sfRepairs').value||0;
+    const fee = +document.getElementById('sfFee').value||0;
+    const holdPct = (+document.getElementById('sfHoldPct').value||10)/100;
+    const rent = +document.getElementById('sfRent').value||0;
+    const piti = +document.getElementById('sfPiti').value||0;
+
+    const maxOfferWholesale = Math.max(0, arv*0.7 - repairs - fee);
+    const carrying = Math.round(arv * holdPct);
+    const cashflow = Math.round(rent - piti);
+    let strat = 'Wholesale';
+    if (cashflow >= 300) strat = 'Buy & Hold';
+    if (piti>0 && cashflow>0 && maxOfferWholesale<=0) strat = 'Subject-To';
+
+    const r = document.getElementById('sfResults');
+    r.innerHTML = `
+      <div class="pe-grid">
+        <div class="pe-field"><label>Max Offer (Wholesale)</label><div class="tag">$ ${maxOfferWholesale.toLocaleString()}</div></div>
+        <div class="pe-field"><label>Carrying Reserve</label><div class="tag">$ ${carrying.toLocaleString()}</div></div>
+        <div class="pe-field"><label>Cashflow (rent - PITI)</label><div class="tag">$ ${cashflow.toLocaleString()}</div></div>
+      </div>
+      <div style="margin-top:8px"><strong>Suggested Strategy:</strong> ${strat}</div>`;
+
+    document.getElementById('sfSetOffer').disabled = false;
+    return { maxOfferWholesale, carrying, cashflow, strat };
+  }
+  document.getElementById('sfAnalyze').addEventListener('click', analyzeSF);
+  document.getElementById('sfSetOffer').addEventListener('click', ()=>{
+    const out = analyzeSF();
+    const dealId = currentDealId();
+    const addr = (document.getElementById('peAddress').value||'').trim();
+    if (!dealId) { alert('Open a deal via Analyze, or select a deal first.'); return; }
+    const deals = getDeals();
+    const d = deals.find(x=>x && x._id===dealId);
+    if (!d) { alert('Deal not found.'); return; }
+    d.offerPrice = Math.round(out.maxOfferWholesale);
+    if (addr) d.address = d.propertyAddress = addr;
+    d.updatedAt = Date.now();
+    saveDeals(deals);
+    refreshTable();
+    alert('Offer price set on deal.');
+  });
+
+  // ---------- Multifamily ----------
+  function pmt(rate, nper, pv){
+    // Monthly mortgage payment
+    const i = rate/12;
+    return (pv*i) / (1 - Math.pow(1+i, -nper));
+  }
+  function analyzeMF(){
+    const units = +document.getElementById('mfUnits').value||0;
+    const rentU = +document.getElementById('mfRent').value||0;
+    const other = +document.getElementById('mfOther').value||0;
+    const vac = (+document.getElementById('mfVacancy').value||5)/100;
+    const opexPct = (+document.getElementById('mfOpexPct').value||40)/100;
+    const price = +document.getElementById('mfPrice').value||0;
+    const downPct = (+document.getElementById('mfDownPct').value||25)/100;
+    const rate = (+document.getElementById('mfRate').value||6.5)/100;
+    const amort = +document.getElementById('mfAmort').value||25;
+
+    const grossSched = units * rentU * 12 + other*12;
+    const egi = grossSched * (1 - vac);
+    const opex = egi * opexPct;
+    const noi = egi - opex;
+
+    const loanAmt = price * (1 - downPct);
+    const annualDebt = pmt(rate, amort*12, loanAmt) * 12;
+    const dscr = (annualDebt>0)? (noi / annualDebt): 0;
+    const capRate = (price>0)? (noi / price) : 0;
+    const cashNeeded = price * downPct;
+    const cashFlow = noi - annualDebt;
+    const coc = (cashNeeded>0)? (cashFlow / cashNeeded) : 0;
+
+    const r = document.getElementById('mfResults');
+    r.innerHTML = `
+      <div class="pe-grid">
+        <div class="pe-field"><label>NOI</label><div class="tag">$ ${(Math.round(noi)).toLocaleString()}</div></div>
+        <div class="pe-field"><label>Cap Rate</label><div class="tag">${(capRate*100).toFixed(2)}%</div></div>
+        <div class="pe-field"><label>DSCR</label><div class="tag">${dscr.toFixed(2)}</div></div>
+        <div class="pe-field"><label>Annual Debt Service</label><div class="tag">$ ${(Math.round(annualDebt)).toLocaleString()}</div></div>
+        <div class="pe-field"><label>Annual Cash Flow</label><div class="tag">$ ${(Math.round(cashFlow)).toLocaleString()}</div></div>
+        <div class="pe-field"><label>Cash-on-Cash</label><div class="tag">${(coc*100).toFixed(1)}%</div></div>
+      </div>
+      <div style="margin-top:8px" class="tag">${dscr>=1.25?'✅ DSCR lender-safe (≥1.25)':'⚠️ DSCR below 1.25 — risk for lenders'}</div>`;
+
+    document.getElementById('mfSave').disabled = false;
+    return { noi, capRate, dscr, annualDebt, cashFlow, coc };
+  }
+  document.getElementById('mfAnalyze').addEventListener('click', analyzeMF);
+  document.getElementById('mfSave').addEventListener('click', ()=>{
+    const out = analyzeMF();
+    const dealId = currentDealId();
+    const addr = (document.getElementById('peAddress').value||'').trim();
+    if (!dealId) { alert('Open a deal via Analyze, or select a deal first.'); return; }
+    const deals = getDeals();
+    const d = deals.find(x=>x && x._id===dealId);
+    if (!d) { alert('Deal not found.'); return; }
+    d.multi = { ...out };
+    if (addr) d.address = d.propertyAddress = addr;
+    d.strategy = 'Multifamily';
+    d.updatedAt = Date.now();
+    saveDeals(deals);
+    refreshTable();
+    alert('Multifamily analysis saved to deal.');
+  });
+
+  // ---------- Airbnb Arbitrage ----------
+  function analyzeAB(){
+    const rent = +document.getElementById('abRent').value||0;
+    const adr = +document.getElementById('abAdr').value||0;
+    const occ = (+document.getElementById('abOcc').value||70)/100;
+    const utils = +document.getElementById('abUtils').value||0;
+    const clean = +document.getElementById('abClean').value||0;
+    const nightsPerStay = +document.getElementById('abNightsPerStay').value||3;
+    const feePct = (+document.getElementById('abFeePct').value||3)/100;
+    const furnish = +document.getElementById('abFurnish').value||0;
+    const other = +document.getElementById('abOther').value||0;
+
+    const nights = 30 * occ;
+    const stays = nightsPerStay>0 ? (nights / nightsPerStay) : 0;
+    const revenue = adr * nights;
+    const platformFees = revenue * feePct;
+    const cleaning = stays * clean;
+    const expenses = rent + utils + platformFees + cleaning + other;
+    const profit = revenue - expenses;
+    const roi = furnish>0 ? ((profit*12)/furnish) : 0;
+    const breakEvenNights = adr>0 ? ((rent + utils + platformFees + other)/adr) : 0;
+
+    const r = document.getElementById('abResults');
+    r.innerHTML = `
+      <div class="pe-grid">
+        <div class="pe-field"><label>Monthly Revenue</label><div class="tag">$ ${(Math.round(revenue)).toLocaleString()}</div></div>
+        <div class="pe-field"><label>Monthly Expenses</label><div class="tag">$ ${(Math.round(expenses)).toLocaleString()}</div></div>
+        <div class="pe-field"><label>Monthly Profit</label><div class="tag">$ ${(Math.round(profit)).toLocaleString()}</div></div>
+        <div class="pe-field"><label>Break-even Nights</label><div class="tag">${breakEvenNights.toFixed(1)}</div></div>
+        <div class="pe-field"><label>Annualized ROI (on furnishings)</label><div class="tag">${(roi*100).toFixed(1)}%</div></div>
+      </div>
+      <div style="margin-top:8px" class="tag">${breakEvenNights<=15?'✅ Break-even ≤ 15 nights':'⚠️ Break-even high — consider different ADR/market'}</div>`;
+
+    document.getElementById('abSave').disabled = false;
+    return { revenue, expenses, profit, breakEvenNights, roi };
+  }
+  document.getElementById('abAnalyze').addEventListener('click', analyzeAB);
+  document.getElementById('abSave').addEventListener('click', ()=>{
+    const out = analyzeAB();
+    const dealId = currentDealId();
+    const addr = (document.getElementById('peAddress').value||'').trim();
+    if (!dealId) { alert('Open a deal via Analyze, or select a deal first.'); return; }
+    const deals = getDeals();
+    const d = deals.find(x=>x && x._id===dealId);
+    if (!d) { alert('Deal not found.'); return; }
+    d.arbitrage = { ...out };
+    if (addr) d.address = d.propertyAddress = addr;
+    d.strategy = 'Airbnb Arbitrage';
+    d.updatedAt = Date.now();
+    saveDeals(deals);
+    refreshTable();
+    alert('Airbnb arbitrage analysis saved to deal.');
+  });
+})();
+</script>
+<!-- =================== /MBPS: Property Evaluation (Replaced) =================== -->
+
+
+<style>
+  /* Collapse Property Evaluation by default */
+  #propertyEvaluation { display:none; }
+  #propertyEvaluation.open { display:block; animation: fadeIn 0.3s ease-in-out; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
+</style>
+
+<script>
 (function(){
   document.addEventListener('DOMContentLoaded', () => {
-    // ---- 1) Prevent double-modal: trap Property Evaluation button click
-    const evalBtn = document.getElementById('evalBtn') || document.querySelector("button#evalBtn, .btn.eval, button[aria-controls='property-evaluation']");
-    const peModal = document.getElementById('propertyEvalModal') || document.getElementById('peModal');
-    if (evalBtn) {
-      evalBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        e.stopPropagation();
-        // close any other open dialog before opening PE
-        document.querySelectorAll('dialog[open]').forEach(d => { if (d !== peModal) { try { d.close(); } catch(_){} } });
-        if (peModal && typeof peModal.showModal === 'function') peModal.showModal();
-      }, true); // capture to pre-empt other listeners
-    }
-    // Ensure PE modal's showModal also closes others, for safety
-    if (peModal && peModal.showModal && !peModal.dataset._wrapped) {
-      const _show = peModal.showModal.bind(peModal);
-      peModal.showModal = function(){
-        document.querySelectorAll('dialog[open]').forEach(d => { if (d !== peModal) { try { d.close(); } catch(_){} } });
-        return _show();
-      };
-      peModal.dataset._wrapped = '1';
+    // Try to find a top control bar; fall back to body if none.
+    const controlBar = document.querySelector('.toolbar, #controls, .top-controls, .actions-bar') || document.body;
+
+    // Add the toggle button once
+    if(controlBar && !document.getElementById('togglePEBtn')){
+      const btn = document.createElement('button');
+      btn.id = 'togglePEBtn';
+      btn.className = 'btn';
+      btn.style.marginLeft = '8px';
+      btn.textContent = 'Property Evaluation';
+      controlBar.appendChild(btn);
     }
 
-    // ---- 2) Fix blank Extended Pipeline tab label
-    const extTabSelectors = [
-      "[data-tab='extended']",
-      "#extendedTab",
-      "button[aria-controls='extended-pipeline']",
-      "a[href='#extended-pipeline']",
-      "a[href='#extendedPipeline']"
-    ];
-    for (const sel of extTabSelectors) {
-      const el = document.querySelector(sel);
-      if (el) {
-        const t = (el.textContent||'').trim();
-        if (!t) el.textContent = "Extended Pipeline";
-      }
+    const pe = document.getElementById('propertyEvaluation');
+    const toggle = document.getElementById('togglePEBtn');
+
+    if(toggle && pe){
+      toggle.addEventListener('click', () => {
+        pe.classList.toggle('open');
+        if(pe.classList.contains('open')){
+          pe.scrollIntoView({behavior:'smooth', block:'start'});
+        }
+      });
     }
+
+    // Optional: hide Property Evaluation when switching other app tabs
+    document.querySelectorAll('[data-tab]').forEach(tab => {
+      tab.addEventListener('click', () => {
+        if(pe) pe.classList.remove('open');
+      });
+    });
+  });
+})();
+</script>
+
+
+<!-- ===== Property Evaluation Modal (Expanded) ===== -->
+<style>
+  #propertyEvalModal { border:0; border-radius:18px; padding:0; width:min(980px,96vw); }
+  #propertyEvalModal .hd { padding:12px 16px; border-bottom:1px solid rgba(148,163,184,.25); display:flex; align-items:center; justify-content:space-between; }
+  #propertyEvalModal .bd { padding:14px; max-height:72vh; overflow:auto; }
+  .pe-tabs { display:flex; gap:8px; margin:8px 0 16px 0; flex-wrap:wrap; }
+  .pe-tabs .tab { padding:8px 12px; border:1px solid rgba(148,163,184,.4); border-radius:999px; cursor:pointer; background:#fff; }
+  .pe-tabs .tab.active { background:#00a8ff; color:#fff; border-color:#00a8ff; }
+  .pe-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  .pe-card { border:1px solid rgba(148,163,184,.35); border-radius:12px; padding:12px; background:#fff; }
+  .pe-field label { display:block; font-size:12px; color:#6b7280; margin-bottom:4px; }
+  .pe-field input { width:100%; padding:8px; border:1px solid rgba(148,163,184,.5); border-radius:8px; }
+  .pe-actions { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+  .btn { display:inline-flex; align-items:center; gap:.5rem; padding:.5rem .75rem; border:1px solid rgba(148,163,184,.4); border-radius:10px; background:#fff; cursor:pointer; }
+  .btn.primary { background:#00a8ff; color:#fff; border-color:#00a8ff; }
+  .tag { display:inline-block; padding:2px 8px; border-radius:999px; border:1px solid rgba(148,163,184,.4); }
+  @media (max-width:900px){ .pe-grid { grid-template-columns:1fr; } }
+</style>
+
+<dialog id="propertyEvalModal">
+  <div class="hd">
+    <strong>Property Evaluation</strong>
+    <div style="display:flex; gap:8px;">
+      <button id="peClose" class="btn">Close</button>
+    </div>
+  </div>
+  <div class="bd">
+    <div class="pe-field" style="margin-bottom:12px;">
+      <label>Property Address</label>
+      <input id="peAddress" type="text" placeholder="123 Main St, City, ST 00000" />
+    </div>
+
+    <div class="pe-tabs" role="tablist">
+      <button class="tab active" data-tab="single" role="tab" aria-selected="true">Single-Family</button>
+      <button class="tab" data-tab="multi" role="tab" aria-selected="false">Apartments (Multifamily)</button>
+      <button class="tab" data-tab="airbnb" role="tab" aria-selected="false">Airbnb Arbitrage</button>
+    </div>
+
+    <div class="pe-pane" id="pe-single">
+      <div class="pe-grid">
+        <div class="pe-field"><label>ARV</label><input id="sfArv" type="number" placeholder="220000"></div>
+        <div class="pe-field"><label>Repairs</label><input id="sfRepairs" type="number" placeholder="35000"></div>
+        <div class="pe-field"><label>Assignment / Margin</label><input id="sfFee" type="number" placeholder="10000" value="10000"></div>
+        <div class="pe-field"><label>Holding %</label><input id="sfHoldPct" type="number" placeholder="10" value="10"></div>
+        <div class="pe-field"><label>Rent (if BRRR/hold)</label><input id="sfRent" type="number" placeholder="1800"></div>
+        <div class="pe-field"><label>PITI (if Sub2)</label><input id="sfPiti" type="number" placeholder="1350"></div>
+      </div>
+      <div class="pe-actions">
+        <button id="sfAnalyze" class="btn">Analyze</button>
+        <button id="sfSetOffer" class="btn primary" disabled>Set Offer Price</button>
+      </div>
+      <div id="sfResults" class="pe-card" style="margin-top:10px;color:#64748b">Enter inputs and Analyze.</div>
+    </div>
+
+    <div class="pe-pane" id="pe-multi" hidden>
+      <div class="pe-grid">
+        <div class="pe-field"><label>Units</label><input id="mfUnits" type="number" placeholder="12"></div>
+        <div class="pe-field"><label>Avg Rent / Unit</label><input id="mfRent" type="number" placeholder="1200"></div>
+        <div class="pe-field"><label>Other Income (mo)</label><input id="mfOther" type="number" placeholder="0"></div>
+        <div class="pe-field"><label>Vacancy %</label><input id="mfVacancy" type="number" placeholder="5" value="5"></div>
+        <div class="pe-field"><label>OpEx % of EGI</label><input id="mfOpexPct" type="number" placeholder="40" value="40"></div>
+        <div class="pe-field"><label>Purchase Price</label><input id="mfPrice" type="number" placeholder="1500000"></div>
+        <div class="pe-field"><label>Down Payment %</label><input id="mfDownPct" type="number" placeholder="25" value="25"></div>
+        <div class="pe-field"><label>Interest %</label><input id="mfRate" type="number" step="0.01" placeholder="6.5" value="6.5"></div>
+        <div class="pe-field"><label>Amortization (yrs)</label><input id="mfAmort" type="number" placeholder="25" value="25"></div>
+      </div>
+      <div class="pe-actions">
+        <button id="mfAnalyze" class="btn">Analyze</button>
+        <button id="mfSave" class="btn primary" disabled>Save to Deal</button>
+      </div>
+      <div id="mfResults" class="pe-card" style="margin-top:10px;color:#64748b">Enter inputs and Analyze.</div>
+    </div>
+
+    <div class="pe-pane" id="pe-airbnb" hidden>
+      <div class="pe-grid">
+        <div class="pe-field"><label>Monthly Rent</label><input id="abRent" type="number" placeholder="2000"></div>
+        <div class="pe-field"><label>Average Daily Rate (ADR)</label><input id="abAdr" type="number" placeholder="175"></div>
+        <div class="pe-field"><label>Occupancy %</label><input id="abOcc" type="number" placeholder="70" value="70"></div>
+        <div class="pe-field"><label>Monthly Utilities</label><input id="abUtils" type="number" placeholder="250"></div>
+        <div class="pe-field"><label>Cleaning / Turnover per Stay</label><input id="abClean" type="number" placeholder="50"></div>
+        <div class="pe-field"><label>Avg Nights per Stay</label><input id="abNightsPerStay" type="number" placeholder="3" value="3"></div>
+        <div class="pe-field"><label>Airbnb Fee %</label><input id="abFeePct" type="number" placeholder="3" value="3"></div>
+        <div class="pe-field"><label>Furnishing (one-time)</label><input id="abFurnish" type="number" placeholder="5000"></div>
+        <div class="pe-field"><label>Other Monthly Costs</label><input id="abOther" type="number" placeholder="0"></div>
+      </div>
+      <div class="pe-actions">
+        <button id="abAnalyze" class="btn">Analyze</button>
+        <button id="abSave" class="btn primary" disabled>Save to Deal</button>
+      </div>
+      <div id="abResults" class="pe-card" style="margin-top:10px;color:#64748b">Enter inputs and Analyze.</div>
+    </div>
+  </div>
+</dialog>
+
+<script>
+(function(){
+  // Wire existing blue Property Evaluation button (id=evalBtn) to open modal.
+  // If not present, create it next to Analyze Deal.
+  document.addEventListener('DOMContentLoaded', () => {
+    const toolbar = document.querySelector('.toolbar') || document.body;
+
+    // Remove old toggle button if our prior patch added it
+    const oldToggle = document.getElementById('togglePEBtn');
+    if (oldToggle) oldToggle.remove();
+
+    let evalBtn = document.getElementById('evalBtn');
+    if (!evalBtn) {
+      // Try to place it visually near Analyze Deal
+      evalBtn = document.createElement('button');
+      evalBtn.id = 'evalBtn';
+      evalBtn.className = 'btn primary';
+      evalBtn.textContent = 'Property Evaluation';
+      toolbar.appendChild(evalBtn);
+    }
+    evalBtn.addEventListener('click', () => {
+      document.getElementById('propertyEvalModal').showModal();
+    });
+
+    document.getElementById('peClose').addEventListener('click', () => {
+      document.getElementById('propertyEvalModal').close();
+    });
+  });
+
+  function getDeals(){ try{return JSON.parse(localStorage.getItem('mbpsDeals')||'[]')}catch(_){return[]} }
+  function saveDeals(d){ localStorage.setItem('mbpsDeals', JSON.stringify(d)); }
+  function refreshTable(){ if (window.renderDealsTable) try{ window.renderDealsTable(); }catch(_){} }
+  function currentDealId(){ return (window.CURRENT_ANALYZE_DEAL_ID) || (window.currentDealId) || null; }
+
+  // Tabs
+  function showTab(name){
+    document.querySelectorAll('#propertyEvalModal .pe-pane').forEach(p=>p.hidden=true);
+    const active = document.getElementById('pe-'+name); if(active) active.hidden=false;
+    document.querySelectorAll('#propertyEvalModal .pe-tabs .tab').forEach(b=>{
+      b.classList.toggle('active', b.dataset.tab===name);
+      b.setAttribute('aria-selected', b.dataset.tab===name ? 'true' : 'false');
+    });
+  }
+  document.addEventListener('click', (e)=>{
+    const tab = e.target.closest('#propertyEvalModal .pe-tabs .tab');
+    if(!tab) return;
+    showTab(tab.dataset.tab);
+  });
+  document.addEventListener('DOMContentLoaded', ()=> showTab('single'));
+
+  // Single-family analyzer
+  function analyzeSF(){
+    const arv = +document.getElementById('sfArv').value||0;
+    const repairs = +document.getElementById('sfRepairs').value||0;
+    const fee = +document.getElementById('sfFee').value||0;
+    const holdPct = (+document.getElementById('sfHoldPct').value||10)/100;
+    const rent = +document.getElementById('sfRent').value||0;
+    const piti = +document.getElementById('sfPiti').value||0;
+
+    const maxOfferWholesale = Math.max(0, arv*0.7 - repairs - fee);
+    const carrying = Math.round(arv * holdPct);
+    const cashflow = Math.round(rent - piti);
+    let strat = 'Wholesale';
+    if (cashflow >= 300) strat = 'Buy & Hold';
+    if (piti>0 && cashflow>0 && maxOfferWholesale<=0) strat = 'Subject-To';
+
+    const r = document.getElementById('sfResults');
+    r.innerHTML = `
+      <div class="pe-grid">
+        <div class="pe-field"><label>Max Offer (Wholesale)</label><div class="tag">$ ${(Math.round(maxOfferWholesale)).toLocaleString()}</div></div>
+        <div class="pe-field"><label>Carrying Reserve</label><div class="tag">$ ${(Math.round(carrying)).toLocaleString()}</div></div>
+        <div class="pe-field"><label>Cashflow (rent - PITI)</label><div class="tag">$ ${(Math.round(cashflow)).toLocaleString()}</div></div>
+      </div>
+      <div style="margin-top:8px"><strong>Suggested Strategy:</strong> ${strat}</div>`;
+
+    document.getElementById('sfSetOffer').disabled = false;
+    return { maxOfferWholesale, carrying, cashflow, strat };
+  }
+  document.addEventListener('click', (e)=>{
+    if(e.target.id==='sfAnalyze') analyzeSF();
+    if(e.target.id==='sfSetOffer'){
+      const out = analyzeSF();
+      const dealId = currentDealId();
+      const addr = (document.getElementById('peAddress').value||'').trim();
+      if (!dealId) { alert('Open a deal via Analyze, or select a deal first.'); return; }
+      const deals = getDeals();
+      const d = deals.find(x=>x && x._id===dealId);
+      if (!d) { alert('Deal not found.'); return; }
+      d.offerPrice = Math.round(out.maxOfferWholesale);
+      if (addr) d.address = d.propertyAddress = addr;
+      d.updatedAt = Date.now();
+      saveDeals(deals);
+      refreshTable();
+      alert('Offer price set on deal.');
+    }
+  });
+
+  // Multifamily analyzer
+  function pmt(rate, nper, pv){ const i = rate/12; return (pv*i) / (1 - Math.pow(1+i, -nper)); }
+  function analyzeMF(){
+    const units = +document.getElementById('mfUnits').value||0;
+    const rentU = +document.getElementById('mfRent').value||0;
+    const other = +document.getElementById('mfOther').value||0;
+    const vac = (+document.getElementById('mfVacancy').value||5)/100;
+    const opexPct = (+document.getElementById('mfOpexPct').value||40)/100;
+    const price = +document.getElementById('mfPrice').value||0;
+    const downPct = (+document.getElementById('mfDownPct').value||25)/100;
+    const rate = (+document.getElementById('mfRate').value||6.5)/100;
+    const amort = +document.getElementById('mfAmort').value||25;
+
+    const grossSched = units * rentU * 12 + other*12;
+    const egi = grossSched * (1 - vac);
+    const opex = egi * opexPct;
+    const noi = egi - opex;
+
+    const loanAmt = price * (1 - downPct);
+    const annualDebt = pmt(rate, amort*12, loanAmt) * 12;
+    const dscr = (annualDebt>0)? (noi / annualDebt): 0;
+    const capRate = (price>0)? (noi / price) : 0;
+    const cashNeeded = price * downPct;
+    const cashFlow = noi - annualDebt;
+    const coc = (cashNeeded>0)? (cashFlow / cashNeeded) : 0;
+
+    const r = document.getElementById('mfResults');
+    r.innerHTML = `
+      <div class="pe-grid">
+        <div class="pe-field"><label>NOI</label><div class="tag">$ ${(Math.round(noi)).toLocaleString()}</div></div>
+        <div class="pe-field"><label>Cap Rate</label><div class="tag">${(capRate*100).toFixed(2)}%</div></div>
+        <div class="pe-field"><label>DSCR</label><div class="tag">${dscr.toFixed(2)}</div></div>
+        <div class="pe-field"><label>Annual Debt Service</label><div class="tag">$ ${(Math.round(annualDebt)).toLocaleString()}</div></div>
+        <div class="pe-field"><label>Annual Cash Flow</label><div class="tag">$ ${(Math.round(cashFlow)).toLocaleString()}</div></div>
+        <div class="pe-field"><label>Cash-on-Cash</label><div class="tag">${(coc*100).toFixed(1)}%</div></div>
+      </div>
+      <div style="margin-top:8px" class="tag">${dscr>=1.25?'✅ DSCR lender-safe (≥1.25)':'⚠️ DSCR below 1.25 — risk for lenders'}</div>`;
+
+    document.getElementById('mfSave').disabled = false;
+    return { noi, capRate, dscr, annualDebt, cashFlow, coc };
+  }
+  document.addEventListener('click', (e)=>{
+    if(e.target.id==='mfAnalyze') analyzeMF();
+    if(e.target.id==='mfSave'){
+      const out = analyzeMF();
+      const dealId = currentDealId();
+      const addr = (document.getElementById('peAddress').value||'').trim();
+      if (!dealId) { alert('Open a deal via Analyze, or select a deal first.'); return; }
+      const deals = getDeals();
+      const d = deals.find(x=>x && x._id===dealId);
+      if (!d) { alert('Deal not found.'); return; }
+      d.multi = { ...out };
+      if (addr) d.address = d.propertyAddress = addr;
+      d.strategy = 'Multifamily';
+      d.updatedAt = Date.now();
+      saveDeals(deals);
+      refreshTable();
+      alert('Multifamily analysis saved to deal.');
+    }
+  });
+
+  // Airbnb arbitrage analyzer
+  function analyzeAB(){
+    const rent = +document.getElementById('abRent').value||0;
+    const adr = +document.getElementById('abAdr').value||0;
+    const occ = (+document.getElementById('abOcc').value||70)/100;
+    const utils = +document.getElementById('abUtils').value||0;
+    const clean = +document.getElementById('abClean').value||0;
+    const nightsPerStay = +document.getElementById('abNightsPerStay').value||3;
+    const feePct = (+document.getElementById('abFeePct').value||3)/100;
+    const furnish = +document.getElementById('abFurnish').value||0;
+    const other = +document.getElementById('abOther').value||0;
+
+    const nights = 30 * occ;
+    const stays = nightsPerStay>0 ? (nights / nightsPerStay) : 0;
+    const revenue = adr * nights;
+    const platformFees = revenue * feePct;
+    const cleaning = stays * clean;
+    const expenses = rent + utils + platformFees + cleaning + other;
+    const profit = revenue - expenses;
+    const roi = furnish>0 ? ((profit*12)/furnish) : 0;
+    const breakEvenNights = adr>0 ? ((rent + utils + platformFees + other)/adr) : 0;
+
+    const r = document.getElementById('abResults');
+    r.innerHTML = `
+      <div class="pe-grid">
+        <div class="pe-field"><label>Monthly Revenue</label><div class="tag">$ ${(Math.round(revenue)).toLocaleString()}</div></div>
+        <div class="pe-field"><label>Monthly Expenses</label><div class="tag">$ ${(Math.round(expenses)).toLocaleString()}</div></div>
+        <div class="pe-field"><label>Monthly Profit</label><div class="tag">$ ${(Math.round(profit)).toLocaleString()}</div></div>
+        <div class="pe-field"><label>Break-even Nights</label><div class="tag">${breakEvenNights.toFixed(1)}</div></div>
+        <div class="pe-field"><label>Annualized ROI (on furnishings)</label><div class="tag">${(roi*100).toFixed(1)}%</div></div>
+      </div>
+      <div style="margin-top:8px" class="tag">${breakEvenNights<=15?'✅ Break-even ≤ 15 nights':'⚠️ Break-even high — consider different ADR/market'}</div>`;
+
+    document.getElementById('abSave').disabled = false;
+    return { revenue, expenses, profit, breakEvenNights, roi };
+  }
+  document.addEventListener('click', (e)=>{
+    if(e.target.id==='abAnalyze') analyzeAB();
+    if(e.target.id==='abSave'){
+      const out = analyzeAB();
+      const dealId = currentDealId();
+      const addr = (document.getElementById('peAddress').value||'').trim();
+      if (!dealId) { alert('Open a deal via Analyze, or select a deal first.'); return; }
+      const deals = getDeals();
+      const d = deals.find(x=>x && x._id===dealId);
+      if (!d) { alert('Deal not found.'); return; }
+      d.arbitrage = { ...out };
+      if (addr) d.address = d.propertyAddress = addr;
+      d.strategy = 'Airbnb Arbitrage';
+      d.updatedAt = Date.now();
+      saveDeals(deals);
+      refreshTable();
+      alert('Airbnb arbitrage analysis saved to deal.');
+    }
+  });
+})();
+</script>
+<!-- ===== /Property Evaluation Modal ===== -->
+
+
+<script>
+/* ========= MBPS Sync + Kanban (S3 + DnD) ========= */
+(function(){
+  const API_BASE = "https://pocy3byloc.execute-api.us-east-1.amazonaws.com/prod";
+  let USER_ID = (localStorage.getItem('mbpsUserId') || 'owner').trim() || 'owner';
+
+  function emptyState(){
+    return { deals: [], agents: [], buyers: [], properties: [], contracts: [], meta: { updatedAt: Date.now() } };
+  }
+  const $ = (sel, root=document) => root.querySelector(sel);
+  const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+  const money = (n) => (isFinite(n)? Math.round(n) : 0).toLocaleString();
+  const safeParse = (s, fallback) => { try { return JSON.parse(s) } catch(_) { return fallback } };
+  const debounce = (fn, wait=600) => { let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), wait); } };
+  function toast(msg, ok=true){ try{ console[ok?'log':'warn'](msg);}catch(_){} }
+
+  const STAGES = ["New Lead","Warm","Hot","Offer Sent","Under Contract","Assigning","Closed / Dead"];
+  const FILE_NAME = "deals.json";
+
+  function getLocal(){ return safeParse(localStorage.getItem('mbpsState'), emptyState()); }
+  function setLocal(state){ localStorage.setItem('mbpsState', JSON.stringify(state)); }
+
+  function mergeStates(remote, local){
+    const out = emptyState();
+    const mergeArrayById = (ra=[], la=[]) => {
+      const by = new Map();
+      la.forEach(x => x && x._id && by.set(x._id, x));
+      ra.forEach(x => x && x._id && by.set(x._id, x));
+      return Array.from(by.values());
+    };
+    out.deals      = mergeArrayById(remote.deals, local.deals);
+    out.agents     = mergeArrayById(remote.agents, local.agents);
+    out.buyers     = mergeArrayById(remote.buyers, local.buyers);
+    out.properties = mergeArrayById(remote.properties, local.properties);
+    out.contracts  = mergeArrayById(remote.contracts, local.contracts);
+    out.meta.updatedAt = Math.max(remote.meta?.updatedAt||0, local.meta?.updatedAt||0, Date.now());
+    return out;
+  }
+
+  async function presign(path, key=FILE_NAME){
+    const url = `${API_BASE}${path}?userId=${encodeURIComponent(USER_ID)}&file=${encodeURIComponent(key)}`;
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(`Presign failed: ${r.status}`);
+    const json = await r.json();
+    if (!json.url) throw new Error('No URL returned from presign');
+    return json.url;
+  }
+
+  async function pullState(){
+    try{
+      const getUrl = await presign('/getUrl', FILE_NAME);
+      const r = await fetch(getUrl, { cache:'no-store' });
+      if (r.status === 404) return emptyState();
+      const remote = await r.json();
+      const merged = mergeStates(remote||emptyState(), getLocal());
+      setLocal(merged);
+      return merged;
+    }catch(e){
+      return getLocal();
+    }
+  }
+
+  function getOutbox(){ return safeParse(localStorage.getItem('mbpsOutbox'), []); }
+  function pushOutbox(state){ const q = getOutbox(); q.push(state); localStorage.setItem('mbpsOutbox', JSON.stringify(q)); }
+  async function flushOutbox(){
+    const q = getOutbox(); if (!q.length) return;
+    const next = q[0];
+    try{ await pushState(next); q.shift(); localStorage.setItem('mbpsOutbox', JSON.stringify(q)); if (q.length) flushOutbox(); } catch(e){}
+  }
+  async function pushState(state){
+    const putUrl = await presign('/putUrl', FILE_NAME);
+    const r = await fetch(putUrl, { method:'PUT', headers:{ 'content-type':'application/json' }, body: JSON.stringify(state) });
+    if (!r.ok) throw new Error(`PUT failed: ${r.status}`);
+  }
+  const saveDebounced = debounce(async ()=>{
+    const state = getLocal();
+    state.meta = state.meta || {}; state.meta.updatedAt = Date.now(); setLocal(state);
+    try{ await pushState(state); } catch(e){ pushOutbox(state); }
+  }, 800);
+
+  window.setUserId = function(newId){
+    USER_ID = (newId||'').trim() || 'owner';
+    localStorage.setItem('mbpsUserId', USER_ID);
+    pullState().then(renderKanban).catch(()=>renderKanban(getLocal()));
+  };
+
+  function renderKanban(state){
+    state = state || getLocal();
+    const deals = (state.deals||[]).filter(d => d && !d.archived);
+    const board = document.getElementById('kanbanBoard') || document.querySelector('.kanban');
+    if (!board) return;
+
+    board.innerHTML = STAGES.map(s => `
+      <div class="kb-col" data-stage="${s}">
+        <div class="kb-hd"><span>${s}</span><span class="kb-count">${deals.filter(d=> (d.stage||'New Lead')===s).length}</span></div>
+        <div class="kb-list" data-drop="${s}"></div>
+      </div>
+    `).join("");
+
+    STAGES.forEach(stage => {
+      const list = board.querySelector(\`.kb-list[data-drop="\${stage}"]\`);
+      deals.filter(d=> (d.stage||'New Lead')===stage).forEach(d => {
+        const card = document.createElement('div');
+        card.className = 'kb-card';
+        card.draggable = true;
+        card.dataset.id = d._id;
+        const badges = [];
+        if (d.offerPrice) badges.push(\`<span class="kb-badge">$\${isFinite(d.offerPrice)? Math.round(d.offerPrice).toLocaleString() : d.offerPrice}</span>\`);
+        if (d.arv) badges.push(\`<span class="kb-badge">ARV $\${isFinite(d.arv)? Math.round(d.arv).toLocaleString() : d.arv}</span>\`);
+        if (d.multi?.dscr) badges.push(\`<span class="kb-badge">DSCR \${Number(d.multi.dscr).toFixed(2)}</span>\`);
+        if (d.arbitrage?.profit) badges.push(\`<span class="kb-badge">Profit $\${isFinite(d.arbitrage.profit)? Math.round(d.arbitrage.profit).toLocaleString() : d.arbitrage.profit}</span>\`);
+        const nextDt = d.nextActionDate ? new Date(d.nextActionDate).toLocaleDateString() : '';
+        card.innerHTML = \`
+          <div class="kb-title"><div class="kb-pri">\${d.title || d.address || d.propertyAddress || 'Untitled'}</div><div class="kb-next">\${nextDt}</div></div>
+          <div class="kb-addr">\${d.address || d.propertyAddress || ''}</div>
+          <div class="kb-meta">\${badges.join(' ')}</div>
+          <div class="kb-actions">
+            <button class="btn kb-call" data-id="\${d._id}">Call</button>
+            <button class="btn kb-sms" data-id="\${d._id}">Text</button>
+            <button class="btn kb-nextaction" data-id="\${d._id}">\${d.nextAction || 'Next Action'}</button>
+          </div>
+          <div class="kb-gloss"><strong>Helper:</strong> ARV=After Repair Value · MAO=Max Allowable Offer · NOI=Net Operating Income · Cap=Cap Rate · DSCR=Debt Service Coverage Ratio · CoC=Cash-on-Cash Return · ADR=Avg Daily Rate · PITI=Principal+Interest+Taxes+Insurance · EGI=Effective Gross Income · LTV=Loan-to-Value.</div>
+        \`;
+        card.addEventListener('dragstart', e => { card.classList.add('dragging'); e.dataTransfer.setData('text/plain', d._id); });
+        card.addEventListener('dragend', ()=> card.classList.remove('dragging'));
+        list.appendChild(card);
+      });
+    });
+
+    board.querySelectorAll('.kb-list').forEach(zone => {
+      zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.background='#f8fafc'; });
+      zone.addEventListener('dragleave', () => { zone.style.background=''; });
+      zone.addEventListener('drop', e => {
+        e.preventDefault(); zone.style.background='';
+        const id = e.dataTransfer.getData('text/plain');
+        const stage = zone.getAttribute('data-drop');
+        const state = getLocal();
+        const deals = state.deals || [];
+        const idx = deals.findIndex(x => x && x._id === id);
+        if (idx >= 0){
+          deals[idx].stage = stage;
+          deals[idx].updatedAt = Date.now();
+          setLocal(state);
+          renderKanban(state);
+          saveDebounced();
+          if (window.renderDealsTable) { try{ window.renderDealsTable(); }catch(_){ } }
+        }
+      });
+    });
+
+    board.querySelectorAll('.kb-call').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const id = btn.dataset.id;
+        const d = (getLocal().deals||[]).find(x => x && x._id===id);
+        if (d && d.phone) location.href = \`tel:\${d.phone}\`; else alert('No phone on this deal.');
+      });
+    });
+    board.querySelectorAll('.kb-sms').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const id = btn.dataset.id;
+        const d = (getLocal().deals||[]).find(x => x && x._id===id);
+        if (d && d.phone) location.href = \`sms:\${d.phone}\`; else alert('No phone on this deal.');
+      });
+    });
+    board.querySelectorAll('.kb-nextaction').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const id = btn.dataset.id;
+        const state = getLocal();
+        const d = (state.deals||[]).find(x => x && x._id===id);
+        if (!d) return;
+        const action = prompt('Next Action (e.g., Call, Send Offer, Follow-up):', d.nextAction || '');
+        if (action===null) return;
+        const when = prompt('Next Action Date (YYYY-MM-DD):', d.nextActionDate ? new Date(d.nextActionDate).toISOString().slice(0,10) : '');
+        d.nextAction = (action||'').trim();
+        if (when) d.nextActionDate = new Date(when).getTime();
+        d.updatedAt = Date.now();
+        setLocal(state);
+        renderKanban(state);
+        saveDebounced();
+      });
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', async ()=>{
+    try {
+      const state = await pullState();
+      renderKanban(state);
+      flushOutbox();
+    } catch(_) {}
   });
 })();
 </script>
