@@ -5069,8 +5069,6 @@ function updateLiveAnalysis() {
   @media (max-width:900px){ .pe-grid { grid-template-columns:1fr; } }
 </style>
 
-
-
 <script>
 (function(){
   // Remove/hide any previous Property Evaluation blocks
@@ -5082,7 +5080,7 @@ function updateLiveAnalysis() {
     ].filter(Boolean);
     old.forEach(n => n.remove());
   });
-
+  
   // Helpers to use or safely polyfill app storage hooks
   function getDeals(){ try{return JSON.parse(localStorage.getItem('mbpsDeals')||'[]')}catch(_){return[]} }
   function saveDeals(d){ localStorage.setItem('mbpsDeals', JSON.stringify(d)); }
@@ -5090,9 +5088,9 @@ function updateLiveAnalysis() {
   function currentDealId(){
     return (window.CURRENT_ANALYZE_DEAL_ID) || (window.currentDealId) || null;
   }
+})();
+</script>
 
-  // Tabs behavior
-// Find this section around line 5097 and replace the showTab function:
 <script id="mbps-durable-showtab">
 (function(){
   function safeActivate(id){
@@ -5100,7 +5098,7 @@ function updateLiveAnalysis() {
       const panels = document.querySelectorAll('[data-tab-panel], .tab-panel, section.tab-panel');
       panels.forEach(p => { 
         try{ 
-          if(p) p.hidden = true; // Add null check here
+          if(p) p.hidden = true;
         }catch(_){} 
       });
       const target = document.getElementById(id) || document.querySelector(`[data-tab-panel="${id}"]`) || null;
@@ -5111,7 +5109,7 @@ function updateLiveAnalysis() {
       target.hidden = false;
       const tabs = document.querySelectorAll('[data-tab], .tab, [role="tab"]');
       tabs.forEach(btn => {
-        if (!btn) return; // Add null check
+        if (!btn) return;
         const match = (btn.getAttribute('data-tab') === id) ||
                       (btn.getAttribute('href') === `#${id}`) ||
                       (btn.id && btn.id === id);
