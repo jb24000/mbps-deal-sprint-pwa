@@ -5124,7 +5124,27 @@ function updateLiveAnalysis() {
     safeActivate(id); 
   };
 })();
-</script>
+<script>
+(function(){
+  // Helper functions that were missing
+  function getDeals(){ 
+    try{ return JSON.parse(localStorage.getItem('deals')||'[]'); }
+    catch(_){ return []; }
+  }
+  
+  function saveDeals(d){ 
+    localStorage.setItem('deals', JSON.stringify(d)); 
+  }
+  
+  function refreshTable(){ 
+    if (window.renderDealsTable) {
+      try{ window.renderDealsTable(); }catch(_){} 
+    }
+  }
+  
+  function currentDealId(){
+    return window.CURRENT_ANALYZE_DEAL_ID || null;
+  }
 
   // ---------- Single-family (MAO) ----------
   function analyzeSF(){
@@ -5143,40 +5163,28 @@ function updateLiveAnalysis() {
     if (piti>0 && cashflow>0 && maxOfferWholesale<=0) strat = 'Subject-To';
 
     const r = document.getElementById('sfResults');
-    r.innerHTML = `
-      <div class="pe-grid">
-        <div class="pe-field"><label>Max Offer (Wholesale)</label><div class="tag">$ ${maxOfferWholesale.toLocaleString()}</div></div>
-        <div class="pe-field"><label>Carrying Reserve</label><div class="tag">$ ${carrying.toLocaleString()}</div></div>
-        <div class="pe-field"><label>Cashflow (rent - PITI)</label><div class="tag">$ ${cashflow.toLocaleString()}</div></div>
-      </div>
-      <div style="margin-top:8px"><strong>Suggested Strategy:</strong> ${strat}</div>`;
+    if (r) {
+      r.innerHTML = `
+        <div class="pe-grid">
+          <div class="pe-field"><label>Max Offer (Wholesale)</label><div class="tag">$ ${maxOfferWholesale.toLocaleString()}</div></div>
+          <div class="pe-field"><label>Carrying Reserve</label><div class="tag">$ ${carrying.toLocaleString()}</div></div>
+          <div class="pe-field"><label>Cashflow (rent - PITI)</label><div class="tag">$ ${cashflow.toLocaleString()}</div></div>
+        </div>
+        <div style="margin-top:8px"><strong>Suggested Strategy:</strong> ${strat}</div>`;
+    }
 
-    document.getElementById('sfSetOffer').disabled = false;
+    const sfSetOfferBtn = document.getElementById('sfSetOffer');
+    if (sfSetOfferBtn) sfSetOfferBtn.disabled = false;
+    
     return { maxOfferWholesale, carrying, cashflow, strat };
   }
-  document.getElementById('sfAnalyze').addEventListener('click', analyzeSF);
-  document.getElementById('sfSetOffer').addEventListener('click', ()=>{
-    const out = analyzeSF();
-    const dealId = currentDealId();
-    const addr = (document.getElementById('peAddress').value||'').trim();
-    if (!dealId) { alert('Open a deal via Analyze, or select a deal first.'); return; }
-    const deals = getDeals();
-    const d = deals.find(x=>x && x._id===dealId);
-    if (!d) { alert('Deal not found.'); return; }
-    d.offerPrice = Math.round(out.maxOfferWholesale);
-    if (addr) d.address = d.propertyAddress = addr;
-    d.updatedAt = Date.now();
-    saveDeals(deals);
-    refreshTable();
-    alert('Offer price set on deal.');
-  });
 
   // ---------- Multifamily ----------
   function pmt(rate, nper, pv){
-    // Monthly mortgage payment
     const i = rate/12;
     return (pv*i) / (1 - Math.pow(1+i, -nper));
   }
+  
   function analyzeMF(){
     const units = +document.getElementById('mfUnits').value||0;
     const rentU = +document.getElementById('mfRent').value||0;
@@ -5202,37 +5210,24 @@ function updateLiveAnalysis() {
     const coc = (cashNeeded>0)? (cashFlow / cashNeeded) : 0;
 
     const r = document.getElementById('mfResults');
-    r.innerHTML = `
-      <div class="pe-grid">
-        <div class="pe-field"><label>NOI</label><div class="tag">$ ${(Math.round(noi)).toLocaleString()}</div></div>
-        <div class="pe-field"><label>Cap Rate</label><div class="tag">${(capRate*100).toFixed(2)}%</div></div>
-        <div class="pe-field"><label>DSCR</label><div class="tag">${dscr.toFixed(2)}</div></div>
-        <div class="pe-field"><label>Annual Debt Service</label><div class="tag">$ ${(Math.round(annualDebt)).toLocaleString()}</div></div>
-        <div class="pe-field"><label>Annual Cash Flow</label><div class="tag">$ ${(Math.round(cashFlow)).toLocaleString()}</div></div>
-        <div class="pe-field"><label>Cash-on-Cash</label><div class="tag">${(coc*100).toFixed(1)}%</div></div>
-      </div>
-      <div style="margin-top:8px" class="tag">${dscr>=1.25?'✅ DSCR lender-safe (≥1.25)':'⚠️ DSCR below 1.25 — risk for lenders'}</div>`;
+    if (r) {
+      r.innerHTML = `
+        <div class="pe-grid">
+          <div class="pe-field"><label>NOI</label><div class="tag">$ ${(Math.round(noi)).toLocaleString()}</div></div>
+          <div class="pe-field"><label>Cap Rate</label><div class="tag">${(capRate*100).toFixed(2)}%</div></div>
+          <div class="pe-field"><label>DSCR</label><div class="tag">${dscr.toFixed(2)}</div></div>
+          <div class="pe-field"><label>Annual Debt Service</label><div class="tag">$ ${(Math.round(annualDebt)).toLocaleString()}</div></div>
+          <div class="pe-field"><label>Annual Cash Flow</label><div class="tag">$ ${(Math.round(cashFlow)).toLocaleString()}</div></div>
+          <div class="pe-field"><label>Cash-on-Cash</label><div class="tag">${(coc*100).toFixed(1)}%</div></div>
+        </div>
+        <div style="margin-top:8px" class="tag">${dscr>=1.25?'✅ DSCR lender-safe (≥1.25)':'⚠️ DSCR below 1.25 — risk for lenders'}</div>`;
+    }
 
-    document.getElementById('mfSave').disabled = false;
+    const mfSaveBtn = document.getElementById('mfSave');
+    if (mfSaveBtn) mfSaveBtn.disabled = false;
+    
     return { noi, capRate, dscr, annualDebt, cashFlow, coc };
   }
-  document.getElementById('mfAnalyze').addEventListener('click', analyzeMF);
-  document.getElementById('mfSave').addEventListener('click', ()=>{
-    const out = analyzeMF();
-    const dealId = currentDealId();
-    const addr = (document.getElementById('peAddress').value||'').trim();
-    if (!dealId) { alert('Open a deal via Analyze, or select a deal first.'); return; }
-    const deals = getDeals();
-    const d = deals.find(x=>x && x._id===dealId);
-    if (!d) { alert('Deal not found.'); return; }
-    d.multi = { ...out };
-    if (addr) d.address = d.propertyAddress = addr;
-    d.strategy = 'Multifamily';
-    d.updatedAt = Date.now();
-    saveDeals(deals);
-    refreshTable();
-    alert('Multifamily analysis saved to deal.');
-  });
 
   // ---------- Airbnb Arbitrage ----------
   function analyzeAB(){
@@ -5257,36 +5252,108 @@ function updateLiveAnalysis() {
     const breakEvenNights = adr>0 ? ((rent + utils + platformFees + other)/adr) : 0;
 
     const r = document.getElementById('abResults');
-    r.innerHTML = `
-      <div class="pe-grid">
-        <div class="pe-field"><label>Monthly Revenue</label><div class="tag">$ ${(Math.round(revenue)).toLocaleString()}</div></div>
-        <div class="pe-field"><label>Monthly Expenses</label><div class="tag">$ ${(Math.round(expenses)).toLocaleString()}</div></div>
-        <div class="pe-field"><label>Monthly Profit</label><div class="tag">$ ${(Math.round(profit)).toLocaleString()}</div></div>
-        <div class="pe-field"><label>Break-even Nights</label><div class="tag">${breakEvenNights.toFixed(1)}</div></div>
-        <div class="pe-field"><label>Annualized ROI (on furnishings)</label><div class="tag">${(roi*100).toFixed(1)}%</div></div>
-      </div>
-      <div style="margin-top:8px" class="tag">${breakEvenNights<=15?'✅ Break-even ≤ 15 nights':'⚠️ Break-even high — consider different ADR/market'}</div>`;
+    if (r) {
+      r.innerHTML = `
+        <div class="pe-grid">
+          <div class="pe-field"><label>Monthly Revenue</label><div class="tag">$ ${(Math.round(revenue)).toLocaleString()}</div></div>
+          <div class="pe-field"><label>Monthly Expenses</label><div class="tag">$ ${(Math.round(expenses)).toLocaleString()}</div></div>
+          <div class="pe-field"><label>Monthly Profit</label><div class="tag">$ ${(Math.round(profit)).toLocaleString()}</div></div>
+          <div class="pe-field"><label>Break-even Nights</label><div class="tag">${breakEvenNights.toFixed(1)}</div></div>
+          <div class="pe-field"><label>Annualized ROI (on furnishings)</label><div class="tag">${(roi*100).toFixed(1)}%</div></div>
+        </div>
+        <div style="margin-top:8px" class="tag">${breakEvenNights<=15?'✅ Break-even ≤ 15 nights':'⚠️ Break-even high — consider different ADR/market'}</div>`;
+    }
 
-    document.getElementById('abSave').disabled = false;
+    const abSaveBtn = document.getElementById('abSave');
+    if (abSaveBtn) abSaveBtn.disabled = false;
+    
     return { revenue, expenses, profit, breakEvenNights, roi };
   }
-  document.getElementById('abAnalyze').addEventListener('click', analyzeAB);
-  document.getElementById('abSave').addEventListener('click', ()=>{
-    const out = analyzeAB();
-    const dealId = currentDealId();
-    const addr = (document.getElementById('peAddress').value||'').trim();
-    if (!dealId) { alert('Open a deal via Analyze, or select a deal first.'); return; }
-    const deals = getDeals();
-    const d = deals.find(x=>x && x._id===dealId);
-    if (!d) { alert('Deal not found.'); return; }
-    d.arbitrage = { ...out };
-    if (addr) d.address = d.propertyAddress = addr;
-    d.strategy = 'Airbnb Arbitrage';
-    d.updatedAt = Date.now();
-    saveDeals(deals);
-    refreshTable();
-    alert('Airbnb arbitrage analysis saved to deal.');
+
+  // Wire up event listeners after DOM loads
+  document.addEventListener('DOMContentLoaded', () => {
+    // Single Family
+    const sfAnalyzeBtn = document.getElementById('sfAnalyze');
+    if (sfAnalyzeBtn) {
+      sfAnalyzeBtn.addEventListener('click', analyzeSF);
+    }
+    
+    const sfSetOfferBtn = document.getElementById('sfSetOffer');
+    if (sfSetOfferBtn) {
+      sfSetOfferBtn.addEventListener('click', () => {
+        const out = analyzeSF();
+        const dealId = currentDealId();
+        const addr = (document.getElementById('peAddress')?.value||'').trim();
+        if (!dealId) { alert('Open a deal via Analyze, or select a deal first.'); return; }
+        const deals = getDeals();
+        const d = deals.find(x => x && x._id === dealId);
+        if (!d) { alert('Deal not found.'); return; }
+        d.offerPrice = Math.round(out.maxOfferWholesale);
+        if (addr) d.address = d.propertyAddress = addr;
+        d.updatedAt = Date.now();
+        saveDeals(deals);
+        refreshTable();
+        alert('Offer price set on deal.');
+      });
+    }
+
+    // Multifamily
+    const mfAnalyzeBtn = document.getElementById('mfAnalyze');
+    if (mfAnalyzeBtn) {
+      mfAnalyzeBtn.addEventListener('click', analyzeMF);
+    }
+    
+    const mfSaveBtn = document.getElementById('mfSave');
+    if (mfSaveBtn) {
+      mfSaveBtn.addEventListener('click', () => {
+        const out = analyzeMF();
+        const dealId = currentDealId();
+        const addr = (document.getElementById('peAddress')?.value||'').trim();
+        if (!dealId) { alert('Open a deal via Analyze, or select a deal first.'); return; }
+        const deals = getDeals();
+        const d = deals.find(x => x && x._id === dealId);
+        if (!d) { alert('Deal not found.'); return; }
+        d.multi = { ...out };
+        if (addr) d.address = d.propertyAddress = addr;
+        d.strategy = 'Multifamily';
+        d.updatedAt = Date.now();
+        saveDeals(deals);
+        refreshTable();
+        alert('Multifamily analysis saved to deal.');
+      });
+    }
+
+    // Airbnb
+    const abAnalyzeBtn = document.getElementById('abAnalyze');
+    if (abAnalyzeBtn) {
+      abAnalyzeBtn.addEventListener('click', analyzeAB);
+    }
+    
+    const abSaveBtn = document.getElementById('abSave');
+    if (abSaveBtn) {
+      abSaveBtn.addEventListener('click', () => {
+        const out = analyzeAB();
+        const dealId = currentDealId();
+        const addr = (document.getElementById('peAddress')?.value||'').trim();
+        if (!dealId) { alert('Open a deal via Analyze, or select a deal first.'); return; }
+        const deals = getDeals();
+        const d = deals.find(x => x && x._id === dealId);
+        if (!d) { alert('Deal not found.'); return; }
+        d.arbitrage = { ...out };
+        if (addr) d.address = d.propertyAddress = addr;
+        d.strategy = 'Airbnb Arbitrage';
+        d.updatedAt = Date.now();
+        saveDeals(deals);
+        refreshTable();
+        alert('Airbnb arbitrage analysis saved to deal.');
+      });
+    }
   });
+
+  // Make functions globally available
+  window.analyzeSF = analyzeSF;
+  window.analyzeMF = analyzeMF;
+  window.analyzeAB = analyzeAB;
 })();
 </script>
 <!-- =================== /MBPS: Property Evaluation (Replaced) =================== -->
