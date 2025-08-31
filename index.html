@@ -5668,20 +5668,18 @@ function updateLiveAnalysis() {
   window.setUserId = function(newId){
     const USER_ID = (newId||'').trim() || 'owner';
     localStorage.setItem('mbpsUserId', USER_ID);
-    localStorage.setItem('mbpsCurrentUser', USER_ID);  // Also update current user
+    localStorage.setItem('mbpsCurrentUser', USER_ID);
     
-    // Just re-render, don't try to sync
     if (typeof renderKanban === 'function') {
         renderKanban();
     }
-    location.reload(); // Reload to apply new user context
-};
+    location.reload();
+  };
 
-function renderKanban() {
+  function renderKanban() {
     const board = document.getElementById('kanbanBoard') || document.querySelector('.kanban');
     if (!board) return;
     
-    // Get deals from localStorage
     const deals = JSON.parse(localStorage.getItem('deals') || '[]');
     
     board.innerHTML = STAGES.map(s => `
@@ -5693,7 +5691,7 @@ function renderKanban() {
 
     STAGES.forEach(stage => {
       const list = board.querySelector(`.kb-list[data-drop="${stage}"]`);
-      if (!list) return; // Add safety check
+      if (!list) return;
       
       deals.filter(d=> (d.stage||'New Lead')===stage).forEach(d => {
         const card = document.createElement('div');
@@ -5722,7 +5720,8 @@ function renderKanban() {
         list.appendChild(card);
       });
     });
-}
+
+    // THIS SECTION WAS OUTSIDE THE FUNCTION - IT NEEDS TO BE INSIDE
     board.querySelectorAll('.kb-list').forEach(zone => {
       zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.background='#f8fafc'; });
       zone.addEventListener('dragleave', () => { zone.style.background=''; });
@@ -5730,74 +5729,72 @@ function renderKanban() {
         e.preventDefault(); zone.style.background='';
         const id = e.dataTransfer.getData('text/plain');
         const stage = zone.getAttribute('data-drop');
-        const state = getLocal();
-       const deals = JSON.parse(localStorage.getItem('deals') || '[]');
+        const deals = JSON.parse(localStorage.getItem('deals') || '[]');
         const idx = deals.findIndex(x => x && x._id === id);
         if (idx >= 0){
           deals[idx].stage = stage;
-          deals[idx].updatedAt = Date();
-        if (window.renderDealsTable) { try{ window.renderDealsTable(); }catch(_){ } }
+          deals[idx].updatedAt = Date.now();
+          localStorage.setItem('deals', JSON.stringify(deals));
+          if (window.renderDealsTable) { try{ window.renderDealsTable(); }catch(_){ } }
         }
       });
     });
 
- board.querySelectorAll('.kb-call').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    const id = btn.dataset.id;
-    const d = (getLocal().deals||[]).find(x => x && x._id===id);
-    if (d && d.phone) location.href = `tel:${d.phone}`; else alert('No phone on this deal.');
-  });
-});
-board.querySelectorAll('.kb-sms').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    const id = btn.dataset.id;
-    const d = (getLocal().deals||[]).find(x => x && x._id===id);
-    if (d && d.phone) location.href = `sms:${d.phone}`; else alert('No phone on this deal.');
-  });
-});
-board.querySelectorAll('.kb-nextaction').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    const id = btn.dataset.id;
-    const state = getLocal();
-    const deals = JSON.parse(localStorage.getItem('deals') || '[]');
-    const d = deals.find(x => x && x._id===id);
-    if (!d) return;
-    const action = prompt('Next Action (e.g., Call, Send Offer, Follow-up):', d.nextAction || '');
-    if (action===null) return;
-    const when = prompt('Next Action Date (YYYY-MM-DD):', d.nextActionDate ? new Date(d.nextActionDate).toISOString().slice(0,10) : '');
-    d.nextAction = (action||'').trim();
-    if (when) d.nextActionDate = new Date(when).getTime();
-    d.updatedAt = Date.now();
-  });
-});
-} // Closes renderKanban function
+    board.querySelectorAll('.kb-call').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const id = btn.dataset.id;
+        const deals = JSON.parse(localStorage.getItem('deals') || '[]');
+        const d = deals.find(x => x && x._id===id);
+        if (d && d.phone) location.href = `tel:${d.phone}`; else alert('No phone on this deal.');
+      });
+    });
+    
+    board.querySelectorAll('.kb-sms').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const id = btn.dataset.id;
+        const deals = JSON.parse(localStorage.getItem('deals') || '[]');
+        const d = deals.find(x => x && x._id===id);
+        if (d && d.phone) location.href = `sms:${d.phone}`; else alert('No phone on this deal.');
+      });
+    });
+    
+    board.querySelectorAll('.kb-nextaction').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const id = btn.dataset.id;
+        const deals = JSON.parse(localStorage.getItem('deals') || '[]');
+        const d = deals.find(x => x && x._id===id);
+        if (!d) return;
+        const action = prompt('Next Action (e.g., Call, Send Offer, Follow-up):', d.nextAction || '');
+        if (action===null) return;
+        const when = prompt('Next Action Date (YYYY-MM-DD):', d.nextActionDate ? new Date(d.nextActionDate).toISOString().slice(0,10) : '');
+        d.nextAction = (action||'').trim();
+        if (when) d.nextActionDate = new Date(when).getTime();
+        d.updatedAt = Date.now();
+        localStorage.setItem('deals', JSON.stringify(deals));
+      });
+    });
+  } // THIS IS WHERE renderKanban SHOULD CLOSE
 
-document.addEventListener('DOMContentLoaded', async ()=>{
-  // Initialize S3 Sync
-  if (typeof S3Sync !== 'undefined') {
-    S3Sync.init();
-  }
-  
-  // Add dashboard to render cycle
-  if (typeof renderDashboard === 'function') {
-    renderDashboard();
-  }
-  
-  // Render kanban without the deleted sync functions
-  if (typeof renderKanban === 'function') {
-    renderKanban();  // No state parameter, no pullState()
-  }
-  
-  // Make dashboard the default tab
-  setTimeout(() => {
-    const dashboardTab = document.querySelector('[data-tab="dashboard"]');
-    if (dashboardTab) dashboardTab.click();
-  }, 100);
-});
-})(); // <-- This closes the IIFE
+  document.addEventListener('DOMContentLoaded', async ()=>{
+    if (typeof S3Sync !== 'undefined') {
+      S3Sync.init();
+    }
+    
+    if (typeof renderDashboard === 'function') {
+      renderDashboard();
+    }
+    
+    if (typeof renderKanban === 'function') {
+      renderKanban();
+    }
+    
+    setTimeout(() => {
+      const dashboardTab = document.querySelector('[data-tab="dashboard"]');
+      if (dashboardTab) dashboardTab.click();
+    }, 100);
+  });
+})();
 </script>
-
-<script id="mbps-fixes">
 (function(){
   document.addEventListener('DOMContentLoaded', () => {
     // 1) Safe showTab wrapper (prevents null .hidden errors)
