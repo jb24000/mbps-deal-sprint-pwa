@@ -5473,5 +5473,30 @@ Notes:
 })();
 </script>
 
+<script id="mbps-renderDealsTable-guard">
+(function(){
+  function wrap(){
+    if (!window.renderDealsTable || window.renderDealsTable._wrapped) return;
+    const orig = window.renderDealsTable;
+    window.renderDealsTable = function(){
+      try{
+        const tbl = document.getElementById('dealsTable') || document.querySelector('table#dealsTable, .deals-table');
+        if (tbl && !tbl.tHead) try{ tbl.createTHead(); }catch(_){}
+        if (Array.isArray(window.dealColumns)){
+          window.dealColumns = window.dealColumns.filter(Boolean).map(c => {
+            if (typeof c !== 'object') return { key:String(c), title:String(c), cls:'' };
+            if (!('cls' in c)) c.cls = '';
+            if (!('key' in c) && c.title) c.key = String(c.title).toLowerCase().replace(/\s+/g,'_');
+            return c;
+          });
+        }
+        return orig.apply(this, arguments);
+      }catch(e){ console.warn('[renderDealsTable] guarded:', e); }
+    };
+    window.renderDealsTable._wrapped = true;
+  }
+  if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', wrap); else wrap();
+})();
+</script>
 </body>
 </html>
