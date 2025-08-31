@@ -4277,5 +4277,340 @@ Notes:
 </script>
 <!-- ============================== /END v1.3 FULL PATCH ============================== -->
 
+
+<!-- ===================== MBPS: Property Evaluation (Replaced) ===================== -->
+<style>
+  #propertyEvaluation { border-top:1px solid rgba(148,163,184,.35); padding:16px; margin-top:16px; background:#fff;border-radius:14px;}
+  #propertyEvaluation h3 { margin:0 0 12px 0; }
+  .pe-tabs { display:flex; gap:8px; margin:8px 0 16px 0; flex-wrap:wrap; }
+  .pe-tabs .tab { padding:8px 12px; border:1px solid rgba(148,163,184,.4); border-radius:999px; cursor:pointer; }
+  .pe-tabs .tab.active { background:#00a8ff; color:#fff; border-color:#00a8ff; }
+  .pe-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; }
+  .pe-card { border:1px solid rgba(148,163,184,.35); border-radius:12px; padding:12px; background:#fff; }
+  .pe-field label { display:block; font-size:12px; color:#6b7280; margin-bottom:4px; }
+  .pe-field input { width:100%; padding:8px; border:1px solid rgba(148,163,184,.5); border-radius:8px; }
+  .pe-actions { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+  .btn { display:inline-flex; align-items:center; gap:.5rem; padding:.5rem .75rem; border:1px solid rgba(148,163,184,.4); border-radius:10px; background:#fff; cursor:pointer; }
+  .btn.primary { background:#00a8ff; color:#fff; border-color:#00a8ff; }
+  .tag { display:inline-block; padding:2px 8px; border-radius:999px; border:1px solid rgba(148,163,184,.4); }
+  @media (max-width:900px){ .pe-grid { grid-template-columns:1fr; } }
+</style>
+
+<section id="propertyEvaluation" aria-label="Property Evaluation">
+  <h3>Property Evaluation</h3>
+  <div class="pe-field" style="margin-bottom:12px;">
+    <label>Property Address</label>
+    <input id="peAddress" type="text" placeholder="123 Main St, City, ST 00000" />
+  </div>
+
+  <div class="pe-tabs" role="tablist">
+    <button class="tab active" data-tab="single" role="tab" aria-selected="true">Single-Family</button>
+    <button class="tab" data-tab="multi" role="tab" aria-selected="false">Apartments (Multifamily)</button>
+    <button class="tab" data-tab="airbnb" role="tab" aria-selected="false">Airbnb Arbitrage</button>
+  </div>
+
+  <!-- Single-Family (keeps quick MAO approach) -->
+  <div class="pe-pane" id="pe-single" role="tabpanel">
+    <div class="pe-grid">
+      <div class="pe-field"><label>ARV</label><input id="sfArv" type="number" placeholder="220000"></div>
+      <div class="pe-field"><label>Repairs</label><input id="sfRepairs" type="number" placeholder="35000"></div>
+      <div class="pe-field"><label>Assignment / Margin</label><input id="sfFee" type="number" placeholder="10000" value="10000"></div>
+      <div class="pe-field"><label>Holding %</label><input id="sfHoldPct" type="number" placeholder="10" value="10"></div>
+      <div class="pe-field"><label>Rent (if BRRR/hold)</label><input id="sfRent" type="number" placeholder="1800"></div>
+      <div class="pe-field"><label>PITI (if Sub2)</label><input id="sfPiti" type="number" placeholder="1350"></div>
+    </div>
+    <div class="pe-actions">
+      <button id="sfAnalyze" class="btn">Analyze</button>
+      <button id="sfSetOffer" class="btn primary" disabled>Set Offer Price</button>
+    </div>
+    <div id="sfResults" class="pe-card" style="margin-top:10px;color:#64748b">Enter inputs and Analyze.</div>
+  </div>
+
+  <!-- Multifamily / Apartments -->
+  <div class="pe-pane" id="pe-multi" role="tabpanel" hidden>
+    <div class="pe-grid">
+      <div class="pe-field"><label>Units</label><input id="mfUnits" type="number" placeholder="12"></div>
+      <div class="pe-field"><label>Avg Rent / Unit</label><input id="mfRent" type="number" placeholder="1200"></div>
+      <div class="pe-field"><label>Other Income (mo)</label><input id="mfOther" type="number" placeholder="0"></div>
+      <div class="pe-field"><label>Vacancy %</label><input id="mfVacancy" type="number" placeholder="5" value="5"></div>
+      <div class="pe-field"><label>OpEx % of EGI</label><input id="mfOpexPct" type="number" placeholder="40" value="40"></div>
+      <div class="pe-field"><label>Purchase Price</label><input id="mfPrice" type="number" placeholder="1500000"></div>
+      <div class="pe-field"><label>Down Payment %</label><input id="mfDownPct" type="number" placeholder="25" value="25"></div>
+      <div class="pe-field"><label>Interest %</label><input id="mfRate" type="number" step="0.01" placeholder="6.5" value="6.5"></div>
+      <div class="pe-field"><label>Amortization (yrs)</label><input id="mfAmort" type="number" placeholder="25" value="25"></div>
+    </div>
+    <div class="pe-actions">
+      <button id="mfAnalyze" class="btn">Analyze</button>
+      <button id="mfSave" class="btn primary" disabled>Save to Deal</button>
+    </div>
+    <div id="mfResults" class="pe-card" style="margin-top:10px;color:#64748b">Enter inputs and Analyze.</div>
+  </div>
+
+  <!-- Airbnb Arbitrage -->
+  <div class="pe-pane" id="pe-airbnb" role="tabpanel" hidden>
+    <div class="pe-grid">
+      <div class="pe-field"><label>Monthly Rent</label><input id="abRent" type="number" placeholder="2000"></div>
+      <div class="pe-field"><label>Average Daily Rate (ADR)</label><input id="abAdr" type="number" placeholder="175"></div>
+      <div class="pe-field"><label>Occupancy %</label><input id="abOcc" type="number" placeholder="70" value="70"></div>
+      <div class="pe-field"><label>Monthly Utilities</label><input id="abUtils" type="number" placeholder="250"></div>
+      <div class="pe-field"><label>Cleaning / Turnover per Stay</label><input id="abClean" type="number" placeholder="50"></div>
+      <div class="pe-field"><label>Avg Nights per Stay</label><input id="abNightsPerStay" type="number" placeholder="3" value="3"></div>
+      <div class="pe-field"><label>Airbnb Fee %</label><input id="abFeePct" type="number" placeholder="3" value="3"></div>
+      <div class="pe-field"><label>Furnishing (one-time)</label><input id="abFurnish" type="number" placeholder="5000"></div>
+      <div class="pe-field"><label>Other Monthly Costs</label><input id="abOther" type="number" placeholder="0"></div>
+    </div>
+    <div class="pe-actions">
+      <button id="abAnalyze" class="btn">Analyze</button>
+      <button id="abSave" class="btn primary" disabled>Save to Deal</button>
+    </div>
+    <div id="abResults" class="pe-card" style="margin-top:10px;color:#64748b">Enter inputs and Analyze.</div>
+  </div>
+</section>
+
+<script>
+(function(){
+  // Remove/hide any previous Property Evaluation blocks
+  document.addEventListener('DOMContentLoaded', () => {
+    const old = [
+      document.getElementById('property-evaluation'),
+      document.querySelector('#propertyEvaluationOld'),
+      document.querySelector('.property-evaluation')
+    ].filter(Boolean);
+    old.forEach(n => n.remove());
+  });
+
+  // Helpers to use or safely polyfill app storage hooks
+  function getDeals(){ try{return JSON.parse(localStorage.getItem('mbpsDeals')||'[]')}catch(_){return[]} }
+  function saveDeals(d){ localStorage.setItem('mbpsDeals', JSON.stringify(d)); }
+  function refreshTable(){ if (window.renderDealsTable) try{ window.renderDealsTable(); }catch(_){} }
+  function currentDealId(){
+    return (window.CURRENT_ANALYZE_DEAL_ID) || (window.currentDealId) || null;
+  }
+
+  // Tabs behavior
+  function showTab(name){
+    document.querySelectorAll('#propertyEvaluation .pe-pane').forEach(p=>p.hidden=true);
+    document.getElementById('pe-'+name).hidden=false;
+    document.querySelectorAll('#propertyEvaluation .pe-tabs .tab').forEach(b=>{
+      b.classList.toggle('active', b.dataset.tab===name);
+      b.setAttribute('aria-selected', b.dataset.tab===name ? 'true' : 'false');
+    });
+  }
+  document.querySelectorAll('#propertyEvaluation .pe-tabs .tab').forEach(btn=>{
+    btn.addEventListener('click', ()=> showTab(btn.dataset.tab));
+  });
+  showTab('single');
+
+  // ---------- Single-family (MAO) ----------
+  function analyzeSF(){
+    const arv = +document.getElementById('sfArv').value||0;
+    const repairs = +document.getElementById('sfRepairs').value||0;
+    const fee = +document.getElementById('sfFee').value||0;
+    const holdPct = (+document.getElementById('sfHoldPct').value||10)/100;
+    const rent = +document.getElementById('sfRent').value||0;
+    const piti = +document.getElementById('sfPiti').value||0;
+
+    const maxOfferWholesale = Math.max(0, arv*0.7 - repairs - fee);
+    const carrying = Math.round(arv * holdPct);
+    const cashflow = Math.round(rent - piti);
+    let strat = 'Wholesale';
+    if (cashflow >= 300) strat = 'Buy & Hold';
+    if (piti>0 && cashflow>0 && maxOfferWholesale<=0) strat = 'Subject-To';
+
+    const r = document.getElementById('sfResults');
+    r.innerHTML = `
+      <div class="pe-grid">
+        <div class="pe-field"><label>Max Offer (Wholesale)</label><div class="tag">$ ${maxOfferWholesale.toLocaleString()}</div></div>
+        <div class="pe-field"><label>Carrying Reserve</label><div class="tag">$ ${carrying.toLocaleString()}</div></div>
+        <div class="pe-field"><label>Cashflow (rent - PITI)</label><div class="tag">$ ${cashflow.toLocaleString()}</div></div>
+      </div>
+      <div style="margin-top:8px"><strong>Suggested Strategy:</strong> ${strat}</div>`;
+
+    document.getElementById('sfSetOffer').disabled = false;
+    return { maxOfferWholesale, carrying, cashflow, strat };
+  }
+  document.getElementById('sfAnalyze').addEventListener('click', analyzeSF);
+  document.getElementById('sfSetOffer').addEventListener('click', ()=>{
+    const out = analyzeSF();
+    const dealId = currentDealId();
+    const addr = (document.getElementById('peAddress').value||'').trim();
+    if (!dealId) { alert('Open a deal via Analyze, or select a deal first.'); return; }
+    const deals = getDeals();
+    const d = deals.find(x=>x && x._id===dealId);
+    if (!d) { alert('Deal not found.'); return; }
+    d.offerPrice = Math.round(out.maxOfferWholesale);
+    if (addr) d.address = d.propertyAddress = addr;
+    d.updatedAt = Date.now();
+    saveDeals(deals);
+    refreshTable();
+    alert('Offer price set on deal.');
+  });
+
+  // ---------- Multifamily ----------
+  function pmt(rate, nper, pv){
+    // Monthly mortgage payment
+    const i = rate/12;
+    return (pv*i) / (1 - Math.pow(1+i, -nper));
+  }
+  function analyzeMF(){
+    const units = +document.getElementById('mfUnits').value||0;
+    const rentU = +document.getElementById('mfRent').value||0;
+    const other = +document.getElementById('mfOther').value||0;
+    const vac = (+document.getElementById('mfVacancy').value||5)/100;
+    const opexPct = (+document.getElementById('mfOpexPct').value||40)/100;
+    const price = +document.getElementById('mfPrice').value||0;
+    const downPct = (+document.getElementById('mfDownPct').value||25)/100;
+    const rate = (+document.getElementById('mfRate').value||6.5)/100;
+    const amort = +document.getElementById('mfAmort').value||25;
+
+    const grossSched = units * rentU * 12 + other*12;
+    const egi = grossSched * (1 - vac);
+    const opex = egi * opexPct;
+    const noi = egi - opex;
+
+    const loanAmt = price * (1 - downPct);
+    const annualDebt = pmt(rate, amort*12, loanAmt) * 12;
+    const dscr = (annualDebt>0)? (noi / annualDebt): 0;
+    const capRate = (price>0)? (noi / price) : 0;
+    const cashNeeded = price * downPct;
+    const cashFlow = noi - annualDebt;
+    const coc = (cashNeeded>0)? (cashFlow / cashNeeded) : 0;
+
+    const r = document.getElementById('mfResults');
+    r.innerHTML = `
+      <div class="pe-grid">
+        <div class="pe-field"><label>NOI</label><div class="tag">$ ${(Math.round(noi)).toLocaleString()}</div></div>
+        <div class="pe-field"><label>Cap Rate</label><div class="tag">${(capRate*100).toFixed(2)}%</div></div>
+        <div class="pe-field"><label>DSCR</label><div class="tag">${dscr.toFixed(2)}</div></div>
+        <div class="pe-field"><label>Annual Debt Service</label><div class="tag">$ ${(Math.round(annualDebt)).toLocaleString()}</div></div>
+        <div class="pe-field"><label>Annual Cash Flow</label><div class="tag">$ ${(Math.round(cashFlow)).toLocaleString()}</div></div>
+        <div class="pe-field"><label>Cash-on-Cash</label><div class="tag">${(coc*100).toFixed(1)}%</div></div>
+      </div>
+      <div style="margin-top:8px" class="tag">${dscr>=1.25?'✅ DSCR lender-safe (≥1.25)':'⚠️ DSCR below 1.25 — risk for lenders'}</div>`;
+
+    document.getElementById('mfSave').disabled = false;
+    return { noi, capRate, dscr, annualDebt, cashFlow, coc };
+  }
+  document.getElementById('mfAnalyze').addEventListener('click', analyzeMF);
+  document.getElementById('mfSave').addEventListener('click', ()=>{
+    const out = analyzeMF();
+    const dealId = currentDealId();
+    const addr = (document.getElementById('peAddress').value||'').trim();
+    if (!dealId) { alert('Open a deal via Analyze, or select a deal first.'); return; }
+    const deals = getDeals();
+    const d = deals.find(x=>x && x._id===dealId);
+    if (!d) { alert('Deal not found.'); return; }
+    d.multi = { ...out };
+    if (addr) d.address = d.propertyAddress = addr;
+    d.strategy = 'Multifamily';
+    d.updatedAt = Date.now();
+    saveDeals(deals);
+    refreshTable();
+    alert('Multifamily analysis saved to deal.');
+  });
+
+  // ---------- Airbnb Arbitrage ----------
+  function analyzeAB(){
+    const rent = +document.getElementById('abRent').value||0;
+    const adr = +document.getElementById('abAdr').value||0;
+    const occ = (+document.getElementById('abOcc').value||70)/100;
+    const utils = +document.getElementById('abUtils').value||0;
+    const clean = +document.getElementById('abClean').value||0;
+    const nightsPerStay = +document.getElementById('abNightsPerStay').value||3;
+    const feePct = (+document.getElementById('abFeePct').value||3)/100;
+    const furnish = +document.getElementById('abFurnish').value||0;
+    const other = +document.getElementById('abOther').value||0;
+
+    const nights = 30 * occ;
+    const stays = nightsPerStay>0 ? (nights / nightsPerStay) : 0;
+    const revenue = adr * nights;
+    const platformFees = revenue * feePct;
+    const cleaning = stays * clean;
+    const expenses = rent + utils + platformFees + cleaning + other;
+    const profit = revenue - expenses;
+    const roi = furnish>0 ? ((profit*12)/furnish) : 0;
+    const breakEvenNights = adr>0 ? ((rent + utils + platformFees + other)/adr) : 0;
+
+    const r = document.getElementById('abResults');
+    r.innerHTML = `
+      <div class="pe-grid">
+        <div class="pe-field"><label>Monthly Revenue</label><div class="tag">$ ${(Math.round(revenue)).toLocaleString()}</div></div>
+        <div class="pe-field"><label>Monthly Expenses</label><div class="tag">$ ${(Math.round(expenses)).toLocaleString()}</div></div>
+        <div class="pe-field"><label>Monthly Profit</label><div class="tag">$ ${(Math.round(profit)).toLocaleString()}</div></div>
+        <div class="pe-field"><label>Break-even Nights</label><div class="tag">${breakEvenNights.toFixed(1)}</div></div>
+        <div class="pe-field"><label>Annualized ROI (on furnishings)</label><div class="tag">${(roi*100).toFixed(1)}%</div></div>
+      </div>
+      <div style="margin-top:8px" class="tag">${breakEvenNights<=15?'✅ Break-even ≤ 15 nights':'⚠️ Break-even high — consider different ADR/market'}</div>`;
+
+    document.getElementById('abSave').disabled = false;
+    return { revenue, expenses, profit, breakEvenNights, roi };
+  }
+  document.getElementById('abAnalyze').addEventListener('click', analyzeAB);
+  document.getElementById('abSave').addEventListener('click', ()=>{
+    const out = analyzeAB();
+    const dealId = currentDealId();
+    const addr = (document.getElementById('peAddress').value||'').trim();
+    if (!dealId) { alert('Open a deal via Analyze, or select a deal first.'); return; }
+    const deals = getDeals();
+    const d = deals.find(x=>x && x._id===dealId);
+    if (!d) { alert('Deal not found.'); return; }
+    d.arbitrage = { ...out };
+    if (addr) d.address = d.propertyAddress = addr;
+    d.strategy = 'Airbnb Arbitrage';
+    d.updatedAt = Date.now();
+    saveDeals(deals);
+    refreshTable();
+    alert('Airbnb arbitrage analysis saved to deal.');
+  });
+})();
+</script>
+<!-- =================== /MBPS: Property Evaluation (Replaced) =================== -->
+
+
+<style>
+  /* Collapse Property Evaluation by default */
+  #propertyEvaluation { display:none; }
+  #propertyEvaluation.open { display:block; animation: fadeIn 0.3s ease-in-out; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
+</style>
+
+<script>
+(function(){
+  document.addEventListener('DOMContentLoaded', () => {
+    // Try to find a top control bar; fall back to body if none.
+    const controlBar = document.querySelector('.toolbar, #controls, .top-controls, .actions-bar') || document.body;
+
+    // Add the toggle button once
+    if(controlBar && !document.getElementById('togglePEBtn')){
+      const btn = document.createElement('button');
+      btn.id = 'togglePEBtn';
+      btn.className = 'btn';
+      btn.style.marginLeft = '8px';
+      btn.textContent = 'Property Evaluation';
+      controlBar.appendChild(btn);
+    }
+
+    const pe = document.getElementById('propertyEvaluation');
+    const toggle = document.getElementById('togglePEBtn');
+
+    if(toggle && pe){
+      toggle.addEventListener('click', () => {
+        pe.classList.toggle('open');
+        if(pe.classList.contains('open')){
+          pe.scrollIntoView({behavior:'smooth', block:'start'});
+        }
+      });
+    }
+
+    // Optional: hide Property Evaluation when switching other app tabs
+    document.querySelectorAll('[data-tab]').forEach(tab => {
+      tab.addEventListener('click', () => {
+        if(pe) pe.classList.remove('open');
+      });
+    });
+  });
+})();
+</script>
+
 </body>
 </html>
