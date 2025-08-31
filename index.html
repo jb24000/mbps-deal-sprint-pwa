@@ -237,6 +237,18 @@ body.dark .kb-gloss, [data-theme="dark"] .kb-gloss {
 @media (max-width: 768px){
   .agent-search-input{ float:none; width: 100%; max-width: 100%; }
 }
+
+/* Additional fix for the Agent Network search */
+#agentSearch {
+  max-width: 300px;
+  width: 100%;
+}
+@media (min-width: 768px) {
+  .flex.items-center.justify-between {
+    flex-wrap: nowrap;
+  }
+}
+  
 /* Ensure the blank PE button (now labeled) uses the blue primary style if available */
 button#btnPropertyEvaluation, .btn#btnPropertyEvaluation{
   border-color: rgba(0,168,255,.25);
@@ -317,7 +329,7 @@ button#btnPropertyEvaluation, .btn#btnPropertyEvaluation{
     <!-- NAV TABS -->
 <nav class="sticky-tabs flex flex-wrap gap-2 mb-4 rounded-xl p-1 bg-white/80 dark:bg-[#0b1322]/70">
   <button class="tab" data-tab="sprint">Sprint</button>
-  <button class="tab active" data-tab="seven-day-sprint">7-Day Sprint</button>
+  <button class="tab active" data-tab="tab-seven-day-sprint">7-Day Sprint</button>
   <button class="tab" data-tab="contracts">Contracts</button>
   <button class="tab" data-tab="pipeline">Pipeline</button>
   <button class="tab" data-tab="agent-outreach">Agent Network</button>
@@ -5095,7 +5107,7 @@ Notes:
     `).join("");
 
     STAGES.forEach(stage => {
-      const list = board.querySelector(\`.kb-list[data-drop="\${stage}"]\`);
+      const list = board.querySelector(`.kb-list[data-drop="\${stage}"]`);
       deals.filter(d=> (d.stage||'New Lead')===stage).forEach(d => {
         const card = document.createElement('div');
         card.className = 'kb-card';
