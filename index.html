@@ -5656,7 +5656,7 @@ function updateLiveAnalysis() {
     location.reload(); // Reload to apply new user context
 };
 
-  function renderKanban
+ function renderKanban() {
     const board = document.getElementById('kanbanBoard') || document.querySelector('.kanban');
     if (!board) return;
     board.innerHTML = STAGES.map(s => `
