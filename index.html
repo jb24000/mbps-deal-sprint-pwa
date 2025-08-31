@@ -6068,5 +6068,47 @@ function updateLiveAnalysis() {
   if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', wrap); else wrap();
 })();
 </script>
+  <!-- ... existing scripts ... -->
+
+<!-- Add this right before </body> -->
+<script id="fix-missing-button-text">
+(function() {
+  document.addEventListener('DOMContentLoaded', () => {
+    // Fix Agent Network search button
+    const agentSearchBtn = document.querySelector('#tab-agent-outreach button:not([id])');
+    if (agentSearchBtn && !agentSearchBtn.textContent.trim()) {
+      agentSearchBtn.textContent = 'Search';
+      agentSearchBtn.classList.add('btn', 'btn-outline');
+    }
+    
+    // Fix Extended Pipeline buttons
+    const extPipelineSection = document.querySelector('#tab-extended-pipeline');
+    if (extPipelineSection) {
+      const buttons = extPipelineSection.querySelectorAll('button');
+      buttons.forEach(btn => {
+        if (!btn.textContent.trim()) {
+          if (btn.id && btn.id.includes('analyze')) {
+            btn.textContent = 'Analyze Deal';
+            btn.classList.add('btn', 'btn-outline');
+          } else if (btn.id && btn.id.includes('schedule')) {
+            btn.textContent = 'Schedule Follow-up';
+            btn.classList.add('btn', 'btn-outline');
+          }
+        }
+      });
+    }
+    
+    // Fix any other blank buttons in the deal form area
+    const dealFormBtns = document.querySelectorAll('#extendedDealForm button');
+    dealFormBtns.forEach(btn => {
+      if (!btn.textContent.trim() && btn.id) {
+        if (btn.id === 'analyzeExtDealBtn') btn.textContent = 'Analyze Deal';
+        if (btn.id === 'scheduleFollowUpBtn') btn.textContent = 'Schedule Follow-up';
+      }
+    });
+  });
+})();
+</script>
 </body>
 </html>
+
