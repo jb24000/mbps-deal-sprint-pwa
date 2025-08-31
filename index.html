@@ -5373,5 +5373,93 @@ Notes:
 })();
 </script>
 
+
+<script id="mbps-blank-button-killer">
+(function(){
+  function getPEModal(){
+    return document.getElementById('peModal')
+        || document.getElementById('propertyEvalModal')
+        || document.querySelector('dialog#property-valuation, dialog[property-evaluation]')
+        || null;
+  }
+  function openPE(){
+    const pe = getPEModal();
+    if (pe && typeof pe.showModal === 'function'){
+      document.querySelectorAll('dialog[open]').forEach(d => { if (d!==pe) { try{ d.close(); }catch(_){}}});
+      pe.showModal();
+      return true;
+    }
+    // fall back to tab panel if modal not present
+    const tab = document.getElementById('property-valuation') || document.querySelector('[data-tab-panel="property-valuation"]');
+    if (tab){
+      if (typeof window.showTab === 'function') try{ window.showTab('property-valuation'); }catch(_){}
+      tab.scrollIntoView({behavior:'smooth', block:'start'});
+      return true;
+    }
+    alert('Property Evaluation panel not found.');
+    return false;
+  }
+
+  function labelAndWire(btn){
+    if (!btn) return;
+    const txt = (btn.textContent||'').trim();
+    if (!txt){
+      btn.textContent = 'Property Evaluation';
+    }
+    btn.id = btn.id || 'btnPropertyEvaluation';
+    // add primary/blue class if your CSS has it
+    if (btn.classList) {
+      if (!Array.from(btn.classList).some(c => /primary|blue/i.test(c))) {
+        btn.classList.add('blue'); // adjust if your primary class is different
+      }
+    }
+    btn.addEventListener('click', function(ev){
+      ev.preventDefault(); ev.stopPropagation();
+      openPE();
+    }, { once:false });
+  }
+
+  function scanOnce(root=document){
+    // Heuristic: a blank button in the same group as Analyze Deal and Schedule Follow-up
+    const groups = root.querySelectorAll('.btn-group, .actions, .action-row, .deal-actions, .flex, .grid');
+    groups.forEach(g => {
+      const labels = Array.from(g.querySelectorAll('button,.btn,a')).map(x => (x.textContent||'').trim());
+      const hasAnalyze = labels.some(t => /^analyze/i.test(t));
+      const hasFollow  = labels.some(t => /follow[- ]?up/i.test(t));
+      if (hasAnalyze && hasFollow){
+        Array.from(g.querySelectorAll('button,.btn')).forEach(b => {
+          if (!(b.textContent||'').trim()) labelAndWire(b);
+        });
+      }
+    });
+
+    // Also wire explicit placeholders
+    document.querySelectorAll('button[aria-label="property-evaluation"], button[data-action="property-evaluation"]').forEach(labelAndWire);
+
+    // If there is an anchor/tab with no text that points to property valuation, fix it
+    document.querySelectorAll('a[href="#property-valuation"], [data-tab="property-valuation"]').forEach(el => {
+      if (!(el.textContent||'').trim()) el.textContent = 'Property Evaluation';
+    });
+  }
+
+  // Initial scan
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', () => { scanOnce(); });
+  } else {
+    scanOnce();
+  }
+
+  // MutationObserver to catch late-rendered buttons
+  const mo = new MutationObserver(muts => {
+    let needs = false;
+    for (const m of muts){
+      if (m.addedNodes && m.addedNodes.length) { needs = true; break; }
+    }
+    if (needs) scanOnce();
+  });
+  mo.observe(document.documentElement, { childList: true, subtree: true });
+})();
+</script>
+
 </body>
 </html>
