@@ -6160,42 +6160,80 @@ function updateLiveAnalysis() {
   <!-- ... existing scripts ... -->
 
 <!-- Add this right before </body> -->
-<script id="fix-missing-button-text">
+<script id="fix-missing-button-text-v2">
 (function() {
-  document.addEventListener('DOMContentLoaded', () => {
-    // Fix Agent Network search button
-    const agentSearchBtn = document.querySelector('#tab-agent-outreach button:not([id])');
-    if (agentSearchBtn && !agentSearchBtn.textContent.trim()) {
-      agentSearchBtn.textContent = 'Search';
-      agentSearchBtn.classList.add('btn', 'btn-outline');
+  function fixAllButtons() {
+    // Extended Pipeline buttons - check by ID directly
+    const analyzeBtn = document.getElementById('analyzeExtDealBtn');
+    if (analyzeBtn && !analyzeBtn.textContent.trim()) {
+      analyzeBtn.textContent = 'Analyze Deal';
+      analyzeBtn.classList.add('btn', 'btn-outline');
     }
     
-    // Fix Extended Pipeline buttons
-    const extPipelineSection = document.querySelector('#tab-extended-pipeline');
-    if (extPipelineSection) {
-      const buttons = extPipelineSection.querySelectorAll('button');
-      buttons.forEach(btn => {
+    const scheduleBtn = document.getElementById('scheduleFollowUpBtn');
+    if (scheduleBtn && !scheduleBtn.textContent.trim()) {
+      scheduleBtn.textContent = 'Schedule Follow-up';
+      scheduleBtn.classList.add('btn', 'btn-outline');
+    }
+    
+    // Also check for button without specific ID but in the right context
+    const extForm = document.getElementById('extendedDealForm');
+    if (extForm) {
+      const allButtons = extForm.querySelectorAll('button');
+      allButtons.forEach((btn, index) => {
         if (!btn.textContent.trim()) {
-          if (btn.id && btn.id.includes('analyze')) {
+          // Based on position in form
+          if (btn.type === 'submit') {
+            btn.textContent = 'Add to Extended Pipeline';
+          } else if (index === 1) {
             btn.textContent = 'Analyze Deal';
-            btn.classList.add('btn', 'btn-outline');
-          } else if (btn.id && btn.id.includes('schedule')) {
+          } else if (index === 2) {
             btn.textContent = 'Schedule Follow-up';
-            btn.classList.add('btn', 'btn-outline');
           }
         }
       });
     }
-    
-    // Fix any other blank buttons in the deal form area
-    const dealFormBtns = document.querySelectorAll('#extendedDealForm button');
-    dealFormBtns.forEach(btn => {
-      if (!btn.textContent.trim() && btn.id) {
-        if (btn.id === 'analyzeExtDealBtn') btn.textContent = 'Analyze Deal';
-        if (btn.id === 'scheduleFollowUpBtn') btn.textContent = 'Schedule Follow-up';
+  }
+  
+  // Strategy 1: Run immediately
+  fixAllButtons();
+  
+  // Strategy 2: Run on DOM ready
+  if (document.readyState !== 'loading') {
+    fixAllButtons();
+  } else {
+    document.addEventListener('DOMContentLoaded', fixAllButtons);
+  }
+  
+  // Strategy 3: Run multiple times with delays
+  [100, 250, 500, 1000, 2000].forEach(delay => {
+    setTimeout(fixAllButtons, delay);
+  });
+  
+  // Strategy 4: Run when tab changes
+  document.addEventListener('click', function(e) {
+    if (e.target.closest('.tab, [data-tab]')) {
+      setTimeout(fixAllButtons, 100);
+    }
+  });
+  
+  // Strategy 5: Mutation observer to catch dynamic changes
+  const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+      if (mutation.addedNodes.length) {
+        fixAllButtons();
       }
     });
   });
+  
+  // Start observing
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+  
+  // Stop observer after 10 seconds to prevent performance issues
+  setTimeout(() => observer.disconnect(), 10000);
 })();
 </script>
 </body>
