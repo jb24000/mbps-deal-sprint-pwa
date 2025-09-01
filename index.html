@@ -391,8 +391,6 @@ button#btnPropertyEvaluation, .btn#btnPropertyEvaluation{
   <button class="tab" data-tab="buyers">Buyers</button>
   <button class="tab" data-tab="kpi">KPI</button>
   <button class="tab" data-tab="settings">Settings</button>
-  <!-- Add these new tabs to your existing nav, before </nav> -->
-  <button class="tab" data-tab="dashboard">Dashboard</button>
   <button class="tab" data-tab="analyzers">Analyzers</button>
 </nav>
 
@@ -6693,115 +6691,80 @@ function updateLiveAnalysis() {
   }
 })();
 </script>
-  <script id="fix-all-empty-buttons-final">
-// Comprehensive button text fix - runs multiple times to catch everything
+<script id="ultimate-button-fix">
+// Force button text - nuclear option
 (function() {
-  function fixAllButtonText() {
-    // Extended Pipeline buttons
-    const extButtons = {
-      'analyzeExtDealBtn': 'Analyze Deal',
-      'scheduleFollowUpBtn': 'Schedule Follow-up'
-    };
-    
-    Object.keys(extButtons).forEach(id => {
-      const btn = document.getElementById(id);
-      if (btn && !btn.textContent.trim()) {
-        btn.textContent = extButtons[id];
-      }
-    });
-    
-    // Extended Pipeline submit button
-    const extForm = document.getElementById('extendedDealForm');
-    if (extForm) {
-      const submitBtn = extForm.querySelector('button[type="submit"]');
-      if (submitBtn && !submitBtn.textContent.trim()) {
-        submitBtn.textContent = 'Add to Extended Pipeline';
-      }
-    }
-    
-    // Buyers tab button
-    const buyerBtn = document.getElementById('addBuyerBtn');
-    if (buyerBtn && !buyerBtn.textContent.trim()) {
-      buyerBtn.textContent = 'Add Buyer';
-    }
-    
-    // Agent Network buttons
-    const agentBtn = document.getElementById('addAgentBtn');
-    if (agentBtn && !agentBtn.textContent.trim()) {
-      agentBtn.textContent = 'Add Agent';
-    }
-    
-    // Agent outreach search button
-    const agentSection = document.querySelector('#tab-agent-outreach');
-    if (agentSection) {
-      const searchBtn = agentSection.querySelector('button:not([id])');
-      if (searchBtn && !searchBtn.textContent.trim()) {
-        searchBtn.textContent = 'Search';
-      }
-    }
-    
-    // Property Evaluation buttons
-    const peButtons = {
-      'sfAnalyze': 'Analyze',
-      'sfSetOffer': 'Set Offer', 
-      'mfAnalyze': 'Analyze',
-      'mfSave': 'Save to Deal',
-      'abAnalyze': 'Analyze',
-      'abSave': 'Save to Deal'
-    };
-    
-    Object.keys(peButtons).forEach(id => {
-      const btn = document.getElementById(id);
-      if (btn && !btn.textContent.trim()) {
-        btn.textContent = peButtons[id];
-      }
-    });
-    
-    // Any other blank buttons - give them generic text
-    document.querySelectorAll('button').forEach(btn => {
-      if (!btn.textContent.trim() && !btn.querySelector('i')) {
-        if (btn.type === 'submit') {
-          btn.textContent = 'Submit';
-        } else if (btn.id && btn.id.includes('add')) {
-          btn.textContent = 'Add';
-        } else if (btn.id && btn.id.includes('save')) {
-          btn.textContent = 'Save';
-        } else if (btn.id && btn.id.includes('analyze')) {
-          btn.textContent = 'Analyze';
-        }
-      }
-    });
-  }
+  // Kill Lucide for these specific buttons
+  const protectedButtons = [
+    'analyzeExtDealBtn', 
+    'scheduleFollowUpBtn', 
+    'addBuyerBtn', 
+    'addAgentBtn',
+    'sfAnalyze',
+    'sfSetOffer',
+    'mfAnalyze',
+    'mfSave',
+    'abAnalyze',
+    'abSave'
+  ];
   
-  // Run immediately
-  fixAllButtonText();
-  
-  // Run on DOM ready
-  if (document.readyState !== 'loading') {
-    fixAllButtonText();
-  } else {
-    document.addEventListener('DOMContentLoaded', fixAllButtonText);
-  }
-  
-  // Run multiple times to catch dynamic content
-  setTimeout(fixAllButtonText, 100);
-  setTimeout(fixAllButtonText, 500);
-  setTimeout(fixAllButtonText, 1000);
-  setTimeout(fixAllButtonText, 2000);
-  
-  // Run when any tab is clicked
-  document.addEventListener('click', function(e) {
-    if (e.target.classList.contains('tab')) {
-      setTimeout(fixAllButtonText, 100);
+  protectedButtons.forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) {
+      btn.setAttribute('data-lucide-ignore', 'true');
     }
   });
   
-  // Override Lucide to preserve button text
-  if (window.lucide) {
-    const originalCreate = lucide.createIcons;
-    lucide.createIcons = function() {
-      const result = originalCreate.apply(this, arguments);
-      setTimeout(fixAllButtonText, 10);
+  // Force set text
+  function forceButtonText() {
+    // Direct element manipulation
+    const btn1 = document.getElementById('analyzeExtDealBtn');
+    if (btn1) {
+      btn1.innerHTML = 'Analyze Deal';
+      btn1.childNodes.forEach(node => {
+        if (node.nodeType === 3) node.textContent = 'Analyze Deal';
+      });
+    }
+    
+    const btn2 = document.getElementById('scheduleFollowUpBtn');
+    if (btn2) {
+      btn2.innerHTML = 'Schedule Follow-up';
+      btn2.childNodes.forEach(node => {
+        if (node.nodeType === 3) node.textContent = 'Schedule Follow-up';
+      });
+    }
+    
+    // Extended form submit
+    const forms = document.querySelectorAll('#extendedDealForm');
+    forms.forEach(form => {
+      const submitBtns = form.querySelectorAll('button[type="submit"]');
+      submitBtns.forEach(btn => {
+        if (!btn.textContent.trim() || btn.textContent.length < 3) {
+          btn.innerHTML = 'Add to Extended Pipeline';
+        }
+      });
+    });
+  }
+  
+  // Run aggressively
+  forceButtonText();
+  let count = 0;
+  const interval = setInterval(() => {
+    forceButtonText();
+    count++;
+    if (count > 20) clearInterval(interval);
+  }, 250);
+  
+  // Disable Lucide on these buttons
+  const originalLucide = window.lucide?.createIcons;
+  if (originalLucide) {
+    window.lucide.createIcons = function(options) {
+      // Skip protected buttons
+      const result = originalLucide.call(this, {
+        ...options,
+        exclude: protectedButtons
+      });
+      forceButtonText();
       return result;
     };
   }
