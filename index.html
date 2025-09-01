@@ -341,6 +341,46 @@ button#btnPropertyEvaluation, .btn#btnPropertyEvaluation{
   }
 })();
 </script>
+  <style>
+/* Fix button text visibility in light mode */
+.btn {
+  color: #1f2937 !important; /* Dark gray for light mode */
+}
+
+.dark .btn {
+  color: #e5e7eb !important; /* Light gray for dark mode */
+}
+
+/* Specific button type colors */
+.btn-primary {
+  color: white !important;
+}
+
+.btn-accent {
+  color: white !important;
+}
+
+.btn-success {
+  color: white !important;
+}
+
+.btn-warning {
+  color: white !important;
+}
+
+.btn-danger {
+  color: white !important;
+}
+
+/* Outline buttons need dark text in light mode */
+.btn-outline {
+  color: #0e7490 !important; /* Cyan-800 */
+}
+
+.dark .btn-outline {
+  color: #e5e7eb !important; /* Gray-200 */
+}
+</style>
 
 </head>
 <body class="bg-gradient-to-br from-brand-50 via-white to-accent-50 text-gray-800 min-h-screen">
@@ -6688,85 +6728,6 @@ function updateLiveAnalysis() {
     document.addEventListener('DOMContentLoaded', initEnhancements);
   } else {
     initEnhancements();
-  }
-})();
-</script>
-<script id="ultimate-button-fix">
-// Force button text - nuclear option
-(function() {
-  // Kill Lucide for these specific buttons
-  const protectedButtons = [
-    'analyzeExtDealBtn', 
-    'scheduleFollowUpBtn', 
-    'addBuyerBtn', 
-    'addAgentBtn',
-    'sfAnalyze',
-    'sfSetOffer',
-    'mfAnalyze',
-    'mfSave',
-    'abAnalyze',
-    'abSave'
-  ];
-  
-  protectedButtons.forEach(id => {
-    const btn = document.getElementById(id);
-    if (btn) {
-      btn.setAttribute('data-lucide-ignore', 'true');
-    }
-  });
-  
-  // Force set text
-  function forceButtonText() {
-    // Direct element manipulation
-    const btn1 = document.getElementById('analyzeExtDealBtn');
-    if (btn1) {
-      btn1.innerHTML = 'Analyze Deal';
-      btn1.childNodes.forEach(node => {
-        if (node.nodeType === 3) node.textContent = 'Analyze Deal';
-      });
-    }
-    
-    const btn2 = document.getElementById('scheduleFollowUpBtn');
-    if (btn2) {
-      btn2.innerHTML = 'Schedule Follow-up';
-      btn2.childNodes.forEach(node => {
-        if (node.nodeType === 3) node.textContent = 'Schedule Follow-up';
-      });
-    }
-    
-    // Extended form submit
-    const forms = document.querySelectorAll('#extendedDealForm');
-    forms.forEach(form => {
-      const submitBtns = form.querySelectorAll('button[type="submit"]');
-      submitBtns.forEach(btn => {
-        if (!btn.textContent.trim() || btn.textContent.length < 3) {
-          btn.innerHTML = 'Add to Extended Pipeline';
-        }
-      });
-    });
-  }
-  
-  // Run aggressively
-  forceButtonText();
-  let count = 0;
-  const interval = setInterval(() => {
-    forceButtonText();
-    count++;
-    if (count > 20) clearInterval(interval);
-  }, 250);
-  
-  // Disable Lucide on these buttons
-  const originalLucide = window.lucide?.createIcons;
-  if (originalLucide) {
-    window.lucide.createIcons = function(options) {
-      // Skip protected buttons
-      const result = originalLucide.call(this, {
-        ...options,
-        exclude: protectedButtons
-      });
-      forceButtonText();
-      return result;
-    };
   }
 })();
 </script>
