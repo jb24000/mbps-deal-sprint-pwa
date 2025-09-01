@@ -57,6 +57,19 @@
       }
     }
   </script>
+  <style id="light-mode-text-contrast">
+  /* Only in LIGHT mode, undo accidental white-on-white text */
+  html:not(.dark) .text-white:not(.keep-white) { color:#0f172a !important; }
+
+  /* Keep intentionally white text where backgrounds are colored */
+  html:not(.dark) [class*="bg-"] .text-white,
+  html:not(.dark) .btn-primary,
+  html:not(.dark) .btn[class*="bg-"] { color:#ffffff !important; }
+
+  /* Icons follow surrounding text color */
+  svg.lucide { stroke: currentColor; }
+</style>
+
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
