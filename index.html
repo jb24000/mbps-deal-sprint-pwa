@@ -1280,101 +1280,6 @@ button#btnPropertyEvaluation, .btn#btnPropertyEvaluation{
       </div>
     </section>
   </div>
-  <!-- DASHBOARD TAB (Professional Overview) -->
-<section id="dashboard" class="hidden" data-tab-panel="dashboard">
-  <div class="grid lg:grid-cols-4 gap-4 mb-6">
-    <!-- Quick Stats -->
-    <div class="kpi-card">
-      <div class="flex items-center justify-between mb-2">
-        <span class="text-sm text-gray-600">Active Deals</span>
-        <i data-lucide="trending-up" class="w-4 h-4 text-brand-500"></i>
-      </div>
-      <div id="activeDealsCount" class="text-3xl font-bold text-brand-700">0</div>
-      <div class="text-xs text-gray-500 mt-1">In pipeline</div>
-    </div>
-    
-    <div class="kpi-card">
-      <div class="flex items-center justify-between mb-2">
-        <span class="text-sm text-gray-600">This Month</span>
-        <i data-lucide="dollar-sign" class="w-4 h-4 text-green-500"></i>
-      </div>
-      <div id="monthlyProfit" class="text-3xl font-bold text-green-600">$0</div>
-      <div class="text-xs text-gray-500 mt-1">Closed profit</div>
-    </div>
-    
-    <div class="kpi-card">
-      <div class="flex items-center justify-between mb-2">
-        <span class="text-sm text-gray-600">Hot Leads</span>
-        <i data-lucide="flame" class="w-4 h-4 text-orange-500"></i>
-      </div>
-      <div id="hotLeadsCount" class="text-3xl font-bold text-orange-600">0</div>
-      <div class="text-xs text-gray-500 mt-1">Score 70+</div>
-    </div>
-    
-    <div class="kpi-card">
-      <div class="flex items-center justify-between mb-2">
-        <span class="text-sm text-gray-600">Conversion</span>
-        <i data-lucide="target" class="w-4 h-4 text-purple-500"></i>
-      </div>
-      <div id="conversionRate" class="text-3xl font-bold text-purple-600">0%</div>
-      <div class="text-xs text-gray-500 mt-1">Lead to deal</div>
-    </div>
-  </div>
-  
-  <!-- Market Performance -->
-  <div class="card mb-6">
-    <div class="flex items-center justify-between mb-4">
-      <h2 class="text-lg font-semibold">Market Performance</h2>
-      <select id="marketPerformanceFilter" class="rounded-lg border-gray-300 text-sm">
-        <option value="30">Last 30 Days</option>
-        <option value="60">Last 60 Days</option>
-        <option value="90">Last 90 Days</option>
-      </select>
-    </div>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <div class="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-        <div id="marketLeads" class="text-2xl font-bold text-brand-600">0</div>
-        <div class="text-xs text-gray-600">Leads Generated</div>
-      </div>
-      <div class="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-        <div id="marketOffers" class="text-2xl font-bold text-blue-600">0</div>
-        <div class="text-xs text-gray-600">Offers Sent</div>
-      </div>
-      <div class="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-        <div id="marketContracts" class="text-2xl font-bold text-green-600">0</div>
-        <div class="text-xs text-gray-600">Under Contract</div>
-      </div>
-      <div class="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-        <div id="marketClosings" class="text-2xl font-bold text-purple-600">0</div>
-        <div class="text-xs text-gray-600">Closed Deals</div>
-      </div>
-    </div>
-  </div>
-  
-  <!-- Hot Deals & Follow-ups -->
-  <div class="grid lg:grid-cols-2 gap-6">
-    <div class="card">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-semibold">🔥 Hot Deals (Score 70+)</h2>
-        <button onclick="if(window.renderEnhancedDashboard) renderEnhancedDashboard()" class="btn btn-outline btn-sm">Refresh</button>
-      </div>
-      <div id="hotDealsList" class="space-y-3 max-h-96 overflow-auto">
-        <div class="text-gray-500">No hot deals yet</div>
-      </div>
-    </div>
-    
-    <div class="card">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-semibold">📅 Today's Follow-Ups</h2>
-        <span id="todayCount" class="badge badge-pending">0</span>
-      </div>
-      <div id="todayTasksList" class="space-y-3 max-h-96 overflow-auto">
-        <div class="text-gray-500">No tasks today</div>
-      </div>
-    </div>
-  </div>
-</section>
-
 <!-- ANALYZERS TAB -->
 <section id="analyzers" class="hidden" data-tab-panel="analyzers">
   <div class="grid lg:grid-cols-2 gap-6">
@@ -6785,6 +6690,120 @@ function updateLiveAnalysis() {
     document.addEventListener('DOMContentLoaded', initEnhancements);
   } else {
     initEnhancements();
+  }
+})();
+</script>
+  <script id="fix-all-empty-buttons-final">
+// Comprehensive button text fix - runs multiple times to catch everything
+(function() {
+  function fixAllButtonText() {
+    // Extended Pipeline buttons
+    const extButtons = {
+      'analyzeExtDealBtn': 'Analyze Deal',
+      'scheduleFollowUpBtn': 'Schedule Follow-up'
+    };
+    
+    Object.keys(extButtons).forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn && !btn.textContent.trim()) {
+        btn.textContent = extButtons[id];
+      }
+    });
+    
+    // Extended Pipeline submit button
+    const extForm = document.getElementById('extendedDealForm');
+    if (extForm) {
+      const submitBtn = extForm.querySelector('button[type="submit"]');
+      if (submitBtn && !submitBtn.textContent.trim()) {
+        submitBtn.textContent = 'Add to Extended Pipeline';
+      }
+    }
+    
+    // Buyers tab button
+    const buyerBtn = document.getElementById('addBuyerBtn');
+    if (buyerBtn && !buyerBtn.textContent.trim()) {
+      buyerBtn.textContent = 'Add Buyer';
+    }
+    
+    // Agent Network buttons
+    const agentBtn = document.getElementById('addAgentBtn');
+    if (agentBtn && !agentBtn.textContent.trim()) {
+      agentBtn.textContent = 'Add Agent';
+    }
+    
+    // Agent outreach search button
+    const agentSection = document.querySelector('#tab-agent-outreach');
+    if (agentSection) {
+      const searchBtn = agentSection.querySelector('button:not([id])');
+      if (searchBtn && !searchBtn.textContent.trim()) {
+        searchBtn.textContent = 'Search';
+      }
+    }
+    
+    // Property Evaluation buttons
+    const peButtons = {
+      'sfAnalyze': 'Analyze',
+      'sfSetOffer': 'Set Offer', 
+      'mfAnalyze': 'Analyze',
+      'mfSave': 'Save to Deal',
+      'abAnalyze': 'Analyze',
+      'abSave': 'Save to Deal'
+    };
+    
+    Object.keys(peButtons).forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn && !btn.textContent.trim()) {
+        btn.textContent = peButtons[id];
+      }
+    });
+    
+    // Any other blank buttons - give them generic text
+    document.querySelectorAll('button').forEach(btn => {
+      if (!btn.textContent.trim() && !btn.querySelector('i')) {
+        if (btn.type === 'submit') {
+          btn.textContent = 'Submit';
+        } else if (btn.id && btn.id.includes('add')) {
+          btn.textContent = 'Add';
+        } else if (btn.id && btn.id.includes('save')) {
+          btn.textContent = 'Save';
+        } else if (btn.id && btn.id.includes('analyze')) {
+          btn.textContent = 'Analyze';
+        }
+      }
+    });
+  }
+  
+  // Run immediately
+  fixAllButtonText();
+  
+  // Run on DOM ready
+  if (document.readyState !== 'loading') {
+    fixAllButtonText();
+  } else {
+    document.addEventListener('DOMContentLoaded', fixAllButtonText);
+  }
+  
+  // Run multiple times to catch dynamic content
+  setTimeout(fixAllButtonText, 100);
+  setTimeout(fixAllButtonText, 500);
+  setTimeout(fixAllButtonText, 1000);
+  setTimeout(fixAllButtonText, 2000);
+  
+  // Run when any tab is clicked
+  document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('tab')) {
+      setTimeout(fixAllButtonText, 100);
+    }
+  });
+  
+  // Override Lucide to preserve button text
+  if (window.lucide) {
+    const originalCreate = lucide.createIcons;
+    lucide.createIcons = function() {
+      const result = originalCreate.apply(this, arguments);
+      setTimeout(fixAllButtonText, 10);
+      return result;
+    };
   }
 })();
 </script>
