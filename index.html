@@ -391,6 +391,9 @@ button#btnPropertyEvaluation, .btn#btnPropertyEvaluation{
   <button class="tab" data-tab="buyers">Buyers</button>
   <button class="tab" data-tab="kpi">KPI</button>
   <button class="tab" data-tab="settings">Settings</button>
+  <!-- Add these new tabs to your existing nav, before </nav> -->
+  <button class="tab" data-tab="dashboard">Dashboard</button>
+  <button class="tab" data-tab="analyzers">Analyzers</button>
 </nav>
 
 <!-- DASHBOARD TAB (Professional Overview) -->
@@ -1277,6 +1280,237 @@ button#btnPropertyEvaluation, .btn#btnPropertyEvaluation{
       </div>
     </section>
   </div>
+  <!-- DASHBOARD TAB (Professional Overview) -->
+<section id="dashboard" class="hidden" data-tab-panel="dashboard">
+  <div class="grid lg:grid-cols-4 gap-4 mb-6">
+    <!-- Quick Stats -->
+    <div class="kpi-card">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm text-gray-600">Active Deals</span>
+        <i data-lucide="trending-up" class="w-4 h-4 text-brand-500"></i>
+      </div>
+      <div id="activeDealsCount" class="text-3xl font-bold text-brand-700">0</div>
+      <div class="text-xs text-gray-500 mt-1">In pipeline</div>
+    </div>
+    
+    <div class="kpi-card">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm text-gray-600">This Month</span>
+        <i data-lucide="dollar-sign" class="w-4 h-4 text-green-500"></i>
+      </div>
+      <div id="monthlyProfit" class="text-3xl font-bold text-green-600">$0</div>
+      <div class="text-xs text-gray-500 mt-1">Closed profit</div>
+    </div>
+    
+    <div class="kpi-card">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm text-gray-600">Hot Leads</span>
+        <i data-lucide="flame" class="w-4 h-4 text-orange-500"></i>
+      </div>
+      <div id="hotLeadsCount" class="text-3xl font-bold text-orange-600">0</div>
+      <div class="text-xs text-gray-500 mt-1">Score 70+</div>
+    </div>
+    
+    <div class="kpi-card">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm text-gray-600">Conversion</span>
+        <i data-lucide="target" class="w-4 h-4 text-purple-500"></i>
+      </div>
+      <div id="conversionRate" class="text-3xl font-bold text-purple-600">0%</div>
+      <div class="text-xs text-gray-500 mt-1">Lead to deal</div>
+    </div>
+  </div>
+  
+  <!-- Market Performance -->
+  <div class="card mb-6">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-semibold">Market Performance</h2>
+      <select id="marketPerformanceFilter" class="rounded-lg border-gray-300 text-sm">
+        <option value="30">Last 30 Days</option>
+        <option value="60">Last 60 Days</option>
+        <option value="90">Last 90 Days</option>
+      </select>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+        <div id="marketLeads" class="text-2xl font-bold text-brand-600">0</div>
+        <div class="text-xs text-gray-600">Leads Generated</div>
+      </div>
+      <div class="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+        <div id="marketOffers" class="text-2xl font-bold text-blue-600">0</div>
+        <div class="text-xs text-gray-600">Offers Sent</div>
+      </div>
+      <div class="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+        <div id="marketContracts" class="text-2xl font-bold text-green-600">0</div>
+        <div class="text-xs text-gray-600">Under Contract</div>
+      </div>
+      <div class="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+        <div id="marketClosings" class="text-2xl font-bold text-purple-600">0</div>
+        <div class="text-xs text-gray-600">Closed Deals</div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Hot Deals & Follow-ups -->
+  <div class="grid lg:grid-cols-2 gap-6">
+    <div class="card">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold">🔥 Hot Deals (Score 70+)</h2>
+        <button onclick="if(window.renderEnhancedDashboard) renderEnhancedDashboard()" class="btn btn-outline btn-sm">Refresh</button>
+      </div>
+      <div id="hotDealsList" class="space-y-3 max-h-96 overflow-auto">
+        <div class="text-gray-500">No hot deals yet</div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold">📅 Today's Follow-Ups</h2>
+        <span id="todayCount" class="badge badge-pending">0</span>
+      </div>
+      <div id="todayTasksList" class="space-y-3 max-h-96 overflow-auto">
+        <div class="text-gray-500">No tasks today</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ANALYZERS TAB -->
+<section id="analyzers" class="hidden" data-tab-panel="analyzers">
+  <div class="grid lg:grid-cols-2 gap-6">
+    <!-- Wholesale Analyzer -->
+    <div class="analyzer-card">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-semibold text-lg">🏠 Wholesale Analyzer</h3>
+        <i data-lucide="calculator" class="w-5 h-5 text-brand-500"></i>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <input id="wsARV" type="number" class="rounded-lg border-gray-300" placeholder="ARV $" />
+        <input id="wsRepairs" type="number" class="rounded-lg border-gray-300" placeholder="Repairs $" />
+        <input id="wsAsk" type="number" class="rounded-lg border-gray-300" placeholder="Asking Price $" />
+        <input id="wsFee" type="number" class="rounded-lg border-gray-300" placeholder="Assignment Fee $" value="10000" />
+      </div>
+      <div id="wsResults" class="analyzer-result">
+        <div class="analyzer-metric">
+          <div id="wsMAO" class="value">$0</div>
+          <div class="label">Max Offer (70%)</div>
+        </div>
+        <div class="analyzer-metric">
+          <div id="wsSpread" class="value">$0</div>
+          <div class="label">Deal Spread</div>
+        </div>
+        <div class="analyzer-metric">
+          <div id="wsROI" class="value">0%</div>
+          <div class="label">ROI</div>
+        </div>
+        <div class="analyzer-metric">
+          <div id="wsStrength" class="value">—</div>
+          <div class="label">Deal Strength</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Subject-To Analyzer -->
+    <div class="analyzer-card">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-semibold text-lg">🏡 Subject-To Analyzer</h3>
+        <i data-lucide="home" class="w-5 h-5 text-green-500"></i>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <input id="stARV" type="number" class="rounded-lg border-gray-300" placeholder="ARV $" />
+        <input id="stMortgage" type="number" class="rounded-lg border-gray-300" placeholder="Mortgage Balance $" />
+        <input id="stPayment" type="number" class="rounded-lg border-gray-300" placeholder="Monthly Payment $" />
+        <input id="stRent" type="number" class="rounded-lg border-gray-300" placeholder="Market Rent $" />
+      </div>
+      <div id="stResults" class="analyzer-result">
+        <div class="analyzer-metric">
+          <div id="stEquity" class="value">$0</div>
+          <div class="label">Instant Equity</div>
+        </div>
+        <div class="analyzer-metric">
+          <div id="stCashflow" class="value">$0</div>
+          <div class="label">Monthly Cashflow</div>
+        </div>
+        <div class="analyzer-metric">
+          <div id="stLTV" class="value">0%</div>
+          <div class="label">LTV</div>
+        </div>
+        <div class="analyzer-metric">
+          <div id="stRisk" class="value">—</div>
+          <div class="label">Risk Level</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fix & Flip Analyzer -->
+    <div class="analyzer-card">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-semibold text-lg">🔨 Fix & Flip Analyzer</h3>
+        <i data-lucide="wrench" class="w-5 h-5 text-orange-500"></i>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <input id="ffPurchase" type="number" class="rounded-lg border-gray-300" placeholder="Purchase Price $" />
+        <input id="ffARV" type="number" class="rounded-lg border-gray-300" placeholder="ARV $" />
+        <input id="ffRepairs" type="number" class="rounded-lg border-gray-300" placeholder="Repair Costs $" />
+        <input id="ffHoldMonths" type="number" class="rounded-lg border-gray-300" placeholder="Hold Months" value="6" />
+        <input id="ffHoldCosts" type="number" class="rounded-lg border-gray-300" placeholder="Monthly Hold Costs $" value="2500" />
+        <input id="ffSellCosts" type="number" class="rounded-lg border-gray-300" placeholder="Selling Costs %" value="8" />
+      </div>
+      <div id="ffResults" class="analyzer-result">
+        <div class="analyzer-metric">
+          <div id="ffProfit" class="value">$0</div>
+          <div class="label">Net Profit</div>
+        </div>
+        <div class="analyzer-metric">
+          <div id="ffROI" class="value">0%</div>
+          <div class="label">ROI</div>
+        </div>
+        <div class="analyzer-metric">
+          <div id="ffMargin" class="value">0%</div>
+          <div class="label">Profit Margin</div>
+        </div>
+        <div class="analyzer-metric">
+          <div id="ffRisk" class="value">—</div>
+          <div class="label">Risk Level</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Airbnb Analyzer -->
+    <div class="analyzer-card">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-semibold text-lg">🏖️ Airbnb Analyzer</h3>
+        <i data-lucide="bed" class="w-5 h-5 text-purple-500"></i>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <input id="abPurchase" type="number" class="rounded-lg border-gray-300" placeholder="Purchase Price $" />
+        <input id="abRehab" type="number" class="rounded-lg border-gray-300" placeholder="Rehab/Furnish $" />
+        <input id="abNightlyRate" type="number" class="rounded-lg border-gray-300" placeholder="Nightly Rate $" />
+        <input id="abOccupancy" type="number" class="rounded-lg border-gray-300" placeholder="Occupancy %" value="65" />
+        <input id="abExpenses" type="number" class="rounded-lg border-gray-300" placeholder="Monthly Expenses $" />
+        <input id="abDownPayment" type="number" class="rounded-lg border-gray-300" placeholder="Down Payment %" value="25" />
+      </div>
+      <div id="abResults" class="analyzer-result">
+        <div class="analyzer-metric">
+          <div id="abRevenue" class="value">$0</div>
+          <div class="label">Monthly Revenue</div>
+        </div>
+        <div class="analyzer-metric">
+          <div id="abCashflow" class="value">$0</div>
+          <div class="label">Net Cashflow</div>
+        </div>
+        <div class="analyzer-metric">
+          <div id="abROI" class="value">0%</div>
+          <div class="label">Cash-on-Cash ROI</div>
+        </div>
+        <div class="analyzer-metric">
+          <div id="abPayback" class="value">—</div>
+          <div class="label">Payback Period</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
   <!-- Bulk Import Modal -->
   <div id="bulkImportModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -6234,6 +6468,324 @@ function updateLiveAnalysis() {
   
   // Stop observer after 10 seconds to prevent performance issues
   setTimeout(() => observer.disconnect(), 10000);
+})();
+</script>
+  <script id="rei-enhancements-complete">
+// ========= REI STACK ENHANCEMENTS =========
+// This runs alongside your existing code without interfering
+(function() {
+  'use strict';
+  
+  // Check if enhancements already loaded
+  if (window.REIEnhancements) return;
+  
+  // Create enhancement namespace
+  window.REIEnhancements = {
+    version: '1.0.0',
+    initialized: false
+  };
+  
+  // ========= SAFE DASHBOARD RENDERER =========
+  function renderEnhancedDashboard() {
+    try {
+      // Get data safely
+      const deals = JSON.parse(localStorage.getItem('deals') || '[]');
+      const leads = JSON.parse(localStorage.getItem('leads') || '[]');
+      
+      // Active deals count
+      const activeDeals = deals.filter(d => 
+        d.status !== 'closed' && d.status !== 'dead'
+      ).length;
+      
+      // Monthly profit (closed this month)
+      const thisMonth = new Date();
+      thisMonth.setDate(1);
+      const monthStart = thisMonth.getTime();
+      
+      const monthlyProfit = deals
+        .filter(d => d.status === 'closed' && d.closedDate >= monthStart)
+        .reduce((sum, d) => sum + (Number(d.profit) || 0), 0);
+      
+      // Hot leads (score 70+)
+      const hotLeads = leads.filter(l => {
+        const score = typeof window.scoreLead === 'function' ? 
+          window.scoreLead(l) : 50;
+        return score >= 70;
+      });
+      
+      // Conversion rate
+      const totalLeads = leads.length;
+      const convertedDeals = deals.length;
+      const conversionRate = totalLeads > 0 ? 
+        ((convertedDeals / totalLeads) * 100).toFixed(1) : 0;
+      
+      // Update displays safely
+      const updateElement = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+      };
+      
+      updateElement('activeDealsCount', activeDeals);
+      updateElement('monthlyProfit', '$' + monthlyProfit.toLocaleString());
+      updateElement('hotLeadsCount', hotLeads.length);
+      updateElement('conversionRate', conversionRate + '%');
+      
+      // Hot deals list
+      const hotDealsList = document.getElementById('hotDealsList');
+      if (hotDealsList) {
+        if (hotLeads.length === 0) {
+          hotDealsList.innerHTML = '<div class="text-gray-500">No hot deals yet</div>';
+        } else {
+          hotDealsList.innerHTML = hotLeads.slice(0, 5).map(lead => `
+            <div class="p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
+              <div class="font-semibold">${lead.address || 'No address'}</div>
+              <div class="text-sm text-gray-600">
+                Score: ${typeof window.scoreLead === 'function' ? window.scoreLead(lead) : 'N/A'} | 
+                ${lead.seller || 'Unknown seller'}
+              </div>
+            </div>
+          `).join('');
+        }
+      }
+      
+      // Today's tasks
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      const todayTime = today.getTime();
+      const tomorrow = todayTime + 86400000;
+      
+      const todayTasks = deals.filter(d => 
+        d.nextActionDate >= todayTime && d.nextActionDate < tomorrow
+      );
+      
+      updateElement('todayCount', todayTasks.length);
+      
+      const todayTasksList = document.getElementById('todayTasksList');
+      if (todayTasksList) {
+        if (todayTasks.length === 0) {
+          todayTasksList.innerHTML = '<div class="text-gray-500">No tasks today</div>';
+        } else {
+          todayTasksList.innerHTML = todayTasks.map(task => `
+            <div class="p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
+              <div class="font-semibold">${task.address || task.title || 'No address'}</div>
+              <div class="text-sm text-gray-600">
+                ${task.nextAction || 'Follow up'}
+              </div>
+            </div>
+          `).join('');
+        }
+      }
+      
+    } catch (error) {
+      console.log('Dashboard render error (non-critical):', error);
+    }
+  }
+  
+  // ========= ANALYZER FUNCTIONS =========
+  function analyzeWholesale() {
+    try {
+      const arv = Number(document.getElementById('wsARV')?.value || 0);
+      const repairs = Number(document.getElementById('wsRepairs')?.value || 0);
+      const ask = Number(document.getElementById('wsAsk')?.value || 0);
+      const fee = Number(document.getElementById('wsFee')?.value || 10000);
+      
+      const mao = (arv * 0.70) - repairs - fee;
+      const spread = mao - ask;
+      const roi = ask > 0 ? ((spread / ask) * 100) : 0;
+      
+      let strength = 'Pass';
+      let strengthColor = '#ef4444';
+      if (spread > 20000) {
+        strength = 'Strong';
+        strengthColor = '#22c55e';
+      } else if (spread > 10000) {
+        strength = 'Good';
+        strengthColor = '#06b6d4';
+      } else if (spread > 5000) {
+        strength = 'Marginal';
+        strengthColor = '#f59e0b';
+      }
+      
+      const updateEl = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+      };
+      
+      updateEl('wsMAO', '$' + mao.toLocaleString());
+      updateEl('wsSpread', '$' + spread.toLocaleString());
+      updateEl('wsROI', roi.toFixed(1) + '%');
+      
+      const strengthEl = document.getElementById('wsStrength');
+      if (strengthEl) {
+        strengthEl.textContent = strength;
+        strengthEl.style.color = strengthColor;
+      }
+    } catch (e) {
+      console.log('Wholesale analyzer error:', e);
+    }
+  }
+  
+  function analyzeSubjectTo() {
+    try {
+      const arv = Number(document.getElementById('stARV')?.value || 0);
+      const mortgage = Number(document.getElementById('stMortgage')?.value || 0);
+      const payment = Number(document.getElementById('stPayment')?.value || 0);
+      const rent = Number(document.getElementById('stRent')?.value || 0);
+      
+      const equity = arv - mortgage;
+      const cashflow = rent - payment;
+      const ltv = arv > 0 ? ((mortgage / arv) * 100) : 0;
+      
+      let risk = 'Low';
+      let riskColor = '#22c55e';
+      if (ltv > 80) {
+        risk = 'High';
+        riskColor = '#ef4444';
+      } else if (ltv > 65) {
+        risk = 'Medium';
+        riskColor = '#f59e0b';
+      }
+      
+      const updateEl = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+      };
+      
+      updateEl('stEquity', '$' + equity.toLocaleString());
+      updateEl('stCashflow', '$' + cashflow.toLocaleString());
+      updateEl('stLTV', ltv.toFixed(1) + '%');
+      
+      const riskEl = document.getElementById('stRisk');
+      if (riskEl) {
+        riskEl.textContent = risk;
+        riskEl.style.color = riskColor;
+      }
+    } catch (e) {
+      console.log('SubjectTo analyzer error:', e);
+    }
+  }
+  
+  function analyzeFixFlip() {
+    try {
+      const purchase = Number(document.getElementById('ffPurchase')?.value || 0);
+      const arv = Number(document.getElementById('ffARV')?.value || 0);
+      const repairs = Number(document.getElementById('ffRepairs')?.value || 0);
+      const months = Number(document.getElementById('ffHoldMonths')?.value || 6);
+      const holdCosts = Number(document.getElementById('ffHoldCosts')?.value || 2500);
+      const sellPct = Number(document.getElementById('ffSellCosts')?.value || 8) / 100;
+      
+      const totalHold = holdCosts * months;
+      const sellCosts = arv * sellPct;
+      const totalInvest = purchase + repairs + totalHold + sellCosts;
+      const profit = arv - totalInvest;
+      const roi = totalInvest > 0 ? ((profit / totalInvest) * 100) : 0;
+      const margin = arv > 0 ? ((profit / arv) * 100) : 0;
+      
+      let risk = 'Low';
+      let riskColor = '#22c55e';
+      if (margin < 10) {
+        risk = 'High';
+        riskColor = '#ef4444';
+      } else if (margin < 20) {
+        risk = 'Medium';
+        riskColor = '#f59e0b';
+      }
+      
+      const updateEl = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+      };
+      
+      updateEl('ffProfit', '$' + profit.toLocaleString());
+      updateEl('ffROI', roi.toFixed(1) + '%');
+      updateEl('ffMargin', margin.toFixed(1) + '%');
+      
+      const riskEl = document.getElementById('ffRisk');
+      if (riskEl) {
+        riskEl.textContent = risk;
+        riskEl.style.color = riskColor;
+      }
+    } catch (e) {
+      console.log('Fix/flip analyzer error:', e);
+    }
+  }
+  
+  function analyzeAirbnb() {
+    try {
+      const purchase = Number(document.getElementById('abPurchase')?.value || 0);
+      const rehab = Number(document.getElementById('abRehab')?.value || 0);
+      const nightly = Number(document.getElementById('abNightlyRate')?.value || 0);
+      const occupancy = Number(document.getElementById('abOccupancy')?.value || 65) / 100;
+      const expenses = Number(document.getElementById('abExpenses')?.value || 0);
+      const downPct = Number(document.getElementById('abDownPayment')?.value || 25) / 100;
+      
+      const monthlyRevenue = nightly * 30 * occupancy;
+      const cashflow = monthlyRevenue - expenses;
+      const totalCash = (purchase * downPct) + rehab;
+      const annualCashflow = cashflow * 12;
+      const roi = totalCash > 0 ? ((annualCashflow / totalCash) * 100) : 0;
+      const payback = annualCashflow > 0 ? (totalCash / annualCashflow) : 0;
+      
+      const updateEl = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+      };
+      
+      updateEl('abRevenue', '$' + Math.round(monthlyRevenue).toLocaleString());
+      updateEl('abCashflow', '$' + Math.round(cashflow).toLocaleString());
+      updateEl('abROI', roi.toFixed(1) + '%');
+      updateEl('abPayback', payback > 0 ? payback.toFixed(1) + ' years' : '—');
+    } catch (e) {
+      console.log('Airbnb analyzer error:', e);
+    }
+  }
+  
+  // ========= INITIALIZATION =========
+  function initEnhancements() {
+    if (REIEnhancements.initialized) return;
+    
+    // Wire up analyzer inputs
+    const analyzerInputs = [
+      { ids: ['wsARV', 'wsRepairs', 'wsAsk', 'wsFee'], fn: analyzeWholesale },
+      { ids: ['stARV', 'stMortgage', 'stPayment', 'stRent'], fn: analyzeSubjectTo },
+      { ids: ['ffPurchase', 'ffARV', 'ffRepairs', 'ffHoldMonths', 'ffHoldCosts', 'ffSellCosts'], fn: analyzeFixFlip },
+      { ids: ['abPurchase', 'abRehab', 'abNightlyRate', 'abOccupancy', 'abExpenses', 'abDownPayment'], fn: analyzeAirbnb }
+    ];
+    
+    analyzerInputs.forEach(group => {
+      group.ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.addEventListener('input', group.fn);
+        }
+      });
+    });
+    
+    // Make dashboard function available globally
+    window.renderEnhancedDashboard = renderEnhancedDashboard;
+    
+    // Run dashboard on tab click
+    document.querySelectorAll('[data-tab="dashboard"]').forEach(tab => {
+      tab.addEventListener('click', () => {
+        setTimeout(renderEnhancedDashboard, 100);
+      });
+    });
+    
+    // Initial dashboard render if on dashboard tab
+    if (!document.getElementById('dashboard')?.classList.contains('hidden')) {
+      renderEnhancedDashboard();
+    }
+    
+    REIEnhancements.initialized = true;
+    console.log('REI Enhancements loaded successfully');
+  }
+  
+  // Initialize when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initEnhancements);
+  } else {
+    initEnhancements();
+  }
 })();
 </script>
 </body>
