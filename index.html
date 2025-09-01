@@ -57,19 +57,6 @@
       }
     }
   </script>
-  <style id="light-mode-text-contrast">
-  /* Only in LIGHT mode, undo accidental white-on-white text */
-  html:not(.dark) .text-white:not(.keep-white) { color:#0f172a !important; }
-
-  /* Keep intentionally white text where backgrounds are colored */
-  html:not(.dark) [class*="bg-"] .text-white,
-  html:not(.dark) .btn-primary,
-  html:not(.dark) .btn[class*="bg-"] { color:#ffffff !important; }
-
-  /* Icons follow surrounding text color */
-  svg.lucide { stroke: currentColor; }
-</style>
-
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
@@ -355,7 +342,6 @@ button#btnPropertyEvaluation, .btn#btnPropertyEvaluation{
 })();
 </script>
 </head>
-<body class="bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100">
 <body class="bg-gradient-to-br from-brand-50 via-white to-accent-50 text-gray-800 min-h-screen">
   <!-- ONE-METRIC BAR -->
   <div class="sticky-topbar w-full bg-white/90 dark:bg-[#0b1322]/70 backdrop-blur">
