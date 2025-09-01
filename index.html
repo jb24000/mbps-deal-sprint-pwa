@@ -1138,9 +1138,9 @@ button#btnPropertyEvaluation, .btn#btnPropertyEvaluation{
           <textarea id="extNotes" rows="3" class="w-full rounded-xl border-gray-200" placeholder="Special circumstances, key contacts, negotiation notes..."></textarea>
         </div>
         <div class="md:col-span-3 flex gap-3">
-          <button type="submit" class="btn btn-primary">Add to Extended Pipeline</button>
-          <button type="button" id="analyzeExtDealBtn" class="btn btn-outline">Analyze Deal</button>
-          <button type="button" id="scheduleFollowUpBtn" class="btn btn-outline">Schedule Follow-up</button>
+          <button type="submit" class="btn btn-primary" data-lucide-ignore>Add to Extended Pipeline</button>
+          <button type="button" id="analyzeExtDealBtn" class="btn btn-outline" data-lucide-ignore>Analyze Deal</button>
+          <button type="button" id="scheduleFollowUpBtn" class="btn btn-outline" data-lucide-ignore>Schedule Follow-up</button>
         </div>
       </form>
     </section>
@@ -6235,42 +6235,6 @@ function updateLiveAnalysis() {
   // Stop observer after 10 seconds to prevent performance issues
   setTimeout(() => observer.disconnect(), 10000);
 })();
-</script>
-<script>
-// Fix Extended Pipeline buttons after Lucide icons initialize
-document.addEventListener('DOMContentLoaded', function() {
-  // Wait for Lucide to finish
-  setTimeout(function() {
-    const btn1 = document.getElementById('analyzeExtDealBtn');
-    const btn2 = document.getElementById('scheduleFollowUpBtn');
-    const btn3 = document.querySelector('#extendedDealForm button[type="submit"]');
-    
-    if (btn1 && !btn1.textContent.trim()) {
-      btn1.textContent = 'Analyze Deal';
-    }
-    if (btn2 && !btn2.textContent.trim()) {
-      btn2.textContent = 'Schedule Follow-up';
-    }
-    if (btn3 && !btn3.textContent.trim()) {
-      btn3.textContent = 'Add to Extended Pipeline';
-    }
-  }, 1000);
-  
-  // Also fix after Lucide createIcons is called
-  const originalCreateIcons = lucide?.createIcons;
-  if (originalCreateIcons) {
-    lucide.createIcons = function() {
-      originalCreateIcons.apply(this, arguments);
-      // Restore button text
-      setTimeout(function() {
-        document.getElementById('analyzeExtDealBtn').textContent = 'Analyze Deal';
-        document.getElementById('scheduleFollowUpBtn').textContent = 'Schedule Follow-up';
-        const submitBtn = document.querySelector('#extendedDealForm button[type="submit"]');
-        if (submitBtn) submitBtn.textContent = 'Add to Extended Pipeline';
-      }, 100);
-    };
-  }
-});
 </script>
 </body>
 </html>
