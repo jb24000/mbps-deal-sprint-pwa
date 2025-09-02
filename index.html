@@ -6973,34 +6973,6 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
   </script>
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-  setTimeout(function() {
-    // Just add color classes without removing anything
-    document.querySelectorAll('button, .btn').forEach(btn => {
-      // Skip if already has a color class
-      if (btn.classList.contains('btn-primary') || 
-          btn.classList.contains('btn-accent') || 
-          btn.classList.contains('btn-success')) {
-        return;
-      }
-      
-      const text = btn.textContent.trim().toLowerCase();
-      
-      // Add color based on function
-      if (text.includes('analyze') || text.includes('analytics') || 
-          text.includes('property eval') || text.includes('install')) {
-        btn.classList.add('btn-accent');
-      } else if (text.includes('save') || text.includes('complete') || 
-                 text.includes('finish')) {
-        btn.classList.add('btn-success');
-      } else {
-        btn.classList.add('btn-primary');
-      }
-    });
-  }, 500); // Small delay to let everything load
-});
-  </script>
 </body>
 </html>
 
