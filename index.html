@@ -6879,65 +6879,74 @@ function updateLiveAnalysis() {
 })();
 </script>
   <script>
-// Add this at the end of your body or wrap in DOMContentLoaded
 document.addEventListener('DOMContentLoaded', function() {
-  
-  // Primary actions (Cyan) - main workflow buttons
-  const primaryButtons = [
-    '#exportCsvBtn', '#backupBtn', '#restoreBtn', '#addLeadBtn',
-    '#saveGoalsBtn', '#sendCashOfferBtn', '#syncBtn',
-    'button:contains("Add Lead")', 'button:contains("Pipeline")',
-    'button:contains("Schedule")', 'button:contains("Move")',
-    '#logPrivySearchBtn', '#markOfferSentBtn'
-  ];
-  
-  // Special features (Purple) - analysis and special tools
-  const accentButtons = [
-    '#analyzeBtn', '#evalBtn', '#privyBulkImportBtn',
-    'button:contains("Analyze Deal")', 'button:contains("Analytics")',
-    '#analyzeExtDealBtn'
-  ];
-  
-  // Utility/neutral buttons (keep as outline)
-  const outlineButtons = [
-    '#themeToggle', '#mbpsHealthBtn', '#mbpsUserBtn', 
-    '#mbpsRestoreBtn', 'button:contains("PDF")',
-    'button:contains("Attachments")', 'button:contains("Clear")',
-    'button:contains("Reset")', '#viewActivityLogBtn',
-    '#sendTermsOfferBtn' // Terms offer can be outline since Cash is primary
-  ];
-  
-  // Apply primary (cyan)
-  primaryButtons.forEach(selector => {
-    document.querySelectorAll(selector).forEach(btn => {
-      if (btn) {
-        btn.classList.remove('btn-outline', 'btn-accent');
-        btn.classList.add('btn-primary');
-      }
-    });
-  });
-  
-  // Apply accent (purple)
-  accentButtons.forEach(selector => {
-    document.querySelectorAll(selector).forEach(btn => {
-      if (btn) {
-        btn.classList.remove('btn-outline', 'btn-primary');
-        btn.classList.add('btn-accent');
-      }
-    });
-  });
-  
-  // Fix buttons by ID that contain specific text
-  document.querySelectorAll('button').forEach(btn => {
-    const text = btn.textContent.toLowerCase();
+  // Find buttons by their text content
+  document.querySelectorAll('button, .btn').forEach(btn => {
+    const text = btn.textContent.trim();
     
-    if (text.includes('analyze') && !text.includes('export')) {
-      btn.classList.remove('btn-outline', 'btn-primary');
-      btn.classList.add('btn-accent');
-    } else if (text.includes('schedule') || text.includes('add lead') || 
-               text.includes('pipeline') || text.includes('mark offer')) {
+    // Primary (Cyan) - Core workflow actions
+    if (text === 'Export CSV' || 
+        text === 'Backup' || 
+        text === 'Restore' ||
+        text === 'Add Lead' ||
+        text === 'Pipeline' ||
+        text === 'Schedule' ||
+        text === 'Schedule Follow-up' ||
+        text === 'Move from Sprint' ||
+        text === 'Log Privy Search' ||
+        text === 'Mark Offer Sent' ||
+        text.includes('Send') ||
+        text.includes('Save')) {
       btn.classList.remove('btn-outline', 'btn-accent');
       btn.classList.add('btn-primary');
+    }
+    
+    // Accent (Purple) - Analytics and special features
+    else if (text === 'Analytics' ||
+             text === 'Analyze Deal' ||
+             text === 'Analyze' ||
+             text.includes('Bulk Import') ||
+             text.includes('Property Evaluation')) {
+      btn.classList.remove('btn-outline', 'btn-primary');
+      btn.classList.add('btn-accent');
+    }
+    
+    // Keep as outline - utility buttons
+    else if (text === 'Dark' ||
+             text === 'Health' ||
+             text === 'Users' ||
+             text === 'Terms Offer' ||
+             text === 'Reset' ||
+             text === 'PDF' ||
+             text === 'Attachments' ||
+             text === 'Clear' ||
+             text === 'Activity Log' ||
+             text.includes('Close') ||
+             text.includes('Cancel')) {
+      // Keep these as btn-outline (no change needed)
+    }
+  });
+  
+  // Also target by specific IDs you have
+  const idMappings = {
+    primary: ['#exportCsvBtn', '#backupBtn', '#restoreBtn', '#logPrivySearchBtn', '#markOfferSentBtn'],
+    accent: ['#analyzeBtn', '#evalBtn', '#privyBulkImportBtn', '#analyzeExtDealBtn'],
+    outline: ['#themeToggle', '#mbpsHealthBtn', '#mbpsUserBtn', '#mbpsRestoreBtn', '#viewActivityLogBtn']
+  };
+  
+  idMappings.primary.forEach(id => {
+    const btn = document.querySelector(id);
+    if (btn) {
+      btn.classList.remove('btn-outline', 'btn-accent');
+      btn.classList.add('btn-primary');
+    }
+  });
+  
+  idMappings.accent.forEach(id => {
+    const btn = document.querySelector(id);
+    if (btn) {
+      btn.classList.remove('btn-outline', 'btn-primary');
+      btn.classList.add('btn-accent');
     }
   });
 });
