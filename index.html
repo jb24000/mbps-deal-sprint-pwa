@@ -6853,24 +6853,66 @@ function updateLiveAnalysis() {
 })();
 </script>
   <script>
-    // Add this script at the end of your body or in a DOMContentLoaded event
+// Add this at the end of your body or wrap in DOMContentLoaded
 document.addEventListener('DOMContentLoaded', function() {
-  // Primary actions (Cyan) - Save, Submit, Send
-  document.querySelectorAll('#saveGoalsBtn, #sendEmailBtn, #syncBtn, button[type="submit"]').forEach(btn => {
-    btn.classList.remove('btn-outline');
-    btn.classList.add('btn-primary');
+  
+  // Primary actions (Cyan) - main workflow buttons
+  const primaryButtons = [
+    '#exportCsvBtn', '#backupBtn', '#restoreBtn', '#addLeadBtn',
+    '#saveGoalsBtn', '#sendCashOfferBtn', '#syncBtn',
+    'button:contains("Add Lead")', 'button:contains("Pipeline")',
+    'button:contains("Schedule")', 'button:contains("Move")',
+    '#logPrivySearchBtn', '#markOfferSentBtn'
+  ];
+  
+  // Special features (Purple) - analysis and special tools
+  const accentButtons = [
+    '#analyzeBtn', '#evalBtn', '#privyBulkImportBtn',
+    'button:contains("Analyze Deal")', 'button:contains("Analytics")',
+    '#analyzeExtDealBtn'
+  ];
+  
+  // Utility/neutral buttons (keep as outline)
+  const outlineButtons = [
+    '#themeToggle', '#mbpsHealthBtn', '#mbpsUserBtn', 
+    '#mbpsRestoreBtn', 'button:contains("PDF")',
+    'button:contains("Attachments")', 'button:contains("Clear")',
+    'button:contains("Reset")', '#viewActivityLogBtn',
+    '#sendTermsOfferBtn' // Terms offer can be outline since Cash is primary
+  ];
+  
+  // Apply primary (cyan)
+  primaryButtons.forEach(selector => {
+    document.querySelectorAll(selector).forEach(btn => {
+      if (btn) {
+        btn.classList.remove('btn-outline', 'btn-accent');
+        btn.classList.add('btn-primary');
+      }
+    });
   });
   
-  // Special features (Purple) - Import, Analyze, Bulk operations
-  document.querySelectorAll('#privyBulkImportBtn, #analyzeBtn, #evalBtn, #importLeadsBtn, #bulkMessageBtn').forEach(btn => {
-    btn.classList.remove('btn-outline', 'btn-primary');
-    btn.classList.add('btn-accent');
+  // Apply accent (purple)
+  accentButtons.forEach(selector => {
+    document.querySelectorAll(selector).forEach(btn => {
+      if (btn) {
+        btn.classList.remove('btn-outline', 'btn-primary');
+        btn.classList.add('btn-accent');
+      }
+    });
   });
   
-  // Success actions (Green) - need to add btn-success class to your CSS first
-  document.querySelectorAll('#finishBtn, #saveDealsBtn, button:contains("Complete")').forEach(btn => {
-    btn.classList.remove('btn-outline');
-    btn.classList.add('btn-success');
+  // Fix buttons by ID that contain specific text
+  document.querySelectorAll('button').forEach(btn => {
+    const text = btn.textContent.toLowerCase();
+    
+    if (text.includes('analyze') && !text.includes('export')) {
+      btn.classList.remove('btn-outline', 'btn-primary');
+      btn.classList.add('btn-accent');
+    } else if (text.includes('schedule') || text.includes('add lead') || 
+               text.includes('pipeline') || text.includes('mark offer')) {
+      btn.classList.remove('btn-outline', 'btn-accent');
+      btn.classList.add('btn-primary');
+    }
   });
 });
   </script>
