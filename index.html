@@ -538,15 +538,15 @@ html:not(.dark) button {
 </style>
 <style>
 /* Force all success/green buttons to use the same green */
-.btn-success,
-.btn.brand,
-button.bg-green-500,
-button.bg-emerald-500,
-.bg-green-600,
-.bg-emerald-600 {
-  background: #22c55e !important;
-  color: white !important;
-  border-color: #16a34a !important;
+/* Only target btn-success specifically */
+.btn-success { 
+  background: #22c55e; 
+  color: white; 
+  border-color: #16a34a; 
+}
+.btn-success:hover { 
+  background: #16a34a; 
+  border-color: #15803d; 
 }
 
 /* Fix any hover states to match */
