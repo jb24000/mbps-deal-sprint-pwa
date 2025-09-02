@@ -502,6 +502,32 @@ html:not(.dark) button {
   border-color: #22c55e;
 }
   </style>
+  <style>
+/* Keep all active tabs the same cyan color */
+.tab.active {
+  border-color: #06b6d4 !important;
+  background: #cffafe !important;
+  color: #0e7490 !important;
+}
+
+/* Dark mode - keep consistent cyan for active tabs */
+.dark .tab.active {
+  background: rgba(6, 182, 212, 0.2) !important;
+  color: #67e8f9 !important;
+  border-color: #06b6d4 !important;
+}
+
+/* Optional: Keep hover state consistent too */
+.tab:hover {
+  background: #f0f9ff;
+  border-color: #bae6fd;
+}
+
+.dark .tab:hover {
+  background: rgba(6, 182, 212, 0.1);
+  border-color: rgba(6, 182, 212, 0.3);
+}
+</style>
 
 </head>
 <body class="bg-gradient-to-br from-brand-50 via-white to-accent-50 text-gray-800 min-h-screen">
