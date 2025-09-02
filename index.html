@@ -451,6 +451,56 @@ html:not(.dark) button {
   color: #86efac;
 }
   </style>
+  
+  <style>
+    <style id="consistent-button-colors">
+/* Primary action buttons - Cyan */
+.btn-primary {
+  background: #06b6d4;
+  color: white;
+  border-color: #0891b2;
+}
+.btn-primary:hover {
+  background: #0891b2;
+  border-color: #0e7490;
+}
+
+/* Special feature buttons - Purple */
+.btn-accent, .btn-special {
+  background: #d946ef;
+  color: white;
+  border-color: #c026d3;
+}
+.btn-accent:hover, .btn-special:hover {
+  background: #c026d3;
+  border-color: #a21caf;
+}
+
+/* Success/confirmation buttons - Green */
+.btn-success {
+  background: #22c55e;
+  color: white;
+  border-color: #16a34a;
+}
+.btn-success:hover {
+  background: #16a34a;
+  border-color: #15803d;
+}
+
+/* Dark mode adjustments */
+.dark .btn-primary {
+  background: #0891b2;
+  border-color: #06b6d4;
+}
+.dark .btn-accent {
+  background: #c026d3;
+  border-color: #d946ef;
+}
+.dark .btn-success {
+  background: #16a34a;
+  border-color: #22c55e;
+}
+  </style>
 
 </head>
 <body class="bg-gradient-to-br from-brand-50 via-white to-accent-50 text-gray-800 min-h-screen">
