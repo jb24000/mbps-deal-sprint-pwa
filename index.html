@@ -6908,9 +6908,10 @@ document.addEventListener('DOMContentLoaded', function() {
         text === 'Upload PDF' ||
         text === 'Generate Signature' ||
         text === 'Generate Initials' ||
+        text === 'Copy' ||
         text.includes('Send') ||
         text.includes('Save')) {
-      btn.classList.remove('btn-outline', 'btn-accent');
+      btn.classList.remove('btn-outline', 'btn-accent', 'btn-success');
       btn.classList.add('btn-primary');
     }
     
@@ -6919,13 +6920,13 @@ document.addEventListener('DOMContentLoaded', function() {
              text === 'Analyze Deal' ||
              text === 'Analyze' ||
              text === 'Install App' ||
-             text.includes('Bulk Import') ||
-             text.includes('Property Evaluation')) {
-      btn.classList.remove('btn-outline', 'btn-primary');
+             text === 'Property Evaluation' ||
+             text.includes('Bulk Import')) {
+      btn.classList.remove('btn-outline', 'btn-primary', 'btn-success');
       btn.classList.add('btn-accent');
     }
     
-    // Keep as outline - utility buttons
+    // Success (Green) - Utility/system buttons
     else if (text === 'Dark' ||
              text === 'Health' ||
              text === 'Users' ||
@@ -6935,11 +6936,11 @@ document.addEventListener('DOMContentLoaded', function() {
              text === 'Attachments' ||
              text === 'Clear' ||
              text === 'Activity Log' ||
-             text === 'Copy' ||
              text === 'Initials' ||
              text.includes('Close') ||
              text.includes('Cancel')) {
-      // Keep these as btn-outline (no change needed)
+      btn.classList.remove('btn-outline', 'btn-primary', 'btn-accent');
+      btn.classList.add('btn-success');
     }
   });
   
