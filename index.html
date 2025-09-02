@@ -536,6 +536,27 @@ html:not(.dark) button {
   color: inherit !important;
 }
 </style>
+<style>
+/* Force all success/green buttons to use the same green */
+.btn-success,
+.btn.brand,
+button.bg-green-500,
+button.bg-emerald-500,
+.bg-green-600,
+.bg-emerald-600 {
+  background: #22c55e !important;
+  color: white !important;
+  border-color: #16a34a !important;
+}
+
+/* Fix any hover states to match */
+.btn-success:hover,
+.btn.brand:hover {
+  background: #16a34a !important;
+  border-color: #15803d !important;
+}
+</style>
+  
 </head>
 <body class="bg-gradient-to-br from-brand-50 via-white to-accent-50 text-gray-800 min-h-screen">
   <!-- ONE-METRIC BAR -->
