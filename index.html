@@ -556,6 +556,29 @@ html:not(.dark) button {
   border-color: #15803d !important;
 }
 </style>
+  <style>
+/* Fix the two different greens - make brand use the same green */
+.btn.brand { 
+  background: #22c55e !important; 
+  border-color: #16a34a !important; 
+}
+
+/* Fix the always-on issue for Analyze and Property Evaluation in light mode */
+body:not(.dark) #analyzeBtn:not(:hover),
+body:not(.dark) #evalBtn:not(:hover),
+body:not(.dark) button:contains("Property Evaluation"):not(:hover) {
+  background: #d946ef !important;
+  color: white !important;
+  border-color: #c026d3 !important;
+}
+
+/* Ensure they're not stuck in active state */
+body:not(.dark) .btn-accent:not(:active):not(:focus) {
+  background: #d946ef;
+  color: white;
+  border-color: #c026d3;
+}
+</style>
   
 </head>
 <body class="bg-gradient-to-br from-brand-50 via-white to-accent-50 text-gray-800 min-h-screen">
