@@ -370,7 +370,87 @@ body:not(.dark) .btn > span {
 html:not(.dark) button {
   color: #1f2937 !important;
 }
-</style>
+  /* Update the existing tab styles */
+.tab { 
+  border-bottom: 2px solid transparent; 
+  padding: .5rem .75rem; 
+  border-radius: .5rem .5rem 0 0; 
+  transition: all 0.3s ease;
+}
+
+/* Primary/Active tabs - Cyan */
+.tab.active { 
+  border-color: #06b6d4; 
+  background: #cffafe; 
+  color: #0e7490; 
+}
+
+/* Special feature tabs - Purple (for Sprint, Analyzers, etc.) */
+.tab[data-tab="sprint"],
+.tab[data-tab="tab-seven-day-sprint"],
+.tab[data-tab="analyzers"],
+.tab[data-tab="kpi"] {
+  border-color: transparent;
+}
+
+.tab[data-tab="sprint"]:hover,
+.tab[data-tab="tab-seven-day-sprint"]:hover,
+.tab[data-tab="analyzers"]:hover,
+.tab[data-tab="kpi"]:hover {
+  background: #fae8ff;
+  border-color: #d946ef;
+  color: #86198f;
+}
+
+.tab[data-tab="sprint"].active,
+.tab[data-tab="tab-seven-day-sprint"].active,
+.tab[data-tab="analyzers"].active,
+.tab[data-tab="kpi"].active {
+  border-color: #d946ef;
+  background: #fae8ff;
+  color: #86198f;
+}
+
+/* Success/Completed tabs - Green (for Closed deals, etc.) */
+.tab[data-tab="buyers"],
+.tab[data-tab="settings"] {
+  border-color: transparent;
+}
+
+.tab[data-tab="buyers"]:hover,
+.tab[data-tab="settings"]:hover {
+  background: #dcfce7;
+  border-color: #22c55e;
+  color: #166534;
+}
+
+.tab[data-tab="buyers"].active,
+.tab[data-tab="settings"].active {
+  border-color: #22c55e;
+  background: #dcfce7;
+  color: #166534;
+}
+
+/* Dark mode adjustments */
+.dark .tab.active {
+  background: rgba(6, 182, 212, 0.2);
+  color: #67e8f9;
+}
+
+.dark .tab[data-tab="sprint"].active,
+.dark .tab[data-tab="tab-seven-day-sprint"].active,
+.dark .tab[data-tab="analyzers"].active,
+.dark .tab[data-tab="kpi"].active {
+  background: rgba(217, 70, 239, 0.2);
+  color: #f0abfc;
+}
+
+.dark .tab[data-tab="buyers"].active,
+.dark .tab[data-tab="settings"].active {
+  background: rgba(34, 197, 94, 0.2);
+  color: #86efac;
+}
+  </style>
 
 </head>
 <body class="bg-gradient-to-br from-brand-50 via-white to-accent-50 text-gray-800 min-h-screen">
