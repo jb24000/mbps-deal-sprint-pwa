@@ -2076,7 +2076,7 @@ window.renderDashboard = renderDashboard;
         document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
         t.classList.add('active');
         Object.values(sections).forEach(sel=>document.querySelector(sel).classList.add('hidden'));
-        document.querySelector(sections[t.dataset.tab]).classList.remove('hidden');
+        document.querySelector(sections[t.dataset.tab])?.classList.remove('hidden');
         window.scrollTo({ top: 0, behavior: 'smooth' });
         
         if (t.dataset.tab === 'seven-day-sprint') {
