@@ -7042,10 +7042,12 @@ const HotMarketsAPI = {
     localStorage.setItem('HOT_MARKETS_API', url);
   },
   async fetchHotMarkets({ location, category = 'sfr_sub300k', timeframe = '30d' }) {
-    const token = localStorage.getItem('HOT_MARKETS_TOKEN');
-    if (!token) throw new Error('Please set your API token in Settings');
+    if (!this.base) throw new Error('Hot Markets API URL not set. Add it in Settings.');
     
-    const url = `https://dl22vwp2qk.execute-api.us-east-1.amazonaws.com/prod/hot-markets?location=${encodeURIComponent(location)}&category=${category}&timeframe=${timeframe}&token=${token}`;
+    const token = localStorage.getItem('HOT_MARKETS_TOKEN');
+    if (!token) throw new Error('API token not set. Add it in Settings.');
+    
+    const url = `${this.base}?location=${encodeURIComponent(location)}&category=${encodeURIComponent(category)}&timeframe=${encodeURIComponent(timeframe)}&token=${token}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`API ${res.status}`);
     return await res.json();
