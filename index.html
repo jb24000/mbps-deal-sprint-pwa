@@ -7403,7 +7403,10 @@ window.HotMarketsAPI = HotMarketsAPI;
 // Override HotMarketsAPI to use token in query parameter (avoids CORS)
 window.HotMarketsAPI = {
   async fetchHotMarkets({ location, category = 'sfr_sub300k', timeframe = '30d' }) {
-    const url = `https://dl22vwp2qk.execute-api.us-east-1.amazonaws.com/prod/hot-markets?location=${encodeURIComponent(location)}&category=${category}&timeframe=${timeframe}&token=test-token-123`;
+    const token = localStorage.getItem('HOT_MARKETS_TOKEN');
+    if (!token) throw new Error('Please set your API token in Settings');
+    
+    const url = `https://dl22vwp2qk.execute-api.us-east-1.amazonaws.com/prod/hot-markets?location=${encodeURIComponent(location)}&category=${category}&timeframe=${timeframe}&token=${token}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`API ${res.status}`);
     return await res.json();
