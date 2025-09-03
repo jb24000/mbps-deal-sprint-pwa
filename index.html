@@ -7306,11 +7306,13 @@ function initializeMarketIntelligence() {
     showNotification?.('Settings saved', 'success');
 });
   // Analyze via AWS API
-  document.getElementById('analyzeMarkets')?.addEventListener('click', async function() {
+document.getElementById('analyzeMarkets')?.addEventListener('click', async function() {
     const loc = document.getElementById('locationInput').value.trim() || 'United States';
-    if (!localStorage.getItem('HOT_MARKETS_API')) {
-      showNotification?.('Set your AWS API URL in Settings first', 'error');
-      return;
+    const token = localStorage.getItem('HOT_MARKETS_TOKEN');
+    
+    if (!token) {
+        alert('Please enter your API token in Settings first');
+        return;
     }
 
     this.disabled = true;
@@ -7318,27 +7320,24 @@ function initializeMarketIntelligence() {
     this.innerHTML = '<i data-lucide="loader-2" class="animate-spin"></i> Analyzing…';
 
     try {
-      const results = await HotMarketsAPI.fetchHotMarkets({
-        location: loc,
-        category: 'sfr_sub300k',
-        timeframe: '30d'
-      });
-
-      displayMarketResults(results);
-
-      const saved = JSON.parse(localStorage.getItem('analyzedLocations') || '[]');
-      if (!saved.includes(loc)) saved.push(loc);
-      localStorage.setItem('analyzedLocations', JSON.stringify(saved.slice(-20)));
-      updateQuickZipCodes();
+        const url = `https://dl22vwp2qk.execute-api.us-east-1.amazonaws.com/prod/hot-markets?location=${encodeURIComponent(loc)}&category=sfr_sub300k&timeframe=30d&token=${token}`;
+        const res = await fetch(url);
+        const results = await res.json();
+        
+        displayMarketResults(results);
+        
+        const saved = JSON.parse(localStorage.getItem('analyzedLocations') || '[]');
+        if (!saved.includes(loc)) saved.push(loc);
+        localStorage.setItem('analyzedLocations', JSON.stringify(saved.slice(-20)));
+        updateQuickZipCodes();
     } catch (e) {
-      showNotification?.(e.message || 'Analysis failed', 'error');
-      console.error(e);
+        console.error('Analysis error:', e);
+        alert('Analysis failed: ' + e.message);
     } finally {
-      this.disabled = false;
-      this.innerHTML = original;
+        this.disabled = false;
+        this.innerHTML = original;
     }
-  });
-
+});
   // Clear local cache (just localStorage entries you might use)
   document.getElementById('refreshMarkets')?.addEventListener('click', function() {
     Object.keys(localStorage).forEach(k => { if (k.startsWith('hmf_')) localStorage.removeItem(k); });
