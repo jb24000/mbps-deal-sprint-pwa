@@ -7395,6 +7395,22 @@ window.enhanceLeadWithMarketData = enhanceLeadWithMarketData;
 window.MarketIntelligence = MarketIntelligence;
 window.HotMarketsAPI = HotMarketsAPI;
 </script>
+  <!-- Market Intel Token Fix -->
+<script>
+// Override HotMarketsAPI to use token in query parameter (avoids CORS)
+window.HotMarketsAPI = {
+  async fetchHotMarkets({ location, category = 'sfr_sub300k', timeframe = '30d' }) {
+    const url = `https://dl22vwp2qk.execute-api.us-east-1.amazonaws.com/prod/hot-markets?location=${encodeURIComponent(location)}&category=${category}&timeframe=${timeframe}&token=test-token-123`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return await res.json();
+  }
+};
+
+// Set token in localStorage
+localStorage.setItem('HOT_MARKETS_TOKEN', 'test-token-123');
+localStorage.setItem('HOT_MARKETS_API', 'https://dl22vwp2qk.execute-api.us-east-1.amazonaws.com/prod/hot-markets');
+</script>
 </body>
 </html>
 
