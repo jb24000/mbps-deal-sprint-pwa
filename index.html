@@ -2257,7 +2257,8 @@ window.renderDashboard = renderDashboard;
   signer:'#tab-signer',
   buyers:'#tab-buyers',
   kpi:'#tab-kpi',
-  settings:'#tab-settings'
+  settings:'#tab-settings',
+  'market-intel': '#market-intel',   
 };
 
     document.querySelectorAll('.tab').forEach(t=>
@@ -2275,6 +2276,11 @@ window.renderDashboard = renderDashboard;
         if (t.dataset.tab === 'dashboard') {
           renderDashboard();
         }
+        // ADD THIS:
+        if (t.dataset.tab === 'market-intel') {
+          document.querySelector('#market-intel').innerHTML = renderMarketIntelTab();
+          initializeMarketIntelligence();
+}
       }));
 
     // ========= Lead Scoring & Management =========
