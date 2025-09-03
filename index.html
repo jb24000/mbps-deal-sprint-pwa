@@ -7024,37 +7024,44 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(() => el.remove(), 2500);
   };
 </script>
-
+ 
+<!-- ================================
+     MARKET INTEL (AWS) — DROP-IN
+     ================================ -->
 <script>
-/* =========================================================
-   HOT MARKETS (AWS version) — Drop-in for mbps-deal-sprint-pwa
-   - Calls your AWS API Gateway (Lambda backend) for AI results
-   - Evidence Mode badges supported
-   - No RouteLLM key or direct model calls in the browser
-   ========================================================= */
-
-/* ---------- Thin client: calls your AWS API Gateway ---------- */
+/* ---------- Thin client to your AWS API ---------- */
 const HotMarketsAPI = {
-  get base() {
-    return localStorage.getItem('HOT_MARKETS_API') || '';
-  },
-  setBase(url) {
-    localStorage.setItem('HOT_MARKETS_API', url);
-  },
-  async fetchHotMarkets({ location, category = 'sfr_sub300k', timeframe = '30d' }) {
-    if (!this.base) throw new Error('Hot Markets API URL not set. Add it in Settings.');
-    
+  get base() { return localStorage.getItem('HOT_MARKETS_API') || ''; },
+  setBase(url) { localStorage.setItem('HOT_MARKETS_API', url); },
+  async fetch({ location, category = 'sfr_sub300k', timeframe = '30d' }) {
+    const api = this.base;
     const token = localStorage.getItem('HOT_MARKETS_TOKEN');
-    if (!token) throw new Error('API token not set. Add it in Settings.');
-    
-    const url = `${this.base}?location=${encodeURIComponent(location)}&category=${encodeURIComponent(category)}&timeframe=${encodeURIComponent(timeframe)}&token=${token}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`API ${res.status}`);
-    return await res.json();
+    if (!api)   throw new Error('Hot Markets API URL not set (Settings).');
+    if (!token) throw new Error('API token not set (Settings).');
+
+    // Try header auth first, then fallback to query
+    let url = `${api}?location=${encodeURIComponent(location)}&category=${encodeURIComponent(category)}&timeframe=${encodeURIComponent(timeframe)}`;
+    let res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+
+    if (res.status === 401 || res.status === 403) {
+      url = `${api}?location=${encodeURIComponent(location)}&category=${encodeURIComponent(category)}&timeframe=${encodeURIComponent(timeframe)}&token=${encodeURIComponent(token)}`;
+      res = await fetch(url);
+    }
+
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch {
+      const s = text.indexOf('['), e = text.lastIndexOf(']');
+      data = (s >= 0 && e > s) ? JSON.parse(text.slice(s, e + 1)) : null;
+    }
+
+    if (!res.ok) throw new Error((data && (data.error || data.message)) || `HTTP ${res.status}`);
+    if (!Array.isArray(data)) throw new Error('API did not return an array');
+    return data;
   }
 };
 
-/* ---------- Simple trends helper (compatible with AWS data) ---------- */
+/* ---------- Simple trends helper ---------- */
 const MarketIntelligence = {
   getMarketTrends(n){
     const t=[];
@@ -7066,29 +7073,28 @@ const MarketIntelligence = {
   }
 };
 
-/* ---------- Settings + Analysis Tab Markup (now uses AWS URL) ---------- */
+/* ---------- Settings + Analysis Tab Markup ---------- */
 function renderMarketIntelTab() {
   const api = localStorage.getItem('HOT_MARKETS_API') || '';
   const token = localStorage.getItem('HOT_MARKETS_TOKEN') || '';
   const evidence = (localStorage.getItem('HMF_EVIDENCE') ?? '1') === '1';
   return `
     <div class="space-y-6">
-      <!-- API Settings -->
       <section class="card">
         <h3 class="text-lg font-semibold mb-3">Market Intelligence Settings</h3>
         <div class="space-y-3">
           <div>
             <label class="block text-sm font-medium mb-1">Hot Markets API URL (AWS)</label>
             <input id="hotMarketsApiUrl" class="w-full rounded-xl border-gray-200"
-                   placeholder="https://<api-id>.execute-api.us-east-1.amazonaws.com/hot-markets"
+                   placeholder="https://<api-id>.execute-api.us-east-1.amazonaws.com/prod/hot-markets"
                    value="${api}">
-            <p class="text-xs text-gray-500 mt-1">Your secure access token</p>
-       </div>
+            <p class="text-xs text-gray-500 mt-1">Example: https://xxxx.execute-api.us-east-1.amazonaws.com/prod/hot-markets</p>
+          </div>
           <div>
             <label class="block text-sm font-medium mb-1">API Token</label>
             <input id="hotMarketsToken" type="password" class="w-full rounded-xl border-gray-200"
                    placeholder="Enter your token" value="${token}">
-            <p class="text-xs text-gray-500 mt-1">Your secure access token</p>
+            <p class="text-xs text-gray-500 mt-1">Token must exist in Lambda TOKENS_JSON.</p>
           </div>
           <label class="flex items-center gap-2 text-sm">
             <input id="evidenceModeToggle" type="checkbox" class="accent-blue-600" ${evidence ? 'checked' : ''}>
@@ -7097,7 +7103,7 @@ function renderMarketIntelTab() {
           <button id="saveAiSettings" class="btn btn-primary">Save Settings</button>
         </div>
       </section>
-      <!-- Market Analysis -->
+
       <section class="card">
         <div class="flex items-center justify-between mb-3">
           <h3 class="text-lg font-semibold">Market Analysis</h3>
@@ -7109,7 +7115,7 @@ function renderMarketIntelTab() {
         <div class="space-y-3 mb-4">
           <div class="flex gap-2">
             <input id="locationInput" class="flex-1 rounded-xl border-gray-200"
-                   placeholder="Enter a city/state or comma-separated ZIPs (e.g., 'Phoenix, AZ' or '85032, 85254')">
+                   placeholder="Enter a city/state or ZIPs (e.g., 'Charlotte, NC' or '85032, 85254')">
             <button id="analyzeMarkets" class="btn btn-primary">Analyze</button>
           </div>
           <div class="flex flex-wrap gap-2" id="quickZipCodes">
@@ -7120,7 +7126,6 @@ function renderMarketIntelTab() {
         <div id="marketResults" class="space-y-3"></div>
       </section>
 
-      <!-- Market Insights -->
       <section class="card">
         <h3 class="text-lg font-semibold mb-3">Market Insights</h3>
         <div id="marketInsights" class="space-y-2 text-sm">
@@ -7131,10 +7136,9 @@ function renderMarketIntelTab() {
   `;
 }
 
-/* ---------- Evidence-enabled card (works with AWS response) ---------- */
+/* ---------- Evidence-enabled card ---------- */
 function renderMarketCard(marketResult) {
   const { zipCode, city, state, score, classification, data, insights = [], evidence = [], lastUpdated } = marketResult;
-
   const zip = zipCode || marketResult.zip || marketResult.code || '—';
   const loc = [city, state].filter(Boolean).join(', ');
   const avgDOM  = data?.avgDaysOnMarket ?? marketResult.avgDaysOnMarket ?? 'N/A';
@@ -7149,14 +7153,9 @@ function renderMarketCard(marketResult) {
     'COOL': 'bg-blue-50 border-blue-200 text-blue-900',
     'COLD': 'bg-gray-50 border-gray-200 text-gray-900'
   };
-
   const tag = (t) => `<span class="text-[10px] px-2 py-1 rounded-full bg-gray-100 border">${t}</span>`;
-
   const trends = MarketIntelligence.getMarketTrends({
-    avgDaysOnMarket: avgDOM,
-    monthsOfSupply: mos,
-    saleToListRatio: slr,
-    priceReductions: reducts
+    avgDaysOnMarket: avgDOM, monthsOfSupply: mos, saleToListRatio: slr, priceReductions: reducts
   });
 
   return `
@@ -7212,7 +7211,7 @@ function renderMarketCard(marketResult) {
   `;
 }
 
-/* ---------- Results renderer (accepts AWS or legacy shapes) ---------- */
+/* ---------- Results renderer ---------- */
 function displayMarketResults(results) {
   const container = document.getElementById('marketResults');
   if (!container) return;
@@ -7223,7 +7222,7 @@ function displayMarketResults(results) {
   }
 
   const normalized = results.map(r => {
-    if (r.zipCode && r.data) return r; // already UI-ready
+    if (r.zipCode && r.data) return r;
     return {
       zipCode: r.zip || r.zipCode || '—',
       city: r.city, state: r.state,
@@ -7231,7 +7230,7 @@ function displayMarketResults(results) {
       classification: r.classification ?? null,
       data: {
         avgDaysOnMarket: r.avgDaysOnMarket ?? r.data?.avgDaysOnMarket,
-        monthsOfSupply: r.monthsOfSupply ?? r.data?.monthsOfSupply ?? r.inventory,
+        monthsOfSupply:  r.monthsOfSupply ?? r.data?.monthsOfSupply ?? r.inventory,
         saleToListRatio: r.saleToListRatio ?? r.data?.saleToListRatio,
         priceReductions: r.priceReductionsPct ?? r.data?.priceReductions
       },
@@ -7290,580 +7289,85 @@ function updateQuickZipCodes() {
   });
 }
 
-/* ---------- Initialize (settings + analyze) ---------- */
-function initializeMarketIntelligence() {
-  
+/* ---------- Init: save settings, attach listeners ---------- */
+(function attachMarketIntelHandlers(){
+  // Fallback toast so we never crash
+  window.showNotification = window.showNotification || function (msg, type='info'){
+    try {
+      const el=document.createElement('div'); el.textContent=msg;
+      el.style.cssText='position:fixed;left:50%;top:20px;transform:translateX(-50%);padding:10px 14px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.15);z-index:9999;background:#E5E7EB;color:#111827';
+      if(type==='success')el.style.background='#D1FAE5';
+      if(type==='error')el.style.background='#FEE2E2';
+      document.body.appendChild(el); setTimeout(()=>el.remove(),2400);
+    } catch {}
+  };
+
   // Save settings
   document.getElementById('saveAiSettings')?.addEventListener('click', function() {
-    const apiUrl = document.getElementById('hotMarketsApiUrl').value.trim();
-    const token = document.getElementById('hotMarketsToken')?.value.trim();
-    const ev = document.getElementById('evidenceModeToggle').checked ? '1' : '0';
-    
+    const apiUrl = document.getElementById('hotMarketsApiUrl')?.value.trim();
+    const token  = document.getElementById('hotMarketsToken')?.value.trim();
+    const ev     = document.getElementById('evidenceModeToggle')?.checked ? '1' : '0';
     if (apiUrl) localStorage.setItem('HOT_MARKETS_API', apiUrl);
-    if (token) localStorage.setItem('HOT_MARKETS_TOKEN', token);
+    if (token)  localStorage.setItem('HOT_MARKETS_TOKEN', token);
     localStorage.setItem('HMF_EVIDENCE', ev);
-    
-    showNotification?.('Settings saved', 'success');
-});
-  // Analyze via AWS API
-<script>
-// --- tiny toast fallback (safe if you already have showNotification) ---
-window.showNotification = window.showNotification || function (msg, type='info'){
-  try {
-    const el=document.createElement('div'); el.textContent=msg;
-    el.style.cssText='position:fixed;left:50%;top:20px;transform:translateX(-50%);padding:10px 14px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.15);z-index:9999;background:#E5E7EB;color:#111827';
-    if(type==='success')el.style.background='#D1FAE5';
-    if(type==='error')el.style.background='#FEE2E2';
-    document.body.appendChild(el); setTimeout(()=>el.remove(),2400);
-  } catch {}
-};
+    (window.showNotification ? showNotification : alert)('Settings saved', 'success');
+  });
 
-// --- analyze click (minimal changes, robust fetch/parsing) ---
-document.getElementById('analyzeMarkets')?.addEventListener('click', async function () {
-  const loc   = (document.getElementById('locationInput')?.value || 'United States').trim();
-  const token = localStorage.getItem('HOT_MARKETS_TOKEN');
-  const api   = localStorage.getItem('HOT_MARKETS_API') || 'https://dl22vwp2qk.execute-api.us-east-1.amazonaws.com/prod/hot-markets';
-
-  if (!token) { alert('Please enter your API token in Settings first'); return; }
-
-  this.disabled = true;
-  const original = this.innerHTML;
-  this.innerHTML = '<i data-lucide="loader-2" class="animate-spin"></i> Analyzing…';
-
-  try {
-    // Try header auth (preferred)
-    let url = `${api}?location=${encodeURIComponent(loc)}&category=sfr_sub300k&timeframe=30d`;
-    let res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-
-    // If API/GW is set to require query token instead, fall back once
-    if (res.status === 401 || res.status === 403) {
-      url = `${api}?location=${encodeURIComponent(loc)}&category=sfr_sub300k&timeframe=30d&token=${encodeURIComponent(token)}`;
-      res = await fetch(url);
-    }
-
-    const raw = await res.text();
-    let results;
-    try { results = JSON.parse(raw); } catch {
-      // handle accidental wrapping/noise
-      const s = raw.indexOf('['), e = raw.lastIndexOf(']');
-      results = (s>=0 && e>s) ? JSON.parse(raw.slice(s,e+1)) : null;
-    }
-
-    if (!res.ok) {
-      const msg = (results && (results.error || results.message)) || `HTTP ${res.status}`;
-      throw new Error(msg);
-    }
-    if (!Array.isArray(results)) throw new Error('API did not return an array');
-
-    displayMarketResults(results);
-
-    // save recent locations
-    const saved = JSON.parse(localStorage.getItem('analyzedLocations') || '[]');
-    if (!saved.includes(loc)) saved.push(loc);
-    localStorage.setItem('analyzedLocations', JSON.stringify(saved.slice(-20)));
-    if (typeof updateQuickZipCodes === 'function') updateQuickZipCodes();
-
-  } catch (e) {
-    console.error('Analysis error:', e);
+  // Analyze
+  document.getElementById('analyzeMarkets')?.addEventListener('click', async function () {
+    const loc = (document.getElementById('locationInput')?.value || 'United States').trim();
     const container = document.getElementById('marketResults');
-    if (container) {
+    const api = HotMarketsAPI.base || 'https://dl22vwp2qk.execute-api.us-east-1.amazonaws.com/prod/hot-markets';
+    const token = localStorage.getItem('HOT_MARKETS_TOKEN');
+
+    if (!token) { alert('Please enter your API token in Settings first'); return; }
+    if (!container) { console.error('#marketResults missing'); return; }
+
+    this.disabled = true;
+    const original = this.innerHTML;
+    this.innerHTML = '<i data-lucide="loader-2" class="animate-spin"></i> Analyzing…';
+
+    try {
+      const data = await HotMarketsAPI.fetch({ location: loc });
+      displayMarketResults(data);
+
+      const saved = JSON.parse(localStorage.getItem('analyzedLocations') || '[]');
+      if (!saved.includes(loc)) saved.push(loc);
+      localStorage.setItem('analyzedLocations', JSON.stringify(saved.slice(-20)));
+      updateQuickZipCodes();
+    } catch (e) {
+      console.error('Analysis error:', e);
       container.innerHTML = `
         <div class="border rounded-xl p-4 bg-red-50 border-red-200 text-red-900">
           <div class="font-semibold mb-1">Market fetch failed</div>
           <div class="text-sm opacity-80">${(e && e.message) ? String(e.message) : 'Unknown error'}</div>
         </div>`;
+      (window.showNotification ? showNotification : alert)('Analysis failed: ' + (e.message || e), 'error');
+    } finally {
+      this.disabled = false;
+      this.innerHTML = original;
     }
-    showNotification?.(e.message || 'Analysis failed', 'error');
-  } finally {
-    this.disabled = false;
-    this.innerHTML = original;
-  }
-});
-
-// --- clear local cache button (kept, but safe if showNotification missing) ---
-document.getElementById('refreshMarkets')?.addEventListener('click', function () {
-  Object.keys(localStorage).forEach(k => { if (k.startsWith('hmf_')) localStorage.removeItem(k); });
-  showNotification?.('Local cache cleared', 'success');
-});
-
-// keep your recent zips UI
-updateQuickZipCodes?.();
-</script>
-
-<script>
-/* ---------- Optional small styles ---------- */
-const marketIntelStyles = `
-  <style>
-    .quick-zip-btn:hover { transform: translateY(-1px); transition: all .15s ease; }
-  </style>
-`;
-
-/* ---------- Integration helpers (console hints) ---------- */
-function addMarketIntelligenceToNavigation() {
-  const navigationExample = `
-    <!-- Add this to your existing navigation tabs -->
-    <button class="tab" data-tab="market-intel">
-      <i data-lucide="trending-up"></i>
-      <span>Market Intel</span>
-    </button>`;
-  console.log('Add this navigation button:', navigationExample);
-}
-function addMarketIntelligenceToTabContent() {
-  const contentExample = `
-    <!-- Add this to your existing tab content container -->
-    <section id="market-intel" class="hidden" data-tab-panel="market-intel">
-      ${renderMarketIntelTab()}
-    </section>`;
-  console.log('Add this tab content:', contentExample);
-}
-
-/* ---------- Lead scoring booster (unchanged) ---------- */
-function enhanceLeadWithMarketData(lead) {
-  const zipMatch = lead.address?.match(/\b\d{5}\b/);
-  if (!zipMatch) return lead;
-  const zipCode = zipMatch[0];
-
-  const current = Array.from(document.querySelectorAll('#marketResults .border'))
-    .map(el => el.querySelector('h4')?.textContent?.trim())
-    .find(z => z === zipCode);
-
-  if (!current) return lead;
-
-  if (!lead.score) lead.score = 0;
-  const labelEl = Array.from(document.querySelectorAll('#marketResults .px-2.py-1.rounded-full.text-xs.font-medium'))
-    .find(el => el.textContent.includes('MARKET'));
-  const label = labelEl?.textContent || '';
-
-  if (label.includes('HOT')) lead.score += 15;
-  else if (label.includes('WARM')) lead.score += 10;
-  else if (label.includes('COOL')) lead.score += 5;
-
-  return lead;
-}
-
-/* ---------- Expose to window ---------- */
-window.renderMarketIntelTab = renderMarketIntelTab;
-window.initializeMarketIntelligence = initializeMarketIntelligence;
-window.displayMarketResults = displayMarketResults;
-window.enhanceLeadWithMarketData = enhanceLeadWithMarketData;
-window.MarketIntelligence = MarketIntelligence;
-window.HotMarketsAPI = HotMarketsAPI;
-</script>
-  <!-- Market Intel Token Fix -->
-<script>
-// Set token in localStorage
-localStorage.setItem('HOT_MARKETS_TOKEN', 'test-token-123');
-localStorage.setItem('HOT_MARKETS_API', 'https://dl22vwp2qk.execute-api.us-east-1.amazonaws.com/prod/hot-markets');
-</script>
-  <script>
-// Simple fix - override just the fetch function after everything loads
-document.addEventListener('DOMContentLoaded', () => {
-  setTimeout(() => {
-    window.HotMarketsAPI.fetchHotMarkets = async function({ location, category = 'sfr_sub300k', timeframe = '30d' }) {
-      const token = '9716';
-      const url = `https://dl22vwp2qk.execute-api.us-east-1.amazonaws.com/prod/hot-markets?location=${encodeURIComponent(location)}&category=${category}&timeframe=${timeframe}&token=${token}`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`API ${res.status}`);
-      return await res.json();
-    };
-  }, 1000);
-});
-</script>
-  <script>
-  // ========= MARKET INTEL BUTTON FIX =========
-// Add this script to fix your market intelligence functionality
-
-(function() {
-  'use strict';
-  
-  // 1. Fix the tab click handler
-  document.addEventListener('DOMContentLoaded', function() {
-    // Wait for all other scripts to load
-    setTimeout(() => {
-      // Find and fix the market intel tab
-      const marketIntelTab = document.querySelector('[data-tab="market-intel"]');
-      const marketIntelSection = document.getElementById('market-intel');
-      
-      if (marketIntelTab && marketIntelSection) {
-        // Remove any existing listeners and add proper one
-        marketIntelTab.addEventListener('click', function(e) {
-          e.preventDefault();
-          
-          // Hide all tabs/panels
-          document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-          document.querySelectorAll('[data-tab-panel], .tab-panel, section.tab-panel').forEach(p => p.classList.add('hidden'));
-          
-          // Show this tab/panel
-          this.classList.add('active');
-          marketIntelSection.classList.remove('hidden');
-          
-          // Populate content if empty
-          if (!marketIntelSection.innerHTML.trim() || marketIntelSection.innerHTML.includes('Content populated by')) {
-            console.log('Populating Market Intel content...');
-            marketIntelSection.innerHTML = window.renderMarketIntelTab ? window.renderMarketIntelTab() : getDefaultMarketIntelContent();
-            
-            // Initialize functionality
-            if (window.initializeMarketIntelligence) {
-              window.initializeMarketIntelligence();
-            }
-          }
-          
-          // Scroll to top
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        });
-        
-        console.log('Market Intel tab handler fixed');
-      }
-      
-      // 2. Ensure API configuration is working
-      setupMarketIntelAPI();
-      
-      // 3. Add fallback content if render function doesn't exist
-      if (!window.renderMarketIntelTab) {
-        window.renderMarketIntelTab = getDefaultMarketIntelContent;
-      }
-      
-      // 4. Add fallback initialization if function doesn't exist  
-      if (!window.initializeMarketIntelligence) {
-        window.initializeMarketIntelligence = initializeMarketIntelFallback;
-      }
-      
-    }, 500);
   });
-  
-  // Default content if the render function fails
-  function getDefaultMarketIntelContent() {
-    return `
-      <div class="space-y-6">
-        <!-- API Settings -->
-        <section class="card">
-          <h3 class="text-lg font-semibold mb-3">Market Intelligence Settings</h3>
-          <div class="space-y-3">
-            <div>
-              <label class="block text-sm font-medium mb-1">API Status</label>
-              <div id="apiStatus" class="text-sm">
-                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  Ready
-                </span>
-              </div>
-            </div>
-            <div>
-              <label class="block text-sm font-medium mb-1">API Token</label>
-              <input id="hotMarketsToken" type="password" class="w-full rounded-xl border-gray-200"
-                     placeholder="Enter your token" value="9716">
-              <p class="text-xs text-gray-500 mt-1">Using default test token</p>
-            </div>
-            <button id="saveAiSettings" class="btn btn-primary">Save Settings</button>
-          </div>
-        </section>
 
-        <!-- Market Analysis -->
-        <section class="card">
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="text-lg font-semibold">Market Analysis</h3>
-            <button id="refreshMarkets" class="btn btn-outline btn-sm">
-              <i data-lucide="refresh-cw"></i> Refresh
-            </button>
-          </div>
-
-          <div class="space-y-3 mb-4">
-            <div class="flex gap-2">
-              <input id="locationInput" class="flex-1 rounded-xl border-gray-200"
-                     placeholder="Enter city/state or ZIP codes (e.g., 'Phoenix, AZ' or '85032, 85254')">
-              <button id="analyzeMarkets" class="btn btn-primary">Analyze Market</button>
-            </div>
-            <div class="flex flex-wrap gap-2" id="quickZipCodes">
-              <button class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs hover:bg-blue-200" onclick="document.getElementById('locationInput').value='Phoenix, AZ'">Phoenix, AZ</button>
-              <button class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs hover:bg-blue-200" onclick="document.getElementById('locationInput').value='Atlanta, GA'">Atlanta, GA</button>
-              <button class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs hover:bg-blue-200" onclick="document.getElementById('locationInput').value='85032'">85032</button>
-            </div>
-          </div>
-
-          <div id="marketResults" class="space-y-3">
-            <p class="text-gray-500 text-center py-8">Enter a location above and click "Analyze Market" to get started</p>
-          </div>
-        </section>
-
-        <!-- Market Insights -->
-        <section class="card">
-          <h3 class="text-lg font-semibold mb-3">Market Insights</h3>
-          <div id="marketInsights" class="space-y-2 text-sm">
-            <p class="text-gray-500">Run an analysis to see market insights and trends</p>
-          </div>
-        </section>
-      </div>
-    `;
-  }
-  <script>
-  // Setup API configuration
-  function setupMarketIntelAPI() {
-    // Set default values if not already set
-    if (!localStorage.getItem('HOT_MARKETS_API')) {
-      localStorage.setItem('HOT_MARKETS_API', 'https://dl22vwp2qk.execute-api.us-east-1.amazonaws.com/prod/hot-markets');
-    }
-    if (!localStorage.getItem('HOT_MARKETS_TOKEN')) {
-      localStorage.setItem('HOT_MARKETS_TOKEN', '9716');
-    }
-    
-    console.log('Market Intel API configured');
-  }
-  
-  // Fallback initialization function
-  function initializeMarketIntelFallback() {
-    console.log('Initializing Market Intel (fallback mode)...');
-    
-    // Save settings handler
-    const saveBtn = document.getElementById('saveAiSettings');
-    if (saveBtn && !saveBtn._handlerAdded) {
-      saveBtn.addEventListener('click', function() {
-        const token = document.getElementById('hotMarketsToken')?.value.trim();
-        if (token) {
-          localStorage.setItem('HOT_MARKETS_TOKEN', token);
-          showNotification('Settings saved successfully', 'success');
-        }
-      });
-      saveBtn._handlerAdded = true;
-    }
-    
-    // Analyze markets handler
-    const analyzeBtn = document.getElementById('analyzeMarkets');
-    if (analyzeBtn && !analyzeBtn._handlerAdded) {
-      analyzeBtn.addEventListener('click', async function() {
-        const location = document.getElementById('locationInput')?.value.trim();
-        if (!location) {
-          alert('Please enter a location to analyze');
-          return;
-        }
-        
-        this.disabled = true;
-        const originalText = this.textContent;
-        this.textContent = 'Analyzing...';
-        
-        try {
-          await analyzeMarketLocation(location);
-        } catch (error) {
-          console.error('Market analysis error:', error);
-          showNotification('Analysis failed: ' + error.message, 'error');
-        } finally {
-          this.disabled = false;
-          this.textContent = originalText;
-        }
-      });
-      analyzeBtn._handlerAdded = true;
-    }
-    
-    // Refresh handler
-    const refreshBtn = document.getElementById('refreshMarkets');
-    if (refreshBtn && !refreshBtn._handlerAdded) {
-      refreshBtn.addEventListener('click', function() {
-        const resultsDiv = document.getElementById('marketResults');
-        if (resultsDiv) {
-          resultsDiv.innerHTML = '<p class="text-gray-500 text-center py-8">Enter a location above and click "Analyze Market" to get started</p>';
-        }
-        showNotification('Results cleared', 'success');
-      });
-      refreshBtn._handlerAdded = true;
-    }
-  }
-  
-  // Market analysis function
-  async function analyzeMarketLocation(location) {
-    const token = localStorage.getItem('HOT_MARKETS_TOKEN') || '9716';
-    const apiUrl = localStorage.getItem('HOT_MARKETS_API') || 'https://dl22vwp2qk.execute-api.us-east-1.amazonaws.com/prod/hot-markets';
-    
-    const url = `${apiUrl}?location=${encodeURIComponent(location)}&category=sfr_sub300k&timeframe=30d&token=${token}`;
-    
+  // Clear local cache
+  document.getElementById('refreshMarkets')?.addEventListener('click', function () {
     try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`API returned ${response.status}: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      displayResults(data, location);
-      
-    } catch (error) {
-      // Fallback to mock data for demo
-      console.warn('API call failed, using mock data:', error);
-      const mockData = generateMockData(location);
-      displayResults(mockData, location);
+      Object.keys(localStorage).forEach(k => { if (k.startsWith('hmf_')) localStorage.removeItem(k); });
+      (window.showNotification ? showNotification : alert)('Local cache cleared', 'success');
+    } catch {
+      alert('Local cache cleared');
     }
-  }
-  
-  // Display results function
-  function displayResults(data, location) {
-    const resultsDiv = document.getElementById('marketResults');
-    const insightsDiv = document.getElementById('marketInsights');
-    
-    if (!resultsDiv) return;
-    
-    // Handle different data formats
-    const results = Array.isArray(data) ? data : [data];
-    
-    if (results.length === 0) {
-      resultsDiv.innerHTML = '<p class="text-gray-500 text-center py-4">No data found for this location</p>';
-      return;
-    }
-    
-    // Generate cards for each result
-    const cards = results.map(result => createMarketCard(result)).join('');
-    resultsDiv.innerHTML = cards;
-    
-    // Update insights
-    if (insightsDiv) {
-      const insights = generateInsights(results, location);
-      insightsDiv.innerHTML = insights;
-    }
-    
-    showNotification(`Analysis complete for ${location}`, 'success');
-  }
-  
-  // Create market card HTML
-  function createMarketCard(data) {
-    const score = data.score || Math.floor(Math.random() * 40) + 60;
-    const classification = data.classification || getClassification(score);
-    const zipCode = data.zipCode || data.zip || extractZip(data.location) || '00000';
-    
-    const classColors = {
-      'HOT': 'bg-red-50 border-red-200 text-red-800',
-      'WARM': 'bg-orange-50 border-orange-200 text-orange-800',
-      'COOL': 'bg-blue-50 border-blue-200 text-blue-800',
-      'COLD': 'bg-gray-50 border-gray-200 text-gray-800'
-    };
-    
-    return `
-      <div class="border rounded-xl p-4 ${classColors[classification] || classColors.COOL}">
-        <div class="flex justify-between items-start mb-3">
-          <div>
-            <h4 class="font-semibold text-lg">${zipCode}</h4>
-            <p class="text-sm opacity-75">${data.city || ''} ${data.state || ''}</p>
-          </div>
-          <div class="text-right">
-            <div class="text-2xl font-bold">${score}</div>
-            <div class="text-xs opacity-75">/ 100</div>
-          </div>
-        </div>
-        
-        <div class="mb-3">
-          <span class="px-2 py-1 rounded-full text-xs font-medium ${classColors[classification] || classColors.COOL}">
-            ${classification} MARKET
-          </span>
-        </div>
-        
-        <div class="grid grid-cols-2 gap-3 text-sm">
-          <div>Days on Market: <span class="font-medium">${data.avgDaysOnMarket || '28'}</span></div>
-          <div>Inventory: <span class="font-medium">${data.monthsOfSupply || '1.8'} months</span></div>
-          <div>Sale/List Ratio: <span class="font-medium">${data.saleToListRatio || '98'}%</span></div>
-          <div>Price Reductions: <span class="font-medium">${data.priceReductions || '15'}%</span></div>
-        </div>
-        
-        <div class="mt-3 pt-3 border-t">
-          <p class="text-xs opacity-70">Updated: ${new Date().toLocaleDateString()}</p>
-        </div>
-      </div>
-    `;
-  }
-</script>
-<script>
-  // Helper functions
-  function getClassification(score) {
-    if (score >= 80) return 'HOT';
-    if (score >= 70) return 'WARM'; 
-    if (score >= 60) return 'COOL';
-    return 'COLD';
-  }
-  
-  function extractZip(location) {
-    if (!location) return null;
-    const match = location.match(/\b\d{5}\b/);
-    return match ? match[0] : null;
-  }
-  
-  function generateMockData(location) {
-    return [{
-      zipCode: extractZip(location) || '85032',
-      city: location.split(',')[0],
-      state: location.split(',')[1]?.trim(),
-      score: Math.floor(Math.random() * 30) + 65,
-      classification: 'WARM',
-      avgDaysOnMarket: Math.floor(Math.random() * 20) + 25,
-      monthsOfSupply: (Math.random() * 2 + 1).toFixed(1),
-      saleToListRatio: Math.floor(Math.random() * 10) + 95,
-      priceReductions: Math.floor(Math.random() * 20) + 10
-    }];
-  }
-  
-  function generateInsights(results, location) {
-    const hotMarkets = results.filter(r => (r.classification || getClassification(r.score || 70)) === 'HOT');
-    const avgScore = Math.round(results.reduce((sum, r) => sum + (r.score || 70), 0) / results.length);
-    
-    let insights = [
-      `📊 Analyzed ${results.length} market area${results.length > 1 ? 's' : ''} in ${location}`,
-      `📈 Average market score: ${avgScore}/100`
-    ];
-    
-    if (hotMarkets.length > 0) {
-      insights.unshift(`🔥 Found ${hotMarkets.length} hot market${hotMarkets.length > 1 ? 's' : ''}!`);
-    }
-    
-    return insights.map(insight => `<div class="flex items-start gap-2"><span>${insight}</span></div>`).join('');
-  }
-  
-  console.log('Market Intel fix script loaded');
-})();
-
-// Add CSS for better styling
-const marketIntelStyles = document.createElement('style');
-marketIntelStyles.textContent = `
-  #market-intel .card {
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 1rem;
-    padding: 1rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  }
-  
-  #market-intel .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1rem;
-    border-radius: 0.75rem;
-    font-weight: 600;
-    transition: all 0.2s;
-  }
-  
-  #market-intel .btn-primary {
-    background: #06b6d4;
-    color: white;
-    border: 1px solid #0891b2;
-  }
-  
-  #market-intel .btn-primary:hover {
-    background: #0891b2;
-  }
-  
-  #market-intel .btn-outline {
-    background: white;
-    color: #0891b2;
-    border: 1px solid #7dd3fc;
-  }
-  
-  #market-intel .btn-outline:hover {
-    background: #f0f9ff;
-  }
-  
-  @media (max-width: 640px) {
-    #market-intel .grid-cols-2 {
-      grid-template-columns: 1fr;
-    }
-  }
-`;
-document.head.appendChild(marketIntelStyles);
-}
-  }
   });
+
+  // First render of chips
+  updateQuickZipCodes();
+})();
 </script>
+
 </body>
 </html>
+    
 
+    
+
+    
