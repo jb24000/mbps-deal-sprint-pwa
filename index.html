@@ -7306,47 +7306,91 @@ function initializeMarketIntelligence() {
     showNotification?.('Settings saved', 'success');
 });
   // Analyze via AWS API
-document.getElementById('analyzeMarkets')?.addEventListener('click', async function() {
-    const loc = document.getElementById('locationInput').value.trim() || 'United States';
-    const token = localStorage.getItem('HOT_MARKETS_TOKEN');
-    
-    if (!token) {
-        alert('Please enter your API token in Settings first');
-        return;
+<script>
+// --- tiny toast fallback (safe if you already have showNotification) ---
+window.showNotification = window.showNotification || function (msg, type='info'){
+  try {
+    const el=document.createElement('div'); el.textContent=msg;
+    el.style.cssText='position:fixed;left:50%;top:20px;transform:translateX(-50%);padding:10px 14px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.15);z-index:9999;background:#E5E7EB;color:#111827';
+    if(type==='success')el.style.background='#D1FAE5';
+    if(type==='error')el.style.background='#FEE2E2';
+    document.body.appendChild(el); setTimeout(()=>el.remove(),2400);
+  } catch {}
+};
+
+// --- analyze click (minimal changes, robust fetch/parsing) ---
+document.getElementById('analyzeMarkets')?.addEventListener('click', async function () {
+  const loc   = (document.getElementById('locationInput')?.value || 'United States').trim();
+  const token = localStorage.getItem('HOT_MARKETS_TOKEN');
+  const api   = localStorage.getItem('HOT_MARKETS_API') || 'https://dl22vwp2qk.execute-api.us-east-1.amazonaws.com/prod/hot-markets';
+
+  if (!token) { alert('Please enter your API token in Settings first'); return; }
+
+  this.disabled = true;
+  const original = this.innerHTML;
+  this.innerHTML = '<i data-lucide="loader-2" class="animate-spin"></i> Analyzing…';
+
+  try {
+    // Try header auth (preferred)
+    let url = `${api}?location=${encodeURIComponent(loc)}&category=sfr_sub300k&timeframe=30d`;
+    let res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+
+    // If API/GW is set to require query token instead, fall back once
+    if (res.status === 401 || res.status === 403) {
+      url = `${api}?location=${encodeURIComponent(loc)}&category=sfr_sub300k&timeframe=30d&token=${encodeURIComponent(token)}`;
+      res = await fetch(url);
     }
 
-    this.disabled = true;
-    const original = this.innerHTML;
-    this.innerHTML = '<i data-lucide="loader-2" class="animate-spin"></i> Analyzing…';
-
-    try {
-        const url = `https://dl22vwp2qk.execute-api.us-east-1.amazonaws.com/prod/hot-markets?location=${encodeURIComponent(loc)}&category=sfr_sub300k&timeframe=30d&token=${token}`;
-        const res = await fetch(url);
-        const results = await res.json();
-        
-        displayMarketResults(results);
-        
-        const saved = JSON.parse(localStorage.getItem('analyzedLocations') || '[]');
-        if (!saved.includes(loc)) saved.push(loc);
-        localStorage.setItem('analyzedLocations', JSON.stringify(saved.slice(-20)));
-        updateQuickZipCodes();
-    } catch (e) {
-        console.error('Analysis error:', e);
-        alert('Analysis failed: ' + e.message);
-    } finally {
-        this.disabled = false;
-        this.innerHTML = original;
+    const raw = await res.text();
+    let results;
+    try { results = JSON.parse(raw); } catch {
+      // handle accidental wrapping/noise
+      const s = raw.indexOf('['), e = raw.lastIndexOf(']');
+      results = (s>=0 && e>s) ? JSON.parse(raw.slice(s,e+1)) : null;
     }
+
+    if (!res.ok) {
+      const msg = (results && (results.error || results.message)) || `HTTP ${res.status}`;
+      throw new Error(msg);
+    }
+    if (!Array.isArray(results)) throw new Error('API did not return an array');
+
+    displayMarketResults(results);
+
+    // save recent locations
+    const saved = JSON.parse(localStorage.getItem('analyzedLocations') || '[]');
+    if (!saved.includes(loc)) saved.push(loc);
+    localStorage.setItem('analyzedLocations', JSON.stringify(saved.slice(-20)));
+    if (typeof updateQuickZipCodes === 'function') updateQuickZipCodes();
+
+  } catch (e) {
+    console.error('Analysis error:', e);
+    const container = document.getElementById('marketResults');
+    if (container) {
+      container.innerHTML = `
+        <div class="border rounded-xl p-4 bg-red-50 border-red-200 text-red-900">
+          <div class="font-semibold mb-1">Market fetch failed</div>
+          <div class="text-sm opacity-80">${(e && e.message) ? String(e.message) : 'Unknown error'}</div>
+        </div>`;
+    }
+    showNotification?.(e.message || 'Analysis failed', 'error');
+  } finally {
+    this.disabled = false;
+    this.innerHTML = original;
+  }
 });
-  // Clear local cache (just localStorage entries you might use)
-  document.getElementById('refreshMarkets')?.addEventListener('click', function() {
-    Object.keys(localStorage).forEach(k => { if (k.startsWith('hmf_')) localStorage.removeItem(k); });
-    showNotification?.('Local cache cleared', 'success');
-  });
 
-  updateQuickZipCodes();
-}
+// --- clear local cache button (kept, but safe if showNotification missing) ---
+document.getElementById('refreshMarkets')?.addEventListener('click', function () {
+  Object.keys(localStorage).forEach(k => { if (k.startsWith('hmf_')) localStorage.removeItem(k); });
+  showNotification?.('Local cache cleared', 'success');
+});
 
+// keep your recent zips UI
+updateQuickZipCodes?.();
+</script>
+
+<script>
 /* ---------- Optional small styles ---------- */
 const marketIntelStyles = `
   <style>
