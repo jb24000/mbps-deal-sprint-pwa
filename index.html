@@ -7079,7 +7079,7 @@ function renderMarketIntelTab() {
             <input id="hotMarketsApiUrl" class="w-full rounded-xl border-gray-200"
                    placeholder="https://<api-id>.execute-api.us-east-1.amazonaws.com/hot-markets"
                    value="${api}">
-            <p class="text-xs text-gray-500 mt-1">This is your API Gateway URL from CloudFormation Outputs.</p>
+            <<p class="text-xs text-gray-500 mt-1">Your secure access token</p>
           </div>
           <label class="flex items-center gap-2 text-sm">
             <input id="evidenceModeToggle" type="checkbox" class="accent-blue-600" ${evidence ? 'checked' : ''}>
@@ -7288,12 +7288,15 @@ function initializeMarketIntelligence() {
   // Save settings
   document.getElementById('saveAiSettings')?.addEventListener('click', function() {
     const apiUrl = document.getElementById('hotMarketsApiUrl').value.trim();
+    const token = document.getElementById('hotMarketsToken')?.value.trim();
     const ev = document.getElementById('evidenceModeToggle').checked ? '1' : '0';
+    
     if (apiUrl) localStorage.setItem('HOT_MARKETS_API', apiUrl);
+    if (token) localStorage.setItem('HOT_MARKETS_TOKEN', token);
     localStorage.setItem('HMF_EVIDENCE', ev);
+    
     showNotification?.('Settings saved', 'success');
-  });
-
+});
   // Analyze via AWS API
   document.getElementById('analyzeMarkets')?.addEventListener('click', async function() {
     const loc = document.getElementById('locationInput').value.trim() || 'United States';
