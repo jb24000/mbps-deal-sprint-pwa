@@ -7066,8 +7066,8 @@ const MarketIntelligence = {
 /* ---------- Settings + Analysis Tab Markup (now uses AWS URL) ---------- */
 function renderMarketIntelTab() {
   const api = localStorage.getItem('HOT_MARKETS_API') || '';
+  const token = localStorage.getItem('HOT_MARKETS_TOKEN') || '';
   const evidence = (localStorage.getItem('HMF_EVIDENCE') ?? '1') === '1';
-
   return `
     <div class="space-y-6">
       <!-- API Settings -->
