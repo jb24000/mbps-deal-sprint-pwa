@@ -6997,6 +6997,34 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
   </script>
+
+<script>
+  window.showNotification = window.showNotification || function (msg, type = 'info') {
+    const el = document.createElement('div');
+    el.textContent = msg;
+
+    // Styles
+    el.style.position = 'fixed';
+    el.style.left = '50%';
+    el.style.top = '20px';
+    el.style.transform = 'translateX(-50%)';
+    el.style.padding = '10px 14px';
+    el.style.borderRadius = '8px';
+    el.style.fontSize = '14px';
+    el.style.zIndex = 9999;
+    el.style.color = '#111827';
+    el.style.background = type === 'success' ? '#D1FAE5'
+      : type === 'error' ? '#FEE2E2'
+      : '#E5E7EB';
+    el.style.boxShadow = '0 6px 20px rgba(0,0,0,.15)';
+
+    document.body.appendChild(el);
+
+    // Auto-remove after 2.5 seconds
+    setTimeout(() => el.remove(), 2500);
+  };
+</script>
+
 <script>
 /* =========================================================
    HOT MARKETS (AWS version) — Drop-in for mbps-deal-sprint-pwa
