@@ -1749,7 +1749,10 @@ html:not(.dark) button {
       </div>
     </div>
   </div>
-
+  <!-- Add to your existing tab-content area -->
+<div id="market-intel" class="tab-content" style="display: none;">
+  <!-- Content populated by renderMarketIntelTab() -->
+</div>
   <script>
     lucide.createIcons();
     const pdfjsLib = window['pdfjs-dist/build/pdf'];
@@ -7585,10 +7588,10 @@ const marketIntelStyles = `
 function addMarketIntelligenceToNavigation() {
   const navigationExample = `
     <!-- Add this to your existing navigation tabs -->
-    <button class="nav-tab" data-tab="market-intel">
-      <i data-lucide="trending-up"></i>
-      <span>Market Intel</span>
-    </button>`;
+    <button class="tab" data-tab="market-intel">
+  <i data-lucide="trending-up"></i>
+  <span>Market Intel</span>
+</button>`;
   console.log('Add this navigation button:', navigationExample);
 }
 function addMarketIntelligenceToTabContent() {
