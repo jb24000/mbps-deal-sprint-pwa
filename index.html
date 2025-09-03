@@ -7411,6 +7411,20 @@ window.HotMarketsAPI = HotMarketsAPI;
 localStorage.setItem('HOT_MARKETS_TOKEN', 'test-token-123');
 localStorage.setItem('HOT_MARKETS_API', 'https://dl22vwp2qk.execute-api.us-east-1.amazonaws.com/prod/hot-markets');
 </script>
+  <script>
+// Simple fix - override just the fetch function after everything loads
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    window.HotMarketsAPI.fetchHotMarkets = async function({ location, category = 'sfr_sub300k', timeframe = '30d' }) {
+      const token = '9716';
+      const url = `https://dl22vwp2qk.execute-api.us-east-1.amazonaws.com/prod/hot-markets?location=${encodeURIComponent(location)}&category=${category}&timeframe=${timeframe}&token=${token}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`API ${res.status}`);
+      return await res.json();
+    };
+  }, 1000);
+});
+</script>
 </body>
 </html>
 
