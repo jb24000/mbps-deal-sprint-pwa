@@ -7079,7 +7079,13 @@ function renderMarketIntelTab() {
             <input id="hotMarketsApiUrl" class="w-full rounded-xl border-gray-200"
                    placeholder="https://<api-id>.execute-api.us-east-1.amazonaws.com/hot-markets"
                    value="${api}">
-            <<p class="text-xs text-gray-500 mt-1">Your secure access token</p>
+            <p class="text-xs text-gray-500 mt-1">Your secure access token</p>
+       </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">API Token</label>
+            <input id="hotMarketsToken" type="password" class="w-full rounded-xl border-gray-200"
+                   placeholder="Enter your token" value="${token}">
+            <p class="text-xs text-gray-500 mt-1">Your secure access token</p>
           </div>
           <label class="flex items-center gap-2 text-sm">
             <input id="evidenceModeToggle" type="checkbox" class="accent-blue-600" ${evidence ? 'checked' : ''}>
@@ -7088,7 +7094,6 @@ function renderMarketIntelTab() {
           <button id="saveAiSettings" class="btn btn-primary">Save Settings</button>
         </div>
       </section>
-
       <!-- Market Analysis -->
       <section class="card">
         <div class="flex items-center justify-between mb-3">
