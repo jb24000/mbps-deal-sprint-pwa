@@ -7363,9 +7363,20 @@ function updateQuickZipCodes() {
   updateQuickZipCodes();
 })();
 </script>
-
+<script>
+  // Configure Market Intel API and Token
+  localStorage.setItem(
+    'HOT_MARKETS_API',
+    'https://dl22vwp2qk.execute-api.us-east-1.amazonaws.com/prod/hot-markets'
+  );
+  localStorage.setItem(
+    'HOT_MARKETS_TOKEN',
+    '9716' // Replace with one of your TOKENS_JSON keys
+  );
+</script>
 </body>
 </html>
+
     
 
     
