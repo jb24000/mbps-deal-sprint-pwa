@@ -1754,9 +1754,9 @@ html:not(.dark) button {
     </div>
   </div>
   <!-- Add to your existing tab-content area -->
-<div id="market-intel" class="tab-content" style="display: none;">
-  <!-- Content populated by renderMarketIntelTab() -->
-</div>
+<section id="market-intel" class="hidden" data-tab-panel="market-intel">   
+  <!-- Content populated by renderMarketIntelTab() --> 
+</section>
   <script>
     lucide.createIcons();
     const pdfjsLib = window['pdfjs-dist/build/pdf'];
@@ -7617,9 +7617,9 @@ function addMarketIntelligenceToNavigation() {
 function addMarketIntelligenceToTabContent() {
   const contentExample = `
     <!-- Add this to your existing tab content container -->
-    <div id="market-intel" class="tab-content" style="display: none;">
+    <section id="market-intel" class="hidden" data-tab-panel="market-intel">  
       ${renderMarketIntelTab()}
-    </div>`;
+    </section>
   console.log('Add this tab content:', contentExample);
 }
 
