@@ -7256,10 +7256,7 @@ function updateQuickZipCodes() {
 
 /* ---------- Initialize (settings + analyze) ---------- */
 function initializeMarketIntelligence() {
-  // Clean up any old browser-stored model keys (legacy)
-  localStorage.removeItem('ROUTELLM_KEY');
-  localStorage.removeItem('ROUTELLM_MODEL');
-
+  
   // Save settings
   document.getElementById('saveAiSettings')?.addEventListener('click', function() {
     const apiUrl = document.getElementById('hotMarketsApiUrl').value.trim();
