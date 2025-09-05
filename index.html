@@ -9301,5 +9301,38 @@ function renderMarketResultsFromApi(apiData, originalQuery) {
   btn._wiredClear = true;
 })();
 </script>
+
+<!-- PWA Install (tucked in Settings) -->
+<div class="mt-3">
+  <button id="installBtn" class="hidden btn btn-primary">Install App</button>
+  <span id="installHint" class="text-xs text-gray-500 hidden">You can install the PWA on this device.</span>
+</div>
+
+<!-- PWA_INSTALL_WIRING -->
+<script>
+(function(){
+  let deferredPrompt = null;
+  const btn = document.getElementById('installBtn');
+  const hint = document.getElementById('installHint');
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (btn) btn.classList.remove('hidden');
+    if (hint) hint.classList.remove('hidden');
+  });
+  btn && btn.addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    try {
+      const choice = await deferredPrompt.userChoice;
+      console.log('PWA install choice:', choice.outcome);
+    } finally {
+      deferredPrompt = null;
+      btn.classList.add('hidden');
+      hint && hint.classList.add('hidden');
+    }
+  });
+})();
+</script>
 </body>
 </html>
