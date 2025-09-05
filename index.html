@@ -8502,7 +8502,15 @@ window.marketIntel = {
   saveSettings,
   getSettings
 };
-  </script> 
+    // Also expose as direct global functions for backward compatibility
+window.analyzeMarket = analyzeMarket;
+window.saveSettings = saveSettings;
+window.getSettings = getSettings;
+
+console.log("✅ Market Intel functions now available globally");
+console.log("Available as: window.marketIntel.analyzeMarket() OR analyzeMarket()");
+    
+</script> 
 </body>
 </html>
 
