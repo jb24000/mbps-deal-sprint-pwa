@@ -7589,10 +7589,16 @@ function updateQuickZipCodes() {
       console.log('Initiating API call for location:', loc, 'at:', new Date().toISOString());
       const data = await HotMarketsAPI.fetch({ location: loc });
       console.log('API Response received:', data, 'Timestamp:', new Date().toISOString());
+      // Check for demo data (based on analyzeWithFallback logic)
+      if (data.some(r => r.isDemo)) {
+        console.warn('Demo data detected in response');
+        throw new Error('API returned demo data (possible API failure)');
+      }
       // Check for stale data
       const oneHourAgo = Date.now() - 60 * 60 * 1000;
       const isStale = data.some(r => r.lastUpdated && new Date(r.lastUpdated).getTime() < oneHourAgo);
       if (isStale) {
+        console.warn('Stale data detected:', data.map(r => r.lastUpdated));
         throw new Error('API data is stale (older than 1 hour)');
       }
       displayMarketResults(data);
@@ -7601,7 +7607,7 @@ function updateQuickZipCodes() {
       localStorage.setItem('analyzedLocations', JSON.stringify(saved.slice(-20)));
       updateQuickZipCodes();
     } catch (e) {
-      console.error('Analysis error:', e);
+      console.error('Analysis error:', e.message, 'Details:', e);
       container.innerHTML = `
         <div class="border rounded-xl p-4 bg-red-50 border-red-200 text-red-900">
           <div class="font-semibold mb-1">Market fetch failed</div>
