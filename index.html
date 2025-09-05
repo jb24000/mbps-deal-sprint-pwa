@@ -8493,7 +8493,15 @@ document.head.appendChild(errorHandlingStyles);
 
   console.log('Enhanced Market Intelligence System loaded and ready');
 })();
-</script>      
+</script> 
+  <script> 
+  // Ensure Market Intel is available globally
+window.marketIntel = {
+  analyzeMarket: analyzeMarket,
+  saveSettings: saveSettings,
+  getSettings: getSettings
+};
+  </script> 
 </body>
 </html>
 
