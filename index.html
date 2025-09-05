@@ -1956,6 +1956,58 @@ analyzeBtn._initialized = true;
       </div>
     </div>
   </div>
+
+    <!-- APARTMENTS_ANALYZER_INSERTED -->
+    <!-- Apartments Analyzer -->
+    <div class="analyzer-card">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-semibold text-lg">🏢 Apartments Analyzer</h3>
+        <i data-lucide="building-2" class="w-5 h-5 text-brand-500"></i>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <input id="apt_price" type="number" class="rounded-lg border-gray-300" placeholder="Purchase Price $" value="1200000" />
+        <input id="apt_units" type="number" class="rounded-lg border-gray-300" placeholder="Units" value="12" />
+        <input id="apt_rent" type="number" class="rounded-lg border-gray-300" placeholder="Avg Rent / Unit $" value="1300" />
+        <input id="apt_other_inc" type="number" class="rounded-lg border-gray-300" placeholder="Other Monthly Income $" value="0" />
+        <input id="apt_vacancy" type="number" class="rounded-lg border-gray-300" placeholder="Vacancy %" value="6" />
+        <input id="apt_taxes" type="number" class="rounded-lg border-gray-300" placeholder="Taxes (Annual $)" value="18000" />
+        <input id="apt_ins" type="number" class="rounded-lg border-gray-300" placeholder="Insurance (Annual $)" value="12000" />
+        <input id="apt_repairs" type="number" class="rounded-lg border-gray-300" placeholder="Repairs (Annual $)" value="15000" />
+        <input id="apt_capex" type="number" class="rounded-lg border-gray-300" placeholder="CapEx (Annual $)" value="12000" />
+        <input id="apt_utils" type="number" class="rounded-lg border-gray-300" placeholder="Utilities (Annual $)" value="9000" />
+        <input id="apt_mgmt" type="number" class="rounded-lg border-gray-300" placeholder="Mgmt Fee % EGI" value="6" />
+        <input id="apt_down" type="number" class="rounded-lg border-gray-300" placeholder="Down %" value="25" />
+        <input id="apt_rate" type="number" class="rounded-lg border-gray-300" placeholder="Interest %" value="6.75" step="0.01" />
+        <input id="apt_term" type="number" class="rounded-lg border-gray-300" placeholder="Term (years)" value="30" />
+        <input id="apt_closing" type="number" class="rounded-lg border-gray-300" placeholder="Closing & Reserves % Price" value="3" />
+      </div>
+      <div class="mt-3 flex flex-wrap gap-2">
+        <button id="apt_analyze" class="btn btn-primary"><i data-lucide="bar-chart-2"></i>Analyze Apartment Deal</button>
+        <span class="text-xs text-gray-500">Low risk if DSCR ≥ 1.25 & CoC ≥ 8%; Medium if DSCR ≥ 1.15 & CoC ≥ 6%.</span>
+      </div>
+      <div class="grid grid-cols-2 gap-3 mt-4">
+        <div class="p-3 rounded-xl border bg-white dark:bg-[#0b1322]">
+          <div class="text-gray-500">NOI (Annual)</div>
+          <div id="kpi_noi" class="text-xl font-semibold">$—</div>
+        </div>
+        <div class="p-3 rounded-xl border bg-white dark:bg-[#0b1322]">
+          <div class="text-gray-500">Cap Rate</div>
+          <div id="kpi_cap" class="text-xl font-semibold">—%</div>
+        </div>
+        <div class="p-3 rounded-xl border bg-white dark:bg-[#0b1322]">
+          <div class="text-gray-500">DSCR</div>
+          <div id="kpi_dscr" class="text-xl font-semibold">—</div>
+        </div>
+        <div class="p-3 rounded-xl border bg-white dark:bg-[#0b1322]">
+          <div class="text-gray-500">Cash-on-Cash (Y1)</div>
+          <div id="kpi_coc" class="text-xl font-semibold">—%</div>
+        </div>
+      </div>
+      <div class="mt-3">
+        <span id="risk_badge" class="badge">RISK —</span>
+        <span id="risk_note" class="text-sm text-gray-600 ml-2">Fill inputs and analyze.</span>
+      </div>
+    </div>
 </section>
 
   <!-- Bulk Import Modal -->
@@ -9183,5 +9235,78 @@ document.head.appendChild(errorHandlingStyles);
 })();
 </script>
 
+
+<script><!-- APARTMENTS_ANALYZER_SCRIPT -->
+(function(){
+  function fmtMoney(n){ return n.toLocaleString(undefined,{style:'currency',currency:'USD',maximumFractionDigits:0}); }
+  function fmtPct(n){ return (n*100).toFixed(1)+'%'; }
+  function amortizedAnnualDebt(principal, ratePct, termYears) {
+    const r=(ratePct/100)/12, n=termYears*12;
+    if(r===0) return principal/termYears;
+    const m=principal*(r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1);
+    return m*12;
+  }
+  function analyzeApt() {
+    const g = id => +document.getElementById(id).value || 0;
+    const price=g('apt_price'), units=g('apt_units'), rent=g('apt_rent'), other=g('apt_other_inc');
+    const vac=g('apt_vacancy')/100, taxes=g('apt_taxes'), ins=g('apt_ins'), rep=g('apt_repairs'), capex=g('apt_capex'), utils=g('apt_utils');
+    const mgmt=g('apt_mgmt')/100, down=g('apt_down')/100, rate=g('apt_rate'), term=g('apt_term'), clos=g('apt_closing')/100;
+    const GSR=units*rent*12, OI=other*12, Vac=(GSR+OI)*vac, EGI=(GSR+OI)-Vac, Mgmt=EGI*mgmt;
+    const OpEx=taxes+ins+rep+capex+utils+Mgmt, NOI=EGI-OpEx;
+    const loan=Math.max(0, price-(price*down)), ADS=amortizedAnnualDebt(loan, rate, term);
+    const dscr=ADS>0?NOI/ADS:0, cap=price>0?NOI/price:0, cashFlow=NOI-ADS, invested=(price*down)+(price*clos), coc=invested>0?cashFlow/invested:0;
+    let risk='HIGH', note='DSCR < 1.15 or CoC < 6%';
+    if (dscr>=1.25 && coc>=0.08) { risk='LOW'; note='DSCR ≥ 1.25 and CoC ≥ 8%'; }
+    else if (dscr>=1.15 && coc>=0.06) { risk='MEDIUM'; note='DSCR ≥ 1.15 and CoC ≥ 6%'; }
+    document.getElementById('kpi_noi').textContent = fmtMoney(Math.round(NOI));
+    document.getElementById('kpi_cap').textContent = fmtPct(cap);
+    document.getElementById('kpi_dscr').textContent = dscr.toFixed(2);
+    document.getElementById('kpi_coc').textContent = fmtPct(coc);
+    const badge=document.getElementById('risk_badge'); badge.textContent = risk + ' RISK';
+    badge.className='badge '+(risk==='LOW'?'badge-success':risk==='MEDIUM'?'badge-offer':'badge-pending');
+    document.getElementById('risk_note').textContent = note;
+  }
+  document.addEventListener('DOMContentLoaded', function(){
+    document.getElementById('apt_analyze')?.addEventListener('click', analyzeApt);
+  });
+})();
+</script>
+
+<!-- CLOUD_SYNC_V2_INSERTED -->
+<script>(function () {
+  const DEFAULT_API_BASE = (localStorage.getItem('HOT_MARKETS_API')||'https://dl22vwp2qk.execute-api.us-east-1.amazonaws.com/prod/hot-markets').replace(/\/+$/,'').trim();
+  function getApiBase() { return (localStorage.getItem('HOT_MARKETS_API')||DEFAULT_API_BASE).trim(); }
+  function getUID() { const KEY='HOT_MARKETS_UID'; let uid=localStorage.getItem(KEY);
+    if(!uid) { uid='u_'+Math.random().toString(36).slice(2,12)+Date.now().toString(36); localStorage.setItem(KEY, uid); }
+    return uid; }
+  function userKey(file) { return `users/${getUID()}/${file}`; }
+  async function signGet(key) { const r=await fetch(`${getApiBase()}/sign-get?key=${encodeURIComponent(key)}`); if(!r.ok) throw new Error('sign-get '+r.status); return r.json(); }
+  async function signPut(key, ct='application/json') { const r=await fetch(`${getApiBase()}/sign-put?key=${encodeURIComponent(key)}&contentType=${encodeURIComponent(ct)}`); if(!r.ok) throw new Error('sign-put '+r.status); return r.json(); }
+  async function cloudGetJSON(url) { const r=await fetch(url); if(r.status===403||r.status===404) return null; if(!r.ok) throw new Error('GET object failed '+r.status); return r.json(); }
+  async function cloudPutJSON(url, data, headers) { const r=await fetch(url,{method:'PUT',headers:headers||{'Content-Type':'application/json'},body:JSON.stringify(data)}); if(!r.ok) throw new Error('PUT object failed '+r.status); }
+  function defaultSettings() { return { version:1, createdAt:new Date().toISOString(), prefs:{ propertyTypes:['Apartments'] } }; }
+  function defaultRecents() { return { items:[], updatedAt:new Date().toISOString() }; }
+  window.loadCloudSettings = async function () {
+    try { const key=userKey('settings.json'); const {url} = await signGet(key); let s=await cloudGetJSON(url);
+      if(!s) { s=defaultSettings(); const put=await signPut(key); await cloudPutJSON(put.url, s, put.headers); }
+      (window.applySettings||console.log)('[sync] settings', s); return s; } catch(e) { console.warn('[sync] loadCloudSettings failed:', e); return null; }
+  };
+  window.loadCloudRecent = async function () {
+    try { const key=userKey('recent-searches.json'); const {url}=await signGet(key); let rec=await cloudGetJSON(url);
+      if(!rec) { rec=defaultRecents(); const put=await signPut(key); await cloudPutJSON(put.url, rec, put.headers); }
+      window._recentState=rec; window.renderRecentSearches?window.renderRecentSearches(rec.items||[]):null;
+      window.saveRecentSearch = async function(q) { try {
+        const d=(q||'').trim().toLowerCase();
+        const items=(window._recentState.items||[]).filter(x => (x.q||'').trim().toLowerCase()!==d);
+        items.unshift({q, ts:new Date().toISOString()});
+        const newRec={items:items.slice(0,15), updatedAt:new Date().toISOString()};
+        const put=await signPut(userKey('recent-searches.json')); await cloudPutJSON(put.url, newRec, put.headers);
+        window._recentState=newRec; window.renderRecentSearches?window.renderRecentSearches(newRec.items):null;
+      } catch(e) { console.warn('[sync] saveRecentSearch failed:', e); } };
+      return rec; } catch(e) { console.warn('[sync] loadCloudRecent failed:', e); return null; }
+  };
+  document.addEventListener('DOMContentLoaded',()=>{ if(localStorage.getItem('SYNC_DISABLE')==='1') return; window.loadCloudSettings?.(); window.loadCloudRecent?.(); });
+  console.log('Enhanced Market Intelligence System initialized');
+})();</script>
 </body>
 </html>
