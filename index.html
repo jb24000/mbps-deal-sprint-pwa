@@ -7575,15 +7575,26 @@ function updateQuickZipCodes() {
       isAnalyzing = false; 
       return; 
     }
+    if (!loc) {
+      alert('Please enter a valid location'); 
+      isAnalyzing = false; 
+      return; 
+    }
 
     this.disabled = true;
     const original = this.innerHTML;
     this.innerHTML = '<i data-lucide="loader-2" class="animate-spin"></i> Analyzing…';
 
     try {
-      console.log('Initiating API call for location:', loc); // Debug log
+      console.log('Initiating API call for location:', loc, 'at:', new Date().toISOString());
       const data = await HotMarketsAPI.fetch({ location: loc });
-      console.log('API Response received:', data); // Debug log
+      console.log('API Response received:', data, 'Timestamp:', new Date().toISOString());
+      // Check for stale data
+      const oneHourAgo = Date.now() - 60 * 60 * 1000;
+      const isStale = data.some(r => r.lastUpdated && new Date(r.lastUpdated).getTime() < oneHourAgo);
+      if (isStale) {
+        throw new Error('API data is stale (older than 1 hour)');
+      }
       displayMarketResults(data);
       const saved = JSON.parse(localStorage.getItem('analyzedLocations') || '[]');
       if (!saved.includes(loc)) saved.push(loc);
