@@ -7553,14 +7553,25 @@ function updateQuickZipCodes() {
   });
 
   // Analyze
+  let isAnalyzing = false;
   document.getElementById('analyzeMarkets')?.addEventListener('click', async function () {
+    if (isAnalyzing) return; // Prevent multiple clicks
+    isAnalyzing = true;
     const loc = (document.getElementById('locationInput')?.value || 'United States').trim();
     const container = document.getElementById('marketResults');
     const api = HotMarketsAPI.base || 'https://dl22vwp2qk.execute-api.us-east-1.amazonaws.com/prod/hot-markets';
     const token = localStorage.getItem('HOT_MARKETS_TOKEN');
 
-    if (!token) { alert('Please enter your API token in Settings first'); return; }
-    if (!container) { console.error('#marketResults missing'); return; }
+    if (!token) { 
+      alert('Please enter your API token in Settings first'); 
+      isAnalyzing = false; 
+      return; 
+    }
+    if (!container) { 
+      console.error('#marketResults missing'); 
+      isAnalyzing = false; 
+      return; 
+    }
 
     this.disabled = true;
     const original = this.innerHTML;
@@ -7569,7 +7580,6 @@ function updateQuickZipCodes() {
     try {
       const data = await HotMarketsAPI.fetch({ location: loc });
       displayMarketResults(data);
-
       const saved = JSON.parse(localStorage.getItem('analyzedLocations') || '[]');
       if (!saved.includes(loc)) saved.push(loc);
       localStorage.setItem('analyzedLocations', JSON.stringify(saved.slice(-20)));
@@ -7585,6 +7595,7 @@ function updateQuickZipCodes() {
     } finally {
       this.disabled = false;
       this.innerHTML = original;
+      isAnalyzing = false;
     }
   });
 
@@ -7681,55 +7692,57 @@ function updateQuickZipCodes() {
     // Show demo notice
     const notice = document.createElement('div');
     notice.className = 'bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 text-sm text-blue-800';
-    notice.innerHTML = '📊 <strong>Demo Mode:</strong> Showing sample data. Connect your API key for live market data.';
-    resultsDiv.insertBefore(notice, resultsDiv.firstChild);
+    notice.innerHTML = `
+  <strong>Demo Mode:</strong> API unavailable (${e.message || 'Unknown error'}).
+  Showing sample data. Please verify API URL and token in Settings.
+`;
   }
   
   // Try API call with timeout and proper error handling
-  async function tryApiCall(location) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-    
-    try {
-      // Use the existing API configuration but with better error handling
-      const token = localStorage.getItem('HOT_MARKETS_TOKEN') || 'demo';
-      const apiBase = localStorage.getItem('HOT_MARKETS_API') || 
-        'https://dl22vwp2qk.execute-api.us-east-1.amazonaws.com/prod/hot-markets';
-      
-      const url = `${apiBase}?location=${encodeURIComponent(location)}&category=sfr_sub300k&timeframe=30d&token=${token}`;
-      
-      const response = await fetch(url, {
-        signal: controller.signal,
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (response.status === 401) {
-        throw new Error('API authentication failed - invalid token');
-      }
-      
-      if (response.status === 403) {
-        throw new Error('API access forbidden - check permissions');
-      }
-      
-      if (!response.ok) {
-        throw new Error(`API error ${response.status}: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      return Array.isArray(data) ? data : [data];
-      
-    } catch (error) {
-      clearTimeout(timeoutId);
-      if (error.name === 'AbortError') {
-        throw new Error('API request timed out');
-      }
-      throw error;
+async function tryApiCall(location) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+  try {
+    const token = localStorage.getItem('HOT_MARKETS_TOKEN') || 'demo';
+    const apiBase = localStorage.getItem('HOT_MARKETS_API') || 
+      'https://dl22vwp2qk.execute-api.us-east-1.amazonaws.com/prod/hot-markets';
+    if (token === 'demo' || !token) {
+      throw new Error('No valid API token provided. Please update in Settings.');
     }
+    // Test token validity with a lightweight API call
+    const testResponse = await fetch(`${apiBase}?ping=true`, {
+      signal: controller.signal,
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (testResponse.status === 401 || testResponse.status === 403) {
+      throw new Error('Invalid API token. Please verify in Settings.');
+    }
+    if (response.status === 429) {
+        await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
+        return tryApiCall(location); // Retry once
+      }
+    const url = `${apiBase}?location=${encodeURIComponent(location)}&category=sfr_sub300k&timeframe=30d&token=${token}`;
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache' // Prevent server-side caching
+      }
+    });
+    clearTimeout(timeoutId);
+    if (!response.ok) {
+      throw new Error(`API error ${response.status}: ${response.statusText}`);
+    }
+    const data = await response.json();
+    return Array.isArray(data) ? data : [data];
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error('API request timed out');
+    }
+    throw error;
   }
+}
   
   // Generate realistic demo data
   function generateDemoData(location) {
@@ -7812,34 +7825,33 @@ function updateQuickZipCodes() {
   
   // Enhanced display function
   function displayMarketResults(results, location) {
-    const resultsDiv = document.getElementById('marketResults');
-    const insightsDiv = document.getElementById('marketInsights');
-    
-    if (!resultsDiv || !results || results.length === 0) {
-      if (resultsDiv) {
-        resultsDiv.innerHTML = '<p class="text-gray-500 text-center py-4">No data available for this location</p>';
-      }
-      return;
+  const resultsDiv = document.getElementById('marketResults');
+  const insightsDiv = document.getElementById('marketInsights');
+  if (!resultsDiv || !results || results.length === 0) {
+    if (resultsDiv) {
+      resultsDiv.innerHTML = '<p class="text-gray-500 text-center py-4">No data available for this location</p>';
     }
-    
-    // Clear previous results
-    resultsDiv.innerHTML = '';
-    
-    // Create cards for each result
-    results.forEach(result => {
-      const card = createEnhancedMarketCard(result);
-      resultsDiv.insertAdjacentHTML('beforeend', card);
-    });
-    
-    // Update insights summary
-    if (insightsDiv) {
-      const insights = generateSummaryInsights(results, location);
-      insightsDiv.innerHTML = insights;
-    }
-    
-    // Show success notification
-    showNotification(`Analysis complete for ${location}`, 'success');
+    return;
   }
+  // Check for stale data
+  const oneHourAgo = Date.now() - 60 * 60 * 1000;
+  const isStale = results.some(r => new Date(r.lastUpdated).getTime() < oneHourAgo);
+  if (isStale) {
+    resultsDiv.innerHTML = '<p class="text-red-500 text-center py-4">Data is outdated. Please try again or check API status.</p>';
+    showNotification('Stale data detected. Please refresh or verify API.', 'error');
+    return;
+  }
+  resultsDiv.innerHTML = '';
+  results.forEach(result => {
+    const card = createEnhancedMarketCard(result);
+    resultsDiv.insertAdjacentHTML('beforeend', card);
+  });
+  if (insightsDiv) {
+    const insights = generateSummaryInsights(results, location);
+    insightsDiv.innerHTML = insights;
+  }
+  showNotification(`Analysis complete for ${location}`, 'success');
+}
   
   function createEnhancedMarketCard(result) {
     const { zipCode, city, state, score, classification, data, insights = [], evidence = [] } = result;
