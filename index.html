@@ -558,6 +558,12 @@ html:not(.dark) button {
 </style>
  
   <script src="./config.js"></script>
+<!-- Default Market Intel API URL (fallback if not set via Settings) -->
+<script>
+  if (!localStorage.getItem('HOT_MARKETS_API')) {
+    localStorage.setItem('HOT_MARKETS_API', 'https://dl22vwp2qk.execute-api.us-east-1.amazonaws.com/');
+  }
+</script>
 <script>
   // ========= QUICK FIX FOR UNDEFINED FUNCTION ERROR =========
 // Add this script IMMEDIATELY after the <head> section to define the function early
@@ -590,42 +596,39 @@ html:not(.dark) button {
       // Wire up the analyze button  
       const analyzeBtn = document.getElementById('analyzeMarkets');
       if (analyzeBtn && !analyzeBtn._initialized) {
-    
+        
 analyzeBtn.addEventListener('click', async function() {
   const raw = document.getElementById('locationInput')?.value?.trim() || '';
-  if (!raw) {
-    alert('Please enter one or more queries (ZIP or City, ST)');
-    return;
-  }
+  if (!raw) { alert('Please enter one or more queries (ZIP or City, ST)'); return; }
 
   const apiUrl = (localStorage.getItem('HOT_MARKETS_API') || '').trim();
-  const token = (localStorage.getItem('HOT_MARKETS_TOKEN') || '').trim();
-  if (!apiUrl) {
-    alert('Market Intel API URL is not set. Go to Settings > Market Intelligence and save your API URL.');
-    return;
-  }
+  const token  = (localStorage.getItem('HOT_MARKETS_TOKEN') || '').trim();
+  if (!apiUrl) { alert('Market Intel API URL is not set. Go to Settings > Market Intelligence and save your API URL.'); return; }
 
-  // Split on semicolons first; allow 'Phoenix, AZ' and '27909; 85032'
-  let parts = raw.split(/;+/).map(p => p.trim()).filter(Boolean);
+  const resultsDiv  = document.getElementById('marketResults');
+  const insightsDiv = document.getElementById('marketInsights');
+  if (resultsDiv)  resultsDiv.innerHTML  = `<div class="p-3 border rounded-xl bg-blue-50 text-blue-800">Analyzing…</div>`;
+  if (insightsDiv) insightsDiv.innerHTML = ``;
 
-  // If user wrote comma-only list without semicolons and no ZIPs, split into City,ST pairs
-  if (!parts.length || (parts.length == 1 and /,/.test(raw) and !/\d{5}/.test(raw))) {
-    const tokens = raw.split(',').map(t => t.trim()).filter(Boolean);
+  let parts = raw.split(/[;]+/).map(s => s.trim()).filter(Boolean);
+  if (!parts.length) parts = [raw];
+
+  if (parts.length === 1 && /,/.test(raw) && !/\d{5}/.test(raw)) {
+    const t = raw.split(',').map(x => x.trim()).filter(Boolean);
     const pairs = [];
-    for (let i = 0; i < tokens.length; i += 2) {
-      if (tokens[i+1]) pairs.push(tokens[i] + ', ' + tokens[i+1]);
-    }
+    for (let i = 0; i < t.length; i += 2) if (t[i+1]) pairs.push(`${t[i]}, ${t[i+1]}`);
     if (pairs.length) parts = pairs;
   }
 
-  if (!parts.length) {
-    alert('No valid queries found.');
-    return;
+  if (parts.length === 1 && /\d{5}/.test(raw) && /,/.test(raw)) {
+    parts = raw.split(',').map(x => x.trim()).filter(Boolean);
   }
+
+  parts = Array.from(new Set(parts)).slice(0, 12);
 
   this.disabled = true;
   const originalText = this.textContent;
-  this.textContent = `Analyzing (${parts.length})...`;
+  this.textContent = `Analyzing (${parts.length})…`;
 
   try {
     const headers = {};
@@ -638,25 +641,25 @@ analyzeBtn.addEventListener('click', async function() {
         url.searchParams.set('postalCode', zip[0]);
         url.searchParams.set('country', 'US');
       } else {
-        // Normalize "City ST" -> "City, ST"
-        const cityState = q.match(/^\s*([A-Za-z .'-]+)\s*,?\s*([A-Za-z]{2})\s*$/);
-        const normalized = cityState ? `${cityState[1].trim()}, ${cityState[2].toUpperCase()}` : q;
+        const cs = q.match(/^\s*([A-Za-z .'-]+)\s*,?\s*([A-Za-z]{2})\s*$/);
+        const normalized = cs ? `${cs[1].trim()}, ${cs[2].toUpperCase()}` : q;
         url.searchParams.set('q', normalized);
       }
       return url.toString();
     }
 
-    const queue = parts.map(p => p);
+    const queue = parts.slice();
     const results = [];
-    const errors = [];
+    const errors  = [];
     const limit = 3;
+
     async function worker() {
       while (queue.length) {
         const q = queue.shift();
         try {
-          const resp = await fetch(buildUrl(apiUrl, q), { method: 'GET', headers });
-          if (!resp.ok) throw new Error(`API ${resp.status} for "${q}"`);
-          const data = await resp.json();
+          const r = await fetch(buildUrl(apiUrl, q), { method: 'GET', headers });
+          if (!r.ok) throw new Error(`API ${r.status} for "${q}"`);
+          const data = await r.json();
           results.push({ q, data });
         } catch (e) {
           console.error('Query failed:', q, e);
@@ -664,25 +667,29 @@ analyzeBtn.addEventListener('click', async function() {
         }
       }
     }
-    await Promise.all(Array.from({length: Math.min(limit, parts.length)}, worker));
+    await Promise.all(Array.from({ length: Math.min(limit, parts.length) }, worker));
 
-    const merged = results.map(({q, data}) => {
+    const merged = results.map(({ q, data }) => {
       const core = data?.data ?? data;
       if (core && typeof core === 'object' && core.places) { core._query = q; return core; }
-      if (Array.isArray(core)) { return core.map(x => ({...x, _query: q})); }
+      if (Array.isArray(core)) return core.map(x => ({ ...x, _query: q }));
       return { ...core, _query: q };
     }).flat();
 
     if (!merged.length && errors.length) throw new Error(errors[0].error);
 
     renderMarketResultsFromApi(merged, raw);
+
     if (errors.length) {
-      const msg = errors.slice(0,3).map(e => `• ${e.q}: ${e.error}`).join('\n');
-      console.warn('Some queries failed:\n' + msg);
+      const msg = errors.slice(0,3).map(e => `• ${e.q}: ${e.error}`).join('\\n');
+      console.warn('Some queries failed:\\n' + msg);
     }
-  } catch (error) {
-    console.error('Market Intel error:', error);
-    alert('Analysis failed: ' + (error?.message || 'Unknown error'));
+  } catch (err) {
+    if (resultsDiv) {
+      resultsDiv.innerHTML = `<div class="p-3 border rounded-xl bg-red-50 text-red-800">Analysis failed: ${String(err?.message || err)}</div>`;
+    } else {
+      alert('Analysis failed: ' + (err?.message || 'Unknown error'));
+    }
   } finally {
     this.disabled = false;
     this.textContent = originalText;
@@ -690,7 +697,8 @@ analyzeBtn.addEventListener('click', async function() {
 });
 analyzeBtn._initialized = true;
 
-}
+      }
+      
       console.log('Market Intelligence initialized successfully');
     }, 100);
   };
@@ -761,129 +769,115 @@ analyzeBtn._initialized = true;
       </div>
     `;
   };
-
-  // === Production renderer for Market Intel (no demo/sample) ===
-  function renderMarketResultsFromApi(apiData, location) {
+  
+  // Demo data generator
+  function createDemoMarketData(location) {
+    const zipCodes = location.match(/\b\d{5}\b/g) || ['85032'];
+    const [city, state] = location.includes(',') ? location.split(',').map(s => s.trim()) : [location, 'AZ'];
+    
+    return zipCodes.map(zip => {
+      const score = Math.floor(Math.random() * 30) + 65; // 65-95 range
+      const classification = score >= 85 ? 'HOT' : score >= 75 ? 'WARM' : score >= 65 ? 'COOL' : 'COLD';
+      
+      return {
+        zipCode: zip,
+        city: city,
+        state: state,
+        score: score,
+        classification: classification,
+        avgDaysOnMarket: Math.floor(Math.random() * 25) + 20,
+        monthsOfSupply: (Math.random() * 2 + 1).toFixed(1),
+        saleToListRatio: Math.floor(Math.random() * 10) + 95,
+        priceReductions: Math.floor(Math.random() * 20) + 10
+      };
+    });
+  }
+  
+  // Demo results display
+  function displayDemoResults(results, location) {
     const resultsDiv = document.getElementById('marketResults');
     const insightsDiv = document.getElementById('marketInsights');
+    
     if (!resultsDiv) return;
-
-    // Normalize to an array of "areas"
-    let rows = [];
-    try {
-      // Case 1: Lambda proxy for zippopotam.us -> { ok, data: {...} }
-      const core = apiData?.data ?? apiData;
-      if (core && core.places && Array.isArray(core.places)) {
-        const place = core.places[0] || {};
-        rows.push({
-          zipCode: core['post code'] || '',
-          city: place['place name'] || '',
-          state: place['state abbreviation'] || '',
-          // If your API exposes CPI/market metrics, map them here:
-          avgDaysOnMarket: core.avgDaysOnMarket ?? null,
-          monthsOfSupply: core.monthsOfSupply ?? null,
-          saleToListRatio: core.saleToListRatio ?? null,
-          priceReductions: core.priceReductions ?? null,
-          score: core.score ?? null,
-          classification: core.classification ?? null,
-          raw: core
-        });
-      }
-      // Case 2: Already an array of areas
-      else if (Array.isArray(core)) {
-        rows = core.map(x => ({
-          zipCode: x.zipCode || x.postalCode || '',
-          city: x.city || x.town || '',
-          state: x.state || x.stateCode || '',
-          avgDaysOnMarket: x.avgDaysOnMarket ?? null,
-          monthsOfSupply: x.monthsOfSupply ?? null,
-          saleToListRatio: x.saleToListRatio ?? null,
-          priceReductions: x.priceReductions ?? null,
-          score: x.score ?? null,
-          classification: x.classification ?? null,
-          raw: x
-        }));
-      }
-      // Case 3: Generic object -> show raw
-      else if (core && typeof core === 'object') {
-        rows.push({ zipCode: core.postalCode || core['post code'] || '', city: core.city || '', state: core.state || '', raw: core });
-      }
-    } catch (e) {
-      console.warn('Render normalization failed:', e);
-      rows = [];
-    }
-
-    if (!rows.length) {
-      resultsDiv.innerHTML = `<div class="border rounded-xl p-4 bg-yellow-50 border-yellow-200 text-yellow-900">
-        No results returned by API for <strong>${location}</strong>.
-      </div>`;
-      if (insightsDiv) insightsDiv.innerHTML = `<div class="text-sm">No insights available.</div>`;
-      return;
-    }
-
-    // Render cards
-    const html = rows.map(r => {
-      // Optional classification if API didn't send one
-      const cls = (r.classification || classifyByScore(r.score)).toUpperCase();
-      const colorMap = { HOT: 'bg-red-50 border-red-200 text-red-900',
-                         WARM: 'bg-orange-50 border-orange-200 text-orange-900',
-                         COOL: 'bg-blue-50 border-blue-200 text-blue-900',
-                         COLD: 'bg-gray-50 border-gray-200 text-gray-900' };
-      const colorClass = colorMap[cls] || colorMap.COOL;
-
+    
+    // Add demo notice
+    const demoNotice = `
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+        <div class="flex items-center gap-2">
+          <span class="text-blue-600">ℹ️</span>
+          <div class="text-sm text-blue-800">
+            <strong>Demo Mode:</strong> Showing sample market data. Configure your API settings for live data.
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // Generate result cards
+    const cards = results.map(result => {
+      const colorClasses = {
+        'HOT': 'bg-red-50 border-red-200 text-red-900',
+        'WARM': 'bg-orange-50 border-orange-200 text-orange-900', 
+        'COOL': 'bg-blue-50 border-blue-200 text-blue-900',
+        'COLD': 'bg-gray-50 border-gray-200 text-gray-900'
+      };
+      
+      const colorClass = colorClasses[result.classification] || colorClasses.COOL;
+      
       return `
-        <div class=\"text-xs opacity-60 mb-1\">Query: ${escapeHtml(r._query || '')}</div>
-          <div class="border rounded-xl p-4 ${colorClass}">
+        <div class="border rounded-xl p-4 ${colorClass}">
           <div class="flex justify-between items-start mb-3">
             <div>
-              <h4 class="font-semibold text-lg">${r.zipCode || '—'}</h4>
-              <div class="text-sm opacity-75">${r.city || '—'}, ${r.state || '—'}</div>
+              <h4 class="font-semibold text-lg">${result.zipCode}</h4>
+              <div class="text-sm opacity-75">${result.city}, ${result.state}</div>
             </div>
             <div class="text-right">
-              <div class="text-2xl font-bold">${r.score ?? '—'}</div>
-              <div class="text-xs opacity-75">${r.score != null ? '/ 100' : ''}</div>
+              <div class="text-2xl font-bold">${result.score}</div>
+              <div class="text-xs opacity-75">/ 100</div>
             </div>
           </div>
-          <div class="grid grid-cols-2 gap-3 text-sm">
-            <div>Days on Market: <span class="font-medium">${r.avgDaysOnMarket ?? '—'}</span></div>
-            <div>Supply: <span class="font-medium">${r.monthsOfSupply ?? '—'}${r.monthsOfSupply != null ? ' mo' : ''}</span></div>
-            <div>Sale/List: <span class="font-medium">${r.saleToListRatio != null ? r.saleToListRatio + '%' : '—'}</span></div>
-            <div>Reductions: <span class="font-medium">${r.priceReductions != null ? r.priceReductions + '%' : '—'}</span></div>
+          
+          <div class="mb-3">
+            <span class="px-2 py-1 rounded-full text-xs font-medium ${colorClass}">
+              ${result.classification} MARKET
+            </span>
           </div>
-          <details class="mt-3 pt-3 border-t border-gray-200 text-xs">
-            <summary class="cursor-pointer">Raw</summary>
-            <pre class="overflow-auto whitespace-pre-wrap">${escapeHtml(JSON.stringify(r.raw ?? r, null, 2))}</pre>
-          </details>
+          
+          <div class="grid grid-cols-2 gap-3 text-sm">
+            <div>Days on Market: <span class="font-medium">${result.avgDaysOnMarket}</span></div>
+            <div>Supply: <span class="font-medium">${result.monthsOfSupply} mo</span></div>
+            <div>Sale/List: <span class="font-medium">${result.saleToListRatio}%</span></div>
+            <div>Reductions: <span class="font-medium">${result.priceReductions}%</span></div>
+          </div>
+          
+          <div class="mt-3 pt-3 border-t border-gray-200">
+            <p class="text-xs opacity-70">Sample Data - ${new Date().toLocaleDateString()}</p>
+          </div>
         </div>
       `;
     }).join('');
-
-    resultsDiv.innerHTML = html;
-
+    
+    resultsDiv.innerHTML = demoNotice + cards;
+    
+    // Update insights
     if (insightsDiv) {
-      const withScores = rows.filter(r => typeof r.score === 'number');
-      const avgScore = withScores.length ? Math.round(withScores.reduce((s, r) => s + r.score, 0) / withScores.length) : '—';
-      const hotCount = rows.filter(r => (r.classification || classifyByScore(r.score))?.toUpperCase() == 'HOT').length;
-      insightsDiv.innerHTML = `
-        <div class="flex items-start gap-2"><span class="text-sm">📊 Analyzed ${rows.length} area(s) for ${escapeHtml(location)}</span></div>
-        <div class="flex items-start gap-2"><span class="text-sm">📈 Average market score: ${avgScore}${avgScore !== '—' ? '/100' : ''}</span></div>
-        ${hotCount ? `<div class="flex items-start gap-2"><span class="text-sm">🔥 ${hotCount} hot market${hotCount>1?'s':''} found</span></div>` : ''}
-      `;
+      const hotCount = results.filter(r => r.classification === 'HOT').length;
+      const avgScore = Math.round(results.reduce((sum, r) => sum + r.score, 0) / results.length);
+      
+      const insights = [
+        `📊 Analyzed ${results.length} market area${results.length > 1 ? 's' : ''} in ${location}`,
+        `📈 Average market score: ${avgScore}/100`
+      ];
+      
+      if (hotCount > 0) {
+        insights.unshift(`🔥 Found ${hotCount} hot market${hotCount > 1 ? 's' : ''}!`);
+      }
+      
+      insightsDiv.innerHTML = insights.map(insight => 
+        `<div class="flex items-start gap-2"><span class="text-sm">${insight}</span></div>`
+      ).join('');
     }
   }
-
-  function classifyByScore(score) {
-    if (typeof score !== 'number') return 'COOL';
-    if (score >= 85) return 'HOT';
-    if (score >= 75) return 'WARM';
-    if (score >= 65) return 'COOL';
-    return 'COLD';
-  }
-
-  function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  }
-
+  
   console.log('Market Intelligence functions defined');
 })();
 </script>
@@ -7444,7 +7438,7 @@ function renderMarketIntelTab() {
         <div class="space-y-3 mb-4">
           <div class="flex gap-2">
             <input id="locationInput" class="flex-1 rounded-xl border-gray-200"
-                   placeholder="Enter ZIP(s) or City, ST (e.g., "27909", "Phoenix, AZ", "27909; 85032")">
+                   placeholder="Enter a city/state or ZIPs (e.g., 'Charlotte, NC' or '85032, 85254')">
             <button id="analyzeMarkets" class="btn btn-primary">Analyze</button>
           </div>
           <div class="flex flex-wrap gap-2" id="quickZipCodes">
@@ -8530,7 +8524,7 @@ document.head.appendChild(errorHandlingStyles);
           <div class="space-y-3 mb-4">
             <div class="flex gap-2">
               <input id="locationInput" class="flex-1 rounded-xl border-gray-200"
-                placeholder="Enter ZIP(s) or City, ST (e.g., "27909", "Phoenix, AZ", "27909; 85032")">
+                placeholder="Enter location: 'Phoenix, AZ' or 'Phoenix AZ' or '85032' or '85032, 85001'">
               <button id="analyzeMarkets" class="btn btn-primary">Analyze Market</button>
             </div>
             
