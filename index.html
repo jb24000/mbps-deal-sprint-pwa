@@ -8578,11 +8578,414 @@ document.head.appendChild(errorHandlingStyles);
   console.log('Enhanced Market Intelligence System loaded and ready');
 })();
 </script> 
+
+<script>
+// === Market Intel: Hardened override ===
+(function() {
+  'use strict';
+
+  // Safe classify helper
+  function classifyByScore(s){ if (typeof s !== 'number') return 'COOL'; if (s>=85) return 'HOT'; if (s>=75) return 'WARM'; if (s>=65) return 'COOL'; return 'COLD'; }
+  function escapeHtml(str){ return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  // Override renderer globally
+  window.renderMarketResultsFromApi = function(apiData, location) {
+    const resultsDiv  = document.getElementById('marketResults');
+    const insightsDiv = document.getElementById('marketInsights');
+
+    // Update heading if present
+    const h = document.getElementById('marketHeading');
+    if (h && location) h.textContent = `Market Analysis — ${location}`;
+
+    if (!resultsDiv) return;
+
+    let rows = [];
+    try {
+      const core = apiData?.data ?? apiData;
+      if (core && core.places && !Array.isArray(core)) {
+        const place = core.places[0] || {};
+        rows.push({
+          _query: core._query || '',
+          zipCode: core['post code'] || core.postalCode || '',
+          city: place['place name'] || core.city || '',
+          state: place['state abbreviation'] || core.state || '',
+          score: core.score ?? null,
+          classification: core.classification ?? null,
+          avgDaysOnMarket: core.avgDaysOnMarket ?? null,
+          monthsOfSupply:  core.monthsOfSupply ?? null,
+          saleToListRatio: core.saleToListRatio ?? null,
+          priceReductions: core.priceReductions ?? null,
+          raw: core
+        });
+      } else if (Array.isArray(core || apiData)) {
+        const arr = Array.isArray(core) ? core : apiData;
+        rows = arr.map(x => ({
+          _query: x._query || '',
+          zipCode: x.zipCode || x.postalCode || x['post code'] || '',
+          city:    x.city || x.town || (x.places?.[0]?.['place name']) || '',
+          state:   x.state || x.stateCode || (x.places?.[0]?.['state abbreviation']) || '',
+          score:   x.score ?? null,
+          classification: x.classification ?? null,
+          avgDaysOnMarket: x.avgDaysOnMarket ?? null,
+          monthsOfSupply:  x.monthsOfSupply ?? null,
+          saleToListRatio: x.saleToListRatio ?? null,
+          priceReductions: x.priceReductions ?? null,
+          raw: x
+        }));
+      } else if (core && typeof core === 'object') {
+        rows.push({ _query: core._query || '', zipCode: core.postalCode || core['post code'] || '', city: core.city || '', state: core.state || '', raw: core });
+      }
+    } catch(e) {
+      console.warn('Normalization failed:', e);
+      rows = [];
+    }
+
+    if (!rows.length) {
+      resultsDiv.innerHTML = `<div class="p-3 border rounded-xl bg-yellow-50 text-yellow-800">No results for <strong>${escapeHtml(location)}</strong>.</div>`;
+      if (insightsDiv) insightsDiv.innerHTML = '';
+      return;
+    }
+
+    const today = new Date().toLocaleDateString();
+    const html = rows.map(r => {
+      const cls  = (r.classification || classifyByScore(r.score || 0)).toUpperCase();
+      const tone = { HOT:'bg-red-50 border-red-200 text-red-900', WARM:'bg-orange-50 border-orange-200 text-orange-900', COOL:'bg-blue-50 border-blue-200 text-blue-900', COLD:'bg-gray-50 border-gray-200 text-gray-900' }[cls] || 'bg-blue-50 border-blue-200 text-blue-900';
+      const metrics = [];
+      if (r.avgDaysOnMarket != null) metrics.push(`<div>Days on Market: <span class="font-medium">${r.avgDaysOnMarket}</span></div>`);
+      if (r.monthsOfSupply  != null) metrics.push(`<div>Supply: <span class="font-medium">${r.monthsOfSupply} mo</span></div>`);
+      if (r.saleToListRatio != null) metrics.push(`<div>Sale/List: <span class="font-medium">${r.saleToListRatio}%</span></div>`);
+      if (r.priceReductions != null) metrics.push(`<div>Reductions: <span class="font-medium">${r.priceReductions}%</span></div>`);
+
+      return `
+        <div class="border rounded-xl p-4 ${tone}">
+          <div class="text-xs opacity-60 mb-1">Query: ${escapeHtml(r._query || '')}</div>
+
+          <div class="flex justify-between items-start mb-2">
+            <div>
+              <h4 class="font-semibold text-lg">${escapeHtml(r.zipCode || '—')}</h4>
+              <div class="text-sm opacity-75">${escapeHtml(r.city || '—')}, ${escapeHtml(r.state || '—')}</div>
+            </div>
+            <div class="text-right">
+              <div class="text-2xl font-bold">${r.score ?? '—'}</div>
+              <div class="text-xs opacity-75">${r.score != null ? '/ 100' : ''}</div>
+            </div>
+          </div>
+
+          <div class="mb-2">
+            <span class="px-2 py-1 rounded-full text-xs font-medium">${cls} MARKET</span>
+          </div>
+
+          ${metrics.length ? `<div class="grid grid-cols-2 gap-3 text-sm">${metrics.join('')}</div>` : `<div class="text-sm opacity-70">No metric breakdown provided by API</div>`}
+
+          <div class="mt-3 pt-3 border-t border-gray-200 text-xs">Live Data - ${today}</div>
+          <details class="mt-2 text-xs">
+            <summary class="cursor-pointer">Raw</summary>
+            <pre class="overflow-auto whitespace-pre-wrap">${escapeHtml(JSON.stringify(r.raw ?? r, null, 2))}</pre>
+          </details>
+        </div>
+      `;
+    }).join('');
+
+    // Replace previous content (clears lingering results)
+    resultsDiv.innerHTML = html;
+
+    if (insightsDiv) {
+      const scored = rows.filter(x => typeof x.score === 'number');
+      const avg = scored.length ? Math.round(scored.reduce((s, x) => s + x.score, 0) / scored.length) : '—';
+      const hot = rows.filter(x => (x.classification || classifyByScore(x.score || 0)).toUpperCase() === 'HOT').length;
+      insightsDiv.innerHTML = `
+        <div class="text-sm">📊 Analyzed ${rows.length} area(s) for ${escapeHtml(location)}</div>
+        <div class="text-sm">📈 Average score: ${avg}${avg !== '—' ? '/100' : ''}</div>
+        ${hot ? `<div class="text-sm">🔥 ${hot} hot market${hot>1?'s':''}</div>` : ''}`;
+    }
+  };
+})();
+</script>
+
+
+<script>
+// === Cloud Sync (AWS S3 via your existing signing endpoints) ===
+// Assumes a global API base (e.g., defined in config.js): const API = 'https://dl22vwp2qk.execute-api.us-east-1.amazonaws.com';
+
+(function(){
+  'use strict';
+
+  // --- Stable user identity shared across devices ---
+  window.getUserId = function getUserId() {
+    let id = localStorage.getItem('USER_ID');
+    if (!id) {
+      id = 'u_' + crypto.getRandomValues(new Uint32Array(2)).join('');
+      localStorage.setItem('USER_ID', id);
+    }
+    return id;
+  };
+
+  // --- S3 helpers via your signer lambdas ---
+  async function cloudGetJSON(key) {
+    const base = (window.API || localStorage.getItem('HOT_MARKETS_API') || '').replace(/\/+$/,'');
+    if (!base) throw new Error('API base not set');
+    const res = await fetch(`${base}/sign-get?key=${encodeURIComponent(key)}`);
+    if (!res.ok) throw new Error('sign-get failed ' + res.status);
+    const { url } = await res.json();
+    const r2 = await fetch(url, { cache: 'no-store' });
+    if (r2.status === 404) return null;
+    if (!r2.ok) throw new Error('GET object failed ' + r2.status);
+    return r2.json();
+  }
+
+  async function cloudPutJSON(key, obj) {
+    const base = (window.API || localStorage.getItem('HOT_MARKETS_API') || '').replace(/\/+$/,'');
+    if (!base) throw new Error('API base not set');
+    const res = await fetch(`${base}/sign-put?key=${encodeURIComponent(key)}`);
+    if (!res.ok) throw new Error('sign-put failed ' + res.status);
+    const data = await res.json();
+    // Prefer simple PUT URL if present
+    if (data.url && !data.fields) {
+      const r2 = await fetch(data.url, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(obj)
+      });
+      if (!r2.ok) throw new Error('PUT object failed ' + r2.status);
+      return true;
+    }
+    // Support form-data POST (S3 POST policy)
+    if (data.url && data.fields) {
+      const fd = new FormData();
+      Object.entries(data.fields).forEach(([k,v]) => fd.append(k, v));
+      const blob = new Blob([JSON.stringify(obj)], { type: 'application/json' });
+      fd.append('file', blob);
+      const r3 = await fetch(data.url, { method: 'POST', body: fd });
+      if (!r3.ok) throw new Error('POST object failed ' + r3.status);
+      return true;
+    }
+    throw new Error('Unexpected signer response');
+  }
+
+  // --- Settings sync ---
+  window.loadCloudSettings = async function loadCloudSettings() {
+    try {
+      const uid = getUserId();
+      const key = `users/${uid}/settings.json`;
+      const settings = await cloudGetJSON(key);
+      if (settings && typeof settings === 'object') {
+        if (settings.marketIntelUrl)  localStorage.setItem('HOT_MARKETS_API', settings.marketIntelUrl);
+        if (settings.marketIntelToken) localStorage.setItem('HOT_MARKETS_TOKEN', settings.marketIntelToken);
+        // hydrate UI fields if present
+        const apiInput   = document.getElementById('hotMarketsApiUrl');
+        const tokenInput = document.getElementById('hotMarketsToken');
+        if (apiInput && settings.marketIntelUrl) apiInput.value = settings.marketIntelUrl;
+        if (tokenInput && settings.marketIntelToken) tokenInput.value = settings.marketIntelToken;
+        console.log('[sync] settings loaded from cloud');
+        return true;
+      }
+    } catch (e) {
+      console.warn('[sync] loadCloudSettings failed:', e);
+    }
+    return false;
+  };
+
+  window.saveCloudSettings = async function saveCloudSettings() {
+    try {
+      const uid = getUserId();
+      const key = `users/${uid}/settings.json`;
+      const settings = {
+        marketIntelUrl:  (document.getElementById('hotMarketsApiUrl')?.value || localStorage.getItem('HOT_MARKETS_API') || '').trim(),
+        marketIntelToken:(document.getElementById('hotMarketsToken')?.value  || localStorage.getItem('HOT_MARKETS_TOKEN') || '').trim()
+      };
+      await cloudPutJSON(key, settings);
+      console.log('[sync] settings saved to cloud');
+      return true;
+    } catch (e) {
+      console.warn('[sync] saveCloudSettings failed:', e);
+      return false;
+    }
+  };
+
+  // --- Recent searches sync ---
+  window.appendCloudRecent = async function appendCloudRecent(query) {
+    try {
+      const uid = getUserId();
+      const key = `users/${uid}/recent-searches.json`;
+      const existing = (await cloudGetJSON(key)) || [];
+      existing.unshift({ query, ts: new Date().toISOString() });
+      const capped = existing.slice(0, 50);
+      await cloudPutJSON(key, capped);
+      console.log('[sync] recent search saved');
+      return true;
+    } catch (e) {
+      console.warn('[sync] appendCloudRecent failed:', e);
+      return false;
+    }
+  };
+
+  window.loadCloudRecent = async function loadCloudRecent() {
+    try {
+      const uid = getUserId();
+      const key = `users/${uid}/recent-searches.json`;
+      const items = (await cloudGetJSON(key)) || [];
+      if (Array.isArray(items)) {
+        // If you have a renderer hook, call it here:
+        const list = document.getElementById('recentSearchesList');
+        if (list) {
+          list.innerHTML = items.slice(0,10).map(it => 
+            `<button class="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-sm mr-2 mb-2" data-q="${it.query}">${it.query}</button>`
+          ).join('');
+          list.querySelectorAll('button[data-q]').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const input = document.getElementById('locationInput');
+              if (input) { input.value = btn.getAttribute('data-q'); input.focus(); }
+            });
+          });
+        }
+      }
+      console.log('[sync] recent searches loaded');
+      return true;
+    } catch (e) {
+      console.warn('[sync] loadCloudRecent failed:', e);
+      return false;
+    }
+  };
+
+  // --- Hook into your existing flows ---
+  document.addEventListener('DOMContentLoaded', () => {
+    // Try to load cloud settings & recent searches early
+    loadCloudSettings().then(() => loadCloudRecent());
+    // When user saves settings, also persist to cloud (augment existing listener if present)
+    const saveBtn = document.getElementById('saveAiSettings');
+    if (saveBtn && !saveBtn._cloudSync) {
+      saveBtn.addEventListener('click', () => { setTimeout(saveCloudSettings, 50); });
+      saveBtn._cloudSync = true;
+    }
+  });
+
+  // After a successful analysis, remember the query
+  if (!window._appendRecentHooked) {
+    const origRender = window.renderMarketResultsFromApi;
+    window.renderMarketResultsFromApi = function(apiData, location) {
+      try { if (location) appendCloudRecent(location); } catch(e){ console.warn('append recent failed', e); }
+      return origRender.apply(this, arguments);
+    };
+    window._appendRecentHooked = true;
+  }
+})();
+</script>
+
+
+<script>
+// === Market Intel: Property Type Filters (adds Apartments) ===
+(function(){
+  'use strict';
+
+  const TYPES = [
+    { key: 'single_family', label: 'Single‑Family' },
+    { key: 'townhouse',     label: 'Townhouse' },
+    { key: 'condo',         label: 'Condo' },
+    { key: 'apartment',     label: 'Apartments' },
+    { key: 'multi_2_4',     label: 'Multi‑Family (2–4)' },
+    { key: 'multi_5_plus',  label: 'Multi‑Family (5+)' },
+  ];
+
+  function ensureTypeFilters() {
+    const input = document.getElementById('locationInput');
+    if (!input) return;
+
+    // Avoid duplicate UI
+    if (document.getElementById('marketTypeFilters')) return;
+
+    // Container
+    const wrap = document.createElement('div');
+    wrap.id = 'marketTypeFilters';
+    wrap.className = 'mt-3 mb-2';
+
+    const label = document.createElement('div');
+    label.className = 'text-sm font-medium mb-2 opacity-80';
+    label.textContent = 'Property Types';
+    wrap.appendChild(label);
+
+    const row = document.createElement('div');
+    row.className = 'flex flex-wrap gap-2';
+    wrap.appendChild(row);
+
+    // Default selection: SFR, Townhouse, Condo, Apartments
+    const defaults = new Set(['single_family','townhouse','condo','apartment']);
+    TYPES.forEach(t => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.dataset.type = t.key;
+      btn.className = 'px-2 py-1 rounded-full border text-sm';
+      btn.textContent = t.label;
+      const on = defaults.has(t.key);
+      setChipState(btn, on);
+      btn.addEventListener('click', () => setChipState(btn, !btn.classList.contains('bg-blue-600')));
+      row.appendChild(btn);
+    });
+
+    // Insert after the input row
+    // Try to place beneath input; otherwise append to market-intel section
+    const parent = input.closest('.space-y-3, .space-y-4, .p-4') || input.parentElement;
+    if (parent && parent.nextSibling) {
+      parent.parentElement.insertBefore(wrap, parent.nextSibling);
+    } else {
+      // fallback near results
+      const sec = document.getElementById('market-intel') || document.getElementById('marketResults')?.parentElement;
+      (sec || document.body).insertBefore(wrap, (sec || document.body).firstChild);
+    }
+  }
+
+  function setChipState(btn, on) {
+    if (on) {
+      btn.classList.add('bg-blue-600','text-white','border-blue-600');
+      btn.classList.remove('bg-white','text-gray-800','border-gray-300');
+    } else {
+      btn.classList.add('bg-white','text-gray-800','border-gray-300');
+      btn.classList.remove('bg-blue-600','text-white','border-blue-600');
+    }
+  }
+
+  function getSelectedTypes() {
+    return Array.from(document.querySelectorAll('#marketTypeFilters [data-type]'))
+      .filter(el => el.classList.contains('bg-blue-600'))
+      .map(el => el.dataset.type);
+  }
+
+  // Patch analyze flow to include &types=...
+  function patchAnalyze() {
+    // Find the existing buildUrl by monkey-patching analyze handler wrapper
+    if (window._typesPatched) return;
+
+    const analyzeBtn = document.getElementById('analyzeMarkets');
+    if (!analyzeBtn) return;
+
+    // Re-wrap the existing fetch builder if present
+    const _origFetch = window.fetch;
+    window.fetch = function(url, opts) {
+      try {
+        if (typeof url === 'string' && url.includes('?')) {
+          const u = new URL(url, location.href);
+          // Only apply to our Market Intel API calls: heuristic — presence of postalCode or q
+          if (u.searchParams.has('postalCode') || u.searchParams.has('q')) {
+            const sel = getSelectedTypes();
+            if (sel.length) {
+              // Use "types" as CSV. Many APIs accept this; harmless if ignored.
+              u.searchParams.set('types', sel.join(','));
+              url = u.toString();
+            }
+          }
+        }
+      } catch(e) { /* noop */ }
+      return _origFetch.apply(this, arguments);
+    };
+
+    window._typesPatched = true;
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    ensureTypeFilters();
+    patchAnalyze();
+  });
+})();
+</script>
+
 </body>
 </html>
-
-    
-
-    
-
-    
