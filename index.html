@@ -7552,10 +7552,13 @@ function updateQuickZipCodes() {
     (window.showNotification ? showNotification : alert)('Settings saved', 'success');
   });
 
-  // Analyze
+  // Analyze with debounce
   let isAnalyzing = false;
   document.getElementById('analyzeMarkets')?.addEventListener('click', async function () {
-    if (isAnalyzing) return; // Prevent multiple clicks
+    if (isAnalyzing) {
+      console.log('Analyze click ignored: request in progress');
+      return; // Prevent multiple clicks
+    }
     isAnalyzing = true;
     const loc = (document.getElementById('locationInput')?.value || 'United States').trim();
     const container = document.getElementById('marketResults');
@@ -7578,7 +7581,9 @@ function updateQuickZipCodes() {
     this.innerHTML = '<i data-lucide="loader-2" class="animate-spin"></i> Analyzing…';
 
     try {
+      console.log('Initiating API call for location:', loc); // Debug log
       const data = await HotMarketsAPI.fetch({ location: loc });
+      console.log('API Response received:', data); // Debug log
       displayMarketResults(data);
       const saved = JSON.parse(localStorage.getItem('analyzedLocations') || '[]');
       if (!saved.includes(loc)) saved.push(loc);
