@@ -222,6 +222,62 @@
     
  </style>
 
+<style id="mbps-dark-contrast-fix">
+/* High-contrast dark theme overrides */
+body.dark, [data-theme="dark"] {
+  color: #e6e9ef;
+  background: #0b1220;
+}
+body.dark .btn, [data-theme="dark"] .btn {
+  color: #e6e9ef;
+  border-color: rgba(231, 233, 239, 0.25);
+  background: #111827;
+}
+body.dark .btn.primary, [data-theme="dark"] .btn.primary,
+body.dark .btn.blue, [data-theme="dark"] .btn.blue {
+  background: #00a8ff;
+  border-color: #00a8ff;
+  color: #fff;
+}
+body.dark .card, body.dark .panel, body.dark .kb-card, body.dark .kb-col,
+[data-theme="dark"] .card, [data-theme="dark"] .panel, [data-theme="dark"] .kb-card, [data-theme="dark"] .kb-col {
+  background: #0f172a;
+  border-color: rgba(231,233,239,0.15);
+  color: #e6e9ef;
+}
+body.dark .kb-hd, [data-theme="dark"] .kb-hd {
+  border-bottom-color: rgba(231,233,239,0.15);
+  color: #fff;
+}
+body.dark .kb-badge, [data-theme="dark"] .kb-badge {
+  border-color: rgba(231,233,239,0.25);
+  color: #e6e9ef;
+}
+body.dark dialog, [data-theme="dark"] dialog {
+  background: #0f172a;
+  color: #e6e9ef;
+}
+body.dark dialog .hd, body.dark dialog .modal-hd, [data-theme="dark"] dialog .hd, [data-theme="dark"] dialog .modal-hd {
+  border-bottom-color: rgba(231,233,239,0.15);
+}
+body.dark input, [data-theme="dark"] input, 
+body.dark select, [data-theme="dark"] select, 
+body.dark textarea, [data-theme="dark"] textarea {
+  color: #e6e9ef;
+  background: #111827;
+  border-color: rgba(231,233,239,0.25);
+}
+body.dark table, [data-theme="dark"] table { color: #e6e9ef; }
+body.dark th, body.dark td, [data-theme="dark"] th, [data-theme="dark"] td {
+  border-color: rgba(231,233,239,0.15);
+}
+body.dark .kb-gloss, [data-theme="dark"] .kb-gloss {
+  color: #b6bcc8;
+  border-top-color: rgba(231,233,239,0.15);
+}
+</style>
+
+
 <style id="mbps-ui-hotfix-style">
 /* Agent search alignment + responsiveness */
 .agent-search-input{
@@ -395,8 +451,112 @@ html:not(.dark) button {
   background: rgba(34, 197, 94, 0.2);
   color: #86efac;
 }
- </style>
+  </style>
   
+  <style>
+    <style id="consistent-button-colors">
+/* Primary action buttons - Cyan */
+.btn-primary {
+  background: #06b6d4;
+  color: white;
+  border-color: #0891b2;
+}
+.btn-primary:hover {
+  background: #0891b2;
+  border-color: #0e7490;
+}
+
+/* Special feature buttons - Purple */
+.btn-accent, .btn-special {
+  background: #d946ef;
+  color: white;
+  border-color: #c026d3;
+}
+.btn-accent:hover, .btn-special:hover {
+  background: #c026d3;
+  border-color: #a21caf;
+}
+
+/* Success/confirmation buttons - Green */
+.btn-success {
+  background: #22c55e;
+  color: white;
+  border-color: #16a34a;
+}
+.btn-success:hover {
+  background: #16a34a;
+  border-color: #15803d;
+}
+
+/* Dark mode adjustments */
+.dark .btn-primary {
+  background: #0891b2;
+  border-color: #06b6d4;
+}
+.dark .btn-accent {
+  background: #c026d3;
+  border-color: #d946ef;
+}
+.dark .btn-success {
+  background: #16a34a;
+  border-color: #22c55e;
+}
+  </style>
+  <style>
+/* Keep all active tabs the same cyan color */
+.tab.active {
+  border-color: #06b6d4 !important;
+  background: #cffafe !important;
+  color: #0e7490 !important;
+}
+
+/* Dark mode - keep consistent cyan for active tabs */
+.dark .tab.active {
+  background: rgba(6, 182, 212, 0.2) !important;
+  color: #67e8f9 !important;
+  border-color: #06b6d4 !important;
+}
+
+/* Optional: Keep hover state consistent too */
+.tab:hover {
+  background: #f0f9ff;
+  border-color: #bae6fd;
+}
+
+.dark .tab:hover {
+  background: rgba(6, 182, 212, 0.1);
+  border-color: rgba(6, 182, 212, 0.3);
+}
+</style>
+<style>
+/* Fix pipeline tab highlight issue */
+.tab[data-tab="pipeline"]:not(.active) {
+  border-color: transparent !important;
+  background: transparent !important;
+  color: inherit !important;
+}
+</style>
+<style>
+/* Force all success/green buttons to use the same green */
+/* Only target btn-success specifically */
+.btn-success { 
+  background: #22c55e; 
+  color: white; 
+  border-color: #16a34a; 
+}
+.btn-success:hover { 
+  background: #16a34a; 
+  border-color: #15803d; 
+}
+
+/* Fix any hover states to match */
+.btn-success:hover,
+.btn.brand:hover {
+  background: #16a34a !important;
+  border-color: #15803d !important;
+}
+</style>
+ 
   <script src="./config.js"></script>
 <!-- Default Market Intel API URL (fallback if not set via Settings) -->
 <script>
@@ -405,6 +565,34 @@ html:not(.dark) button {
   }
 </script>
 <script>
+  // ========= QUICK FIX FOR UNDEFINED FUNCTION ERROR =========
+// Add this script IMMEDIATELY after the <head> section to define the function early
+
+(function() {
+  'use strict';
+  
+  // Define the missing function immediately to prevent errors
+  window.initializeMarketIntelligence = function() {
+    console.log('Market Intelligence initializing...');
+    
+    // Wait for DOM elements to exist
+    setTimeout(() => {
+      
+      // Wire up the save settings button
+      const saveBtn = document.getElementById('saveAiSettings');
+      if (saveBtn && !saveBtn._initialized) {
+        saveBtn.addEventListener('click', function() {
+          const apiUrl = document.getElementById('hotMarketsApiUrl')?.value?.trim();
+          const token = document.getElementById('hotMarketsToken')?.value?.trim();
+          
+          if (apiUrl) localStorage.setItem('HOT_MARKETS_API', apiUrl);
+          if (token) localStorage.setItem('HOT_MARKETS_TOKEN', token);
+          
+          alert('Settings saved successfully!');
+        });
+        saveBtn._initialized = true;
+      }
+      
       // Wire up the analyze button  
       const analyzeBtn = document.getElementById('analyzeMarkets');
       if (analyzeBtn && !analyzeBtn._initialized) {
@@ -505,42 +693,196 @@ analyzeBtn.addEventListener('click', async function() {
   } finally {
     this.disabled = false;
     this.textContent = originalText;
+  }
+});
+analyzeBtn._initialized = true;
+
+      }
+      
+      console.log('Market Intelligence initialized successfully');
+    }, 100);
   };
+  
+  // Define the missing renderMarketIntelTab function
+  window.renderMarketIntelTab = function() {
+    return `
+      <div class="space-y-6">
+        <!-- API Settings -->
+        <section class="card">
+          <h3 class="text-lg font-semibold mb-3">Market Intelligence Settings</h3>
+          <div class="space-y-3">
+            <div>
+              <label class="block text-sm font-medium mb-1">Status</label>
+              <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                Demo Mode Active
+              </span>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">API URL</label>
+              <input id="hotMarketsApiUrl" class="w-full rounded-xl border-gray-200"
+                     placeholder="https://your-api-url.com" 
+                     value="${localStorage.getItem('HOT_MARKETS_API') || ''}">
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">API Token</label>
+              <input id="hotMarketsToken" type="password" class="w-full rounded-xl border-gray-200"
+                     placeholder="Enter your token" 
+                     value="${localStorage.getItem('HOT_MARKETS_TOKEN') || ''}">
+            </div>
+            <button id="saveAiSettings" class="btn btn-primary">Save Settings</button>
+          </div>
+        </section>
 
-  </script>     
-<!-- Market Analysis -->
-  <section class="card">
-    <div class="flex items-center justify-between mb-3">
-      <h3 class="text-lg font-semibold">Market Analysis</h3>
-    </div>
-    <div class="space-y-3 mb-4">
-      <div class="flex gap-2">
-        <input id="locationInput" class="flex-1 rounded-xl border-gray-200"
-               placeholder="Enter ZIP(s) or City, ST (e.g., &quot;27909&quot;, &quot;Phoenix, AZ&quot;, &quot;27909; 85032&quot;)">
-        <button id="analyzeMarkets" class="btn btn-primary">Analyze Market</button>
+        <!-- Market Analysis -->
+        <section class="card">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-lg font-semibold">Market Analysis</h3>
+          </div>
+
+          <div class="space-y-3 mb-4">
+            <div class="flex gap-2">
+              <input id="locationInput" class="flex-1 rounded-xl border-gray-200"
+                     placeholder="Enter ZIP(s) or City, ST (e.g., "27909", "Phoenix, AZ", "27909; 85032")">
+              <button id="analyzeMarkets" class="btn btn-primary">Analyze Market</button>
+            </div>
+            
+            <!-- Quick buttons -->
+            <div class="flex flex-wrap gap-2">
+              <button class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs hover:bg-blue-200" onclick="document.getElementById('locationInput').value='Phoenix, AZ'">Phoenix, AZ</button>
+              <button class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs hover:bg-blue-200" onclick="document.getElementById('locationInput').value='Atlanta, GA'">Atlanta, GA</button>
+              <button class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs hover:bg-blue-200" onclick="document.getElementById('locationInput').value='Dallas, TX'">Dallas, TX</button>
+            </div>
+          </div>
+
+          <div id="marketResults" class="space-y-3">
+            <p class="text-gray-500 text-center py-8">Enter a location above and click "Analyze Market" to get started</p>
+          </div>
+        </section>
+
+        <!-- Market Insights -->
+        <section class="card">
+          <h3 class="text-lg font-semibold mb-3">Market Insights</h3>
+          <div id="marketInsights" class="space-y-2 text-sm">
+            <p class="text-gray-500">Run an analysis to see market trends and investment opportunities</p>
+          </div>
+        </section>
       </div>
-    </div>
-  </section>
-
-  <!-- Quick buttons -->
-  <div class="flex flex-wrap gap-2">
-    <button class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs hover:bg-blue-200" onclick="document.getElementById('locationInput').value='Phoenix, AZ'">Phoenix, AZ</button>
-    <button class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs hover:bg-blue-200" onclick="document.getElementById('locationInput').value='Atlanta, GA'">Atlanta, GA</button>
-    <button class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs hover:bg-blue-200" onclick="document.getElementById('locationInput').value='Dallas, TX'">Dallas, TX</button>
-  </div>
-
-  <div id="marketResults" class="space-y-3">
-    <p class="text-gray-500 text-center py-8">Enter a location above and click "Analyze Market" to get started</p>
-  </div>
-
-  <!-- Market Insights -->
-  <section class="card">
-    <h3 class="text-lg font-semibold mb-3">Market Insights</h3>
-    <div id="marketInsights" class="space-y-2 text-sm">
-      <p class="text-gray-500">Run an analysis to see market trends and investment opportunities</p>
-    </div>
-  </section>
-
+    `;
+  };
+  
+  // Demo data generator
+  function createDemoMarketData(location) {
+    const zipCodes = location.match(/\b\d{5}\b/g) || ['85032'];
+    const [city, state] = location.includes(',') ? location.split(',').map(s => s.trim()) : [location, 'AZ'];
+    
+    return zipCodes.map(zip => {
+      const score = Math.floor(Math.random() * 30) + 65; // 65-95 range
+      const classification = score >= 85 ? 'HOT' : score >= 75 ? 'WARM' : score >= 65 ? 'COOL' : 'COLD';
+      
+      return {
+        zipCode: zip,
+        city: city,
+        state: state,
+        score: score,
+        classification: classification,
+        avgDaysOnMarket: Math.floor(Math.random() * 25) + 20,
+        monthsOfSupply: (Math.random() * 2 + 1).toFixed(1),
+        saleToListRatio: Math.floor(Math.random() * 10) + 95,
+        priceReductions: Math.floor(Math.random() * 20) + 10
+      };
+    });
+  }
+  
+  // Demo results display
+  function displayDemoResults(results, location) {
+    const resultsDiv = document.getElementById('marketResults');
+    const insightsDiv = document.getElementById('marketInsights');
+    
+    if (!resultsDiv) return;
+    
+    // Add demo notice
+    const demoNotice = `
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+        <div class="flex items-center gap-2">
+          <span class="text-blue-600">ℹ️</span>
+          <div class="text-sm text-blue-800">
+            <strong>Demo Mode:</strong> Showing sample market data. Configure your API settings for live data.
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // Generate result cards
+    const cards = results.map(result => {
+      const colorClasses = {
+        'HOT': 'bg-red-50 border-red-200 text-red-900',
+        'WARM': 'bg-orange-50 border-orange-200 text-orange-900', 
+        'COOL': 'bg-blue-50 border-blue-200 text-blue-900',
+        'COLD': 'bg-gray-50 border-gray-200 text-gray-900'
+      };
+      
+      const colorClass = colorClasses[result.classification] || colorClasses.COOL;
+      
+      return `
+        <div class="border rounded-xl p-4 ${colorClass}">
+          <div class="flex justify-between items-start mb-3">
+            <div>
+              <h4 class="font-semibold text-lg">${result.zipCode}</h4>
+              <div class="text-sm opacity-75">${result.city}, ${result.state}</div>
+            </div>
+            <div class="text-right">
+              <div class="text-2xl font-bold">${result.score}</div>
+              <div class="text-xs opacity-75">/ 100</div>
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <span class="px-2 py-1 rounded-full text-xs font-medium ${colorClass}">
+              ${result.classification} MARKET
+            </span>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-3 text-sm">
+            <div>Days on Market: <span class="font-medium">${result.avgDaysOnMarket}</span></div>
+            <div>Supply: <span class="font-medium">${result.monthsOfSupply} mo</span></div>
+            <div>Sale/List: <span class="font-medium">${result.saleToListRatio}%</span></div>
+            <div>Reductions: <span class="font-medium">${result.priceReductions}%</span></div>
+          </div>
+          
+          <div class="mt-3 pt-3 border-t border-gray-200">
+            <p class="text-xs opacity-70">Sample Data - ${new Date().toLocaleDateString()}</p>
+          </div>
+        </div>
+      `;
+    }).join('');
+    
+    resultsDiv.innerHTML = demoNotice + cards;
+    
+    // Update insights
+    if (insightsDiv) {
+      const hotCount = results.filter(r => r.classification === 'HOT').length;
+      const avgScore = Math.round(results.reduce((sum, r) => sum + r.score, 0) / results.length);
+      
+      const insights = [
+        `📊 Analyzed ${results.length} market area${results.length > 1 ? 's' : ''} in ${location}`,
+        `📈 Average market score: ${avgScore}/100`
+      ];
+      
+      if (hotCount > 0) {
+        insights.unshift(`🔥 Found ${hotCount} hot market${hotCount > 1 ? 's' : ''}!`);
+      }
+      
+      insightsDiv.innerHTML = insights.map(insight => 
+        `<div class="flex items-start gap-2"><span class="text-sm">${insight}</span></div>`
+      ).join('');
+    }
+  }
+  
+  console.log('Market Intelligence functions defined');
+})();
+</script>
+</head>
+<body class="bg-gradient-to-br from-brand-50 via-white to-accent-50 text-gray-800 min-h-screen">
   <!-- ONE-METRIC BAR -->
   <div class="sticky-topbar w-full bg-white/90 dark:bg-[#0b1322]/70 backdrop-blur">
     <div class="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between gap-3">
@@ -566,8 +908,6 @@ analyzeBtn.addEventListener('click', async function() {
           <p class="text-xs text-gray-600 dark:text-gray-300">Leads → Offers (Cash & Terms) → Contracts → Dispo → Closings</p>
         </div>
       </div>
-    </header>
-  </div>
       <div class="flex gap-2 items-center">
         <button id="exportCsvBtn" class="btn btn-outline"><i data-lucide="file-down"></i>Export CSV</button>
         <button id="backupBtn" class="btn btn-outline"><i data-lucide="database"></i>Backup</button>
@@ -5450,6 +5790,274 @@ function updateLiveAnalysis() {
 })();
 </script>
 
+<script id="mbps-durable-showtab">
+(function(){
+  function safeActivate(id){
+    try{
+      const panels = document.querySelectorAll('[data-tab-panel], .tab-panel, section.tab-panel');
+      panels.forEach(p => { 
+        try{ 
+          if(p) p.hidden = true;
+        }catch(_){} 
+      });
+      const target = document.getElementById(id) || document.querySelector(`[data-tab-panel="${id}"]`) || null;
+      if (!target) { 
+        console.warn('[showTab] target not found:', id); 
+        return; 
+      }
+      target.hidden = false;
+      const tabs = document.querySelectorAll('[data-tab], .tab, [role="tab"]');
+      tabs.forEach(btn => {
+        if (!btn) return;
+        const match = (btn.getAttribute('data-tab') === id) ||
+                      (btn.getAttribute('href') === `#${id}`) ||
+                      (btn.id && btn.id === id);
+        btn.classList.toggle('active', !!match);
+      });
+    }catch(e){ 
+      console.warn('[showTab] safeActivate error:', e); 
+    }
+  }
+  
+  window.showTab = function(id){ 
+    safeActivate(id); 
+  };
+})();
+
+(function(){
+  // Helper functions that were missing
+  function getDeals(){ 
+    try{ return JSON.parse(localStorage.getItem('deals')||'[]'); }
+    catch(_){ return []; }
+  }
+  
+  function saveDeals(d){ 
+    localStorage.setItem('deals', JSON.stringify(d)); 
+  }
+  
+  function refreshTable(){ 
+    if (window.renderDealsTable) {
+      try{ window.renderDealsTable(); }catch(_){} 
+    }
+  }
+  
+  function currentDealId(){
+    return window.CURRENT_ANALYZE_DEAL_ID || null;
+  }
+
+  // ---------- Single-family (MAO) ----------
+  function analyzeSF(){
+    const arv = +document.getElementById('sfArv').value||0;
+    const repairs = +document.getElementById('sfRepairs').value||0;
+    const fee = +document.getElementById('sfFee').value||0;
+    const holdPct = (+document.getElementById('sfHoldPct').value||10)/100;
+    const rent = +document.getElementById('sfRent').value||0;
+    const piti = +document.getElementById('sfPiti').value||0;
+
+    const maxOfferWholesale = Math.max(0, arv*0.7 - repairs - fee);
+    const carrying = Math.round(arv * holdPct);
+    const cashflow = Math.round(rent - piti);
+    let strat = 'Wholesale';
+    if (cashflow >= 300) strat = 'Buy & Hold';
+    if (piti>0 && cashflow>0 && maxOfferWholesale<=0) strat = 'Subject-To';
+
+    const r = document.getElementById('sfResults');
+    if (r) {
+      r.innerHTML = `
+        <div class="pe-grid">
+          <div class="pe-field"><label>Max Offer (Wholesale)</label><div class="tag">$ ${maxOfferWholesale.toLocaleString()}</div></div>
+          <div class="pe-field"><label>Carrying Reserve</label><div class="tag">$ ${carrying.toLocaleString()}</div></div>
+          <div class="pe-field"><label>Cashflow (rent - PITI)</label><div class="tag">$ ${cashflow.toLocaleString()}</div></div>
+        </div>
+        <div style="margin-top:8px"><strong>Suggested Strategy:</strong> ${strat}</div>`;
+    }
+
+    const sfSetOfferBtn = document.getElementById('sfSetOffer');
+    if (sfSetOfferBtn) sfSetOfferBtn.disabled = false;
+    
+    return { maxOfferWholesale, carrying, cashflow, strat };
+  }
+
+  // ---------- Multifamily ----------
+  function pmt(rate, nper, pv){
+    const i = rate/12;
+    return (pv*i) / (1 - Math.pow(1+i, -nper));
+  }
+  
+  function analyzeMF(){
+    const units = +document.getElementById('mfUnits').value||0;
+    const rentU = +document.getElementById('mfRent').value||0;
+    const other = +document.getElementById('mfOther').value||0;
+    const vac = (+document.getElementById('mfVacancy').value||5)/100;
+    const opexPct = (+document.getElementById('mfOpexPct').value||40)/100;
+    const price = +document.getElementById('mfPrice').value||0;
+    const downPct = (+document.getElementById('mfDownPct').value||25)/100;
+    const rate = (+document.getElementById('mfRate').value||6.5)/100;
+    const amort = +document.getElementById('mfAmort').value||25;
+
+    const grossSched = units * rentU * 12 + other*12;
+    const egi = grossSched * (1 - vac);
+    const opex = egi * opexPct;
+    const noi = egi - opex;
+
+    const loanAmt = price * (1 - downPct);
+    const annualDebt = pmt(rate, amort*12, loanAmt) * 12;
+    const dscr = (annualDebt>0)? (noi / annualDebt): 0;
+    const capRate = (price>0)? (noi / price) : 0;
+    const cashNeeded = price * downPct;
+    const cashFlow = noi - annualDebt;
+    const coc = (cashNeeded>0)? (cashFlow / cashNeeded) : 0;
+
+    const r = document.getElementById('mfResults');
+    if (r) {
+      r.innerHTML = `
+        <div class="pe-grid">
+          <div class="pe-field"><label>NOI</label><div class="tag">$ ${(Math.round(noi)).toLocaleString()}</div></div>
+          <div class="pe-field"><label>Cap Rate</label><div class="tag">${(capRate*100).toFixed(2)}%</div></div>
+          <div class="pe-field"><label>DSCR</label><div class="tag">${dscr.toFixed(2)}</div></div>
+          <div class="pe-field"><label>Annual Debt Service</label><div class="tag">$ ${(Math.round(annualDebt)).toLocaleString()}</div></div>
+          <div class="pe-field"><label>Annual Cash Flow</label><div class="tag">$ ${(Math.round(cashFlow)).toLocaleString()}</div></div>
+          <div class="pe-field"><label>Cash-on-Cash</label><div class="tag">${(coc*100).toFixed(1)}%</div></div>
+        </div>
+        <div style="margin-top:8px" class="tag">${dscr>=1.25?'✅ DSCR lender-safe (≥1.25)':'⚠️ DSCR below 1.25 — risk for lenders'}</div>`;
+    }
+
+    const mfSaveBtn = document.getElementById('mfSave');
+    if (mfSaveBtn) mfSaveBtn.disabled = false;
+    
+    return { noi, capRate, dscr, annualDebt, cashFlow, coc };
+  }
+
+  // ---------- Airbnb Arbitrage ----------
+  function analyzeAB(){
+    const rent = +document.getElementById('abRent').value||0;
+    const adr = +document.getElementById('abAdr').value||0;
+    const occ = (+document.getElementById('abOcc').value||70)/100;
+    const utils = +document.getElementById('abUtils').value||0;
+    const clean = +document.getElementById('abClean').value||0;
+    const nightsPerStay = +document.getElementById('abNightsPerStay').value||3;
+    const feePct = (+document.getElementById('abFeePct').value||3)/100;
+    const furnish = +document.getElementById('abFurnish').value||0;
+    const other = +document.getElementById('abOther').value||0;
+
+    const nights = 30 * occ;
+    const stays = nightsPerStay>0 ? (nights / nightsPerStay) : 0;
+    const revenue = adr * nights;
+    const platformFees = revenue * feePct;
+    const cleaning = stays * clean;
+    const expenses = rent + utils + platformFees + cleaning + other;
+    const profit = revenue - expenses;
+    const roi = furnish>0 ? ((profit*12)/furnish) : 0;
+    const breakEvenNights = adr>0 ? ((rent + utils + platformFees + other)/adr) : 0;
+
+    const r = document.getElementById('abResults');
+    if (r) {
+      r.innerHTML = `
+        <div class="pe-grid">
+          <div class="pe-field"><label>Monthly Revenue</label><div class="tag">$ ${(Math.round(revenue)).toLocaleString()}</div></div>
+          <div class="pe-field"><label>Monthly Expenses</label><div class="tag">$ ${(Math.round(expenses)).toLocaleString()}</div></div>
+          <div class="pe-field"><label>Monthly Profit</label><div class="tag">$ ${(Math.round(profit)).toLocaleString()}</div></div>
+          <div class="pe-field"><label>Break-even Nights</label><div class="tag">${breakEvenNights.toFixed(1)}</div></div>
+          <div class="pe-field"><label>Annualized ROI (on furnishings)</label><div class="tag">${(roi*100).toFixed(1)}%</div></div>
+        </div>
+        <div style="margin-top:8px" class="tag">${breakEvenNights<=15?'✅ Break-even ≤ 15 nights':'⚠️ Break-even high — consider different ADR/market'}</div>`;
+    }
+
+    const abSaveBtn = document.getElementById('abSave');
+    if (abSaveBtn) abSaveBtn.disabled = false;
+    
+    return { revenue, expenses, profit, breakEvenNights, roi };
+  }
+
+  // Wire up event listeners after DOM loads
+  document.addEventListener('DOMContentLoaded', () => {
+    // Single Family
+    const sfAnalyzeBtn = document.getElementById('sfAnalyze');
+    if (sfAnalyzeBtn) {
+      sfAnalyzeBtn.addEventListener('click', analyzeSF);
+    }
+    
+    const sfSetOfferBtn = document.getElementById('sfSetOffer');
+    if (sfSetOfferBtn) {
+      sfSetOfferBtn.addEventListener('click', () => {
+        const out = analyzeSF();
+        const dealId = currentDealId();
+        const addr = (document.getElementById('peAddress')?.value||'').trim();
+        if (!dealId) { alert('Open a deal via Analyze, or select a deal first.'); return; }
+        const deals = getDeals();
+        const d = deals.find(x => x && x._id === dealId);
+        if (!d) { alert('Deal not found.'); return; }
+        d.offerPrice = Math.round(out.maxOfferWholesale);
+        if (addr) d.address = d.propertyAddress = addr;
+        d.updatedAt = Date.now();
+        saveDeals(deals);
+        refreshTable();
+        alert('Offer price set on deal.');
+      });
+    }
+
+    // Multifamily
+    const mfAnalyzeBtn = document.getElementById('mfAnalyze');
+    if (mfAnalyzeBtn) {
+      mfAnalyzeBtn.addEventListener('click', analyzeMF);
+    }
+    
+    const mfSaveBtn = document.getElementById('mfSave');
+    if (mfSaveBtn) {
+      mfSaveBtn.addEventListener('click', () => {
+        const out = analyzeMF();
+        const dealId = currentDealId();
+        const addr = (document.getElementById('peAddress')?.value||'').trim();
+        if (!dealId) { alert('Open a deal via Analyze, or select a deal first.'); return; }
+        const deals = getDeals();
+        const d = deals.find(x => x && x._id === dealId);
+        if (!d) { alert('Deal not found.'); return; }
+        d.multi = { ...out };
+        if (addr) d.address = d.propertyAddress = addr;
+        d.strategy = 'Multifamily';
+        d.updatedAt = Date.now();
+        saveDeals(deals);
+        refreshTable();
+        alert('Multifamily analysis saved to deal.');
+      });
+    }
+
+    // Airbnb
+    const abAnalyzeBtn = document.getElementById('abAnalyze');
+    if (abAnalyzeBtn) {
+      abAnalyzeBtn.addEventListener('click', analyzeAB);
+    }
+    
+    const abSaveBtn = document.getElementById('abSave');
+    if (abSaveBtn) {
+      abSaveBtn.addEventListener('click', () => {
+        const out = analyzeAB();
+        const dealId = currentDealId();
+        const addr = (document.getElementById('peAddress')?.value||'').trim();
+        if (!dealId) { alert('Open a deal via Analyze, or select a deal first.'); return; }
+        const deals = getDeals();
+        const d = deals.find(x => x && x._id === dealId);
+        if (!d) { alert('Deal not found.'); return; }
+        d.arbitrage = { ...out };
+        if (addr) d.address = d.propertyAddress = addr;
+        d.strategy = 'Airbnb Arbitrage';
+        d.updatedAt = Date.now();
+        saveDeals(deals);
+        refreshTable();
+        alert('Airbnb arbitrage analysis saved to deal.');
+      });
+    }
+  });
+
+  // Make functions globally available
+  window.analyzeSF = analyzeSF;
+  window.analyzeMF = analyzeMF;
+  window.analyzeAB = analyzeAB;
+})();
+</script>
+<!-- =================== /MBPS: Property Evaluation (Replaced) =================== -->
+
+
 <style>
   /* Collapse Property Evaluation by default */
   #propertyEvaluation { display:none; }
@@ -8726,239 +9334,352 @@ function renderMarketResultsFromApi(apiData, originalQuery) {
   });
 })();
 </script>
-  <script>
-/* ---------- FIX PATCH: Market Intel bootstrap & override ---------- */
+<script>
+/* =========================================================
+   Apartment Deal Analyzer – Integrates with:
+   1) Property Valuation > Apartments (Multifamily)
+   2) Analyzers hub (adds a simple panel)
+   - Computes: NOI, Cap Rate, DSCR, Annual Debt Service, Cash In, Cash-on-Cash
+   - Clean results (no step-by-step helper numbers)
+   - Idempotent: safe to include once; won't double-bind
+   ========================================================= */
+(function () {
+  if (window.__APT_ANALYZER_INSTALLED__) return;
+  window.__APT_ANALYZER_INSTALLED__ = true;
 
-/* 1) Tiny toast fallback */
-window.showNotification = window.showNotification || function (msg, type='info'){
-  try {
-    const el=document.createElement('div'); el.textContent=msg;
-    el.style.cssText='position:fixed;left:50%;top:16px;transform:translateX(-50%);padding:10px 14px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.15);z-index:9999;background:#e5e7eb;color:#111827';
-    if(type==='success')el.style.background='#d1fae5';
-    if(type==='error')el.style.background='#fee2e2';
-    document.body.appendChild(el); setTimeout(()=>el.remove(),2200);
-  } catch {}
-};
+  // ---------- tiny utils ----------
+  const $ = (sel, root = document) => root.querySelector(sel);
+  const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+  const num = (v, d = 0) => {
+    const n = Number(String(v).replace(/[,$\s]/g, ''));
+    return Number.isFinite(n) ? n : d;
+  };
+  const money = (n) => n == null ? '—' : n.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+  const pct = (n, d = 2) => n == null ? '—' : `${Number(n).toFixed(d)}%`;
 
-/* 2) Safe trends helper (if not already defined) */
-window.MarketIntelligence = window.MarketIntelligence || {
-  getMarketTrends(n){
-    const t=[], dom=+n?.avgDaysOnMarket, mos=+n?.monthsOfSupply, slr=+n?.saleToListRatio, pr=+n?.priceReductions;
-    if (!isNaN(dom) && dom<30) t.push({type:'positive',text:'Fast moving inventory'});
-    if (!isNaN(mos) && mos<2)  t.push({type:'positive',text:'Low months of supply'});
-    if (!isNaN(pr)  && pr>=12) t.push({type:'positive',text:'High price reductions'});
-    if (!isNaN(slr) && slr>=95) t.push({type:'caution',text:'Tight sale/list spreads'});
-    return t;
+  function pmt(rate, nper, pv) {
+    if (rate === 0) return -(pv / nper);
+    const r = rate;
+    return -(pv * r * Math.pow(1 + r, nper)) / (Math.pow(1 + r, nper) - 1);
   }
-};
 
-/* 3) Card renderer (only define if missing) */
-if (typeof window.renderMarketCard !== 'function') {
-  window.renderMarketCard = function(m){
-    const { zipCode, city, state, score, classification, data, insights=[], evidence=[], lastUpdated } = m;
-    const zip = zipCode || m.zip || '—';
-    const loc = [city, state].filter(Boolean).join(', ');
-    const avgDOM  = data?.avgDaysOnMarket ?? m.avgDaysOnMarket ?? 'N/A';
-    const mos     = data?.monthsOfSupply   ?? m.monthsOfSupply   ?? m.inventory ?? 'N/A';
-    const slr     = data?.saleToListRatio  ?? m.saleToListRatio  ?? 'N/A';
-    const reducts = data?.priceReductions ?? data?.priceReductionsPct ?? m.priceReductionsPct;
-    const updated = lastUpdated ? new Date(lastUpdated).toLocaleDateString() : new Date().toLocaleDateString();
-    const cls = String(classification||'').toUpperCase();
-    const wrapColor =
-      cls==='HOT'  ? 'bg-red-50 border-red-200 text-red-900' :
-      cls==='WARM' ? 'bg-orange-50 border-orange-200 text-orange-900' :
-      cls==='COOL' ? 'bg-blue-50 border-blue-200 text-blue-900' :
-                     'bg-gray-50 border-gray-200 text-gray-900';
-    const trends = window.MarketIntelligence.getMarketTrends({
-      avgDaysOnMarket: avgDOM, monthsOfSupply: mos, saleToListRatio: slr, priceReductions: reducts
-    });
-    const tag = (t) => `<span class="text-[10px] px-2 py-1 rounded-full bg-gray-100 border">${t}</span>`;
-    return `
-    <div class="border rounded-xl p-4 ${wrapColor}">
-      <div class="flex items-start justify-between gap-2 mb-2">
+  function analyzeApt(inputs) {
+    const price     = num(inputs.price);
+    const units     = num(inputs.units);
+    const rent      = num(inputs.rent);
+    const vacancy   = num(inputs.vacancyPct) / 100;
+    const otherIncM = num(inputs.otherIncome);
+    const expRatio  = num(inputs.expenseRatio) / 100;
+
+    // Debt
+    const ltv      = num(inputs.ltv) / 100;
+    const rate     = num(inputs.rate) / 100;
+    const amortYrs = num(inputs.amortYears);
+    const acqPct   = num(inputs.acqPct) / 100;
+
+    // Income
+    const GPRm = units * rent;       // monthly
+    const GPRa = GPRm * 12;
+    const Vac  = GPRa * vacancy;
+    const Other= otherIncM * 12;
+    const EGI  = GPRa - Vac + Other;
+
+    // Expenses (ratio)
+    const Opex = EGI * expRatio;
+
+    // NOI
+    const NOI = EGI - Opex;
+
+    // Debt
+    const loanAmt = price * ltv;
+    const moRate  = rate / 12;
+    const nper    = amortYrs * 12;
+    const moPay   = Math.abs(pmt(moRate, nper, loanAmt));
+    const ADS     = moPay * 12;
+
+    // Cash in
+    const down    = price * (1 - ltv);
+    const acqCost = price * acqPct;
+    const cashIn  = down + acqCost;
+
+    // Metrics
+    const cap  = price > 0 ? (NOI / price) * 100 : null;
+    const dscr = ADS > 0   ? (NOI / ADS)        : null;
+    const coc  = cashIn>0  ? ((NOI - ADS) / cashIn) * 100 : null;
+
+    return { EGI, Opex, NOI, ADS, loanAmt, cashIn, cap, dscr, coc };
+  }
+
+  // ---------- find existing "Apartments (Multifamily)" inputs in Property Valuation ----------
+  // We'll try to locate fields by common id/name/label text. Adjust selectors if your ids differ.
+  function findAptFieldsInValuation() {
+    // common input ids/names used in your file; if any are missing we'll try label-based lookup
+    const candidates = {
+      price:        ['#aptPrice', '[name="aptPrice"]', 'input[placeholder*="Purchase"][placeholder*="Price" i]'],
+      units:        ['#aptUnits', '[name="aptUnits"]', 'input[placeholder*="Units" i]'],
+      rent:         ['#aptRent', '[name="aptRent"]', 'input[placeholder*="Avg Rent" i], input[placeholder*="Rent / Unit" i]'],
+      vacancyPct:   ['#aptVacancy', '[name="aptVacancy"]', 'input[placeholder*="Vacancy" i]'],
+      otherIncome:  ['#aptOtherInc', '[name="aptOtherInc"]', 'input[placeholder*="Other Income" i]'],
+      expenseRatio: ['#aptExpRatio', '[name="aptExpRatio"]', 'input[placeholder*="OpEx" i], input[placeholder*="Expense" i]'],
+      ltv:          ['#aptLtv', '[name="aptLtv"]', 'input[placeholder*="LTV" i], input[placeholder*="Down Payment" i]'],
+      rate:         ['#aptRate', '[name="aptRate"]', 'input[placeholder*="Interest" i], input[placeholder*="Rate" i]'],
+      amortYears:   ['#aptAmort', '[name="aptAmort"]', 'input[placeholder*="Amort" i]'],
+      acqPct:       ['#aptAcqPct', '[name="aptAcqPct"]', 'input[placeholder*="Acq" i], input[placeholder*="Acquisition" i]'],
+      analyzeBtn:   ['#aptAnalyze', '[data-action="analyzeApt"]', 'button:has(span),button'] // we’ll narrow later
+    };
+
+    function pick(selectors) {
+      for (const s of selectors) {
+        const el = $(s);
+        if (el) return el;
+      }
+      return null;
+    }
+
+    // Base container: try to find the “Apartments (Multifamily)” section in the valuation modal/panel
+    const container = $$('section, div, form').find(el => /Apartments\s*\(.*Multi/i.test(el.textContent || ''));
+    const root = container || document;
+
+    function pickInRoot(list) {
+      for (const s of list) {
+        const el = root.querySelector(s);
+        if (el) return el;
+      }
+      return null;
+    }
+
+    const fields = {
+      price:        pickInRoot(candidates.price),
+      units:        pickInRoot(candidates.units),
+      rent:         pickInRoot(candidates.rent),
+      vacancyPct:   pickInRoot(candidates.vacancyPct),
+      otherIncome:  pickInRoot(candidates.otherIncome),
+      expenseRatio: pickInRoot(candidates.expenseRatio),
+      ltv:          pickInRoot(candidates.ltv),
+      rate:         pickInRoot(candidates.rate),
+      amortYears:   pickInRoot(candidates.amortYears),
+      acqPct:       pickInRoot(candidates.acqPct),
+      analyzeBtn:   null
+    };
+
+    // Find an Analyze button near the container
+    const possibleBtns = $$('button, .btn', root).filter(b => /Analyze/i.test(b.textContent || ''));
+    fields.analyzeBtn = possibleBtns[0] || pickInRoot(candidates.analyzeBtn);
+
+    return { fields, root };
+  }
+
+  // ---------- render a compact results block below the apartment inputs ----------
+  function ensureValuationResultsBlock(root) {
+    const anchor = root || document.body;
+    let block = anchor.querySelector('#aptValuationResults');
+    if (block) return block;
+
+    block = document.createElement('div');
+    block.id = 'aptValuationResults';
+    block.className = 'border rounded-xl p-4 mt-3';
+    block.innerHTML = `
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <h4 class="font-semibold text-lg">${zip}</h4>
-          ${loc ? `<div class="text-xs opacity-75">${loc}</div>` : ''}
+          <div class="text-xs text-gray-500 mb-1">NOI</div>
+          <div id="aptV_NOI" class="text-xl font-bold">—</div>
         </div>
-        <div class="flex items-baseline gap-1">
-          <span class="font-bold text-2xl">${Number.isFinite(score)?score:'—'}</span>
-          <span class="text-sm opacity-75">${Number.isFinite(score)?'/ 100':''}</span>
+        <div>
+          <div class="text-xs text-gray-500 mb-1">Cap Rate</div>
+          <div id="aptV_Cap" class="text-xl font-bold">—</div>
+        </div>
+        <div>
+          <div class="text-xs text-gray-500 mb-1">DSCR</div>
+          <div id="aptV_DSCR" class="text-xl font-bold">—</div>
         </div>
       </div>
-      <div class="mb-3">
-        <span class="px-2 py-1 rounded-full text-xs font-medium ${wrapColor}">
-          ${(cls||'UNRATED')} MARKET
-        </span>
-      </div>
-      <div class="grid grid-cols-2 gap-3 text-sm mb-3">
-        <div><span class="text-gray-600">Days on Market:</span> <span class="font-medium ml-1">${avgDOM}</span></div>
-        <div><span class="text-gray-600">Months of Supply:</span> <span class="font-medium ml-1">${mos}</span></div>
-        <div><span class="text-gray-600">Sale/List Ratio:</span> <span class="font-medium ml-1">${slr}${Number.isFinite(slr)?'%':''}</span></div>
-        <div><span class="text-gray-600">% Reductions:</span> <span class="font-medium ml-1">${Number.isFinite(reducts)? (reducts+'%') : (reducts ?? 'N/A')}</span></div>
-      </div>
-      ${trends.length ? `
-      <div class="space-y-1 mb-2">
-        <h5 class="text-sm font-medium">Market Trends:</h5>
-        ${trends.map(tr => `<div class="flex items-center gap-2 text-xs">• ${tr.text}</div>`).join('')}
-      </div>` : ''}
-      ${(insights && insights.length) ? `
-      <div class="space-y-1 mb-2">
-        <h5 class="text-sm font-medium">Insights:</h5>
-        ${insights.map(txt => `<div class="flex items-center gap-2 text-xs">• ${txt}</div>`).join('')}
-      </div>` : ''}
-      ${(evidence && evidence.length) ? `
-      <div class="mt-1">
-        <div class="text-xs font-medium mb-1">Evidence:</div>
-        <div class="flex flex-wrap gap-1">
-          ${evidence.map(tag).join('')}
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
+        <div>
+          <div class="text-xs text-gray-500 mb-1">Annual Debt Service</div>
+          <div id="aptV_ADS" class="text-sm font-semibold">—</div>
         </div>
-      </div>` : ''}
-      <div class="mt-3 pt-2 border-t border-gray-200">
-        <p class="text-xs opacity-70">Updated: ${updated}</p>
+        <div>
+          <div class="text-xs text-gray-500 mb-1">Cash Required</div>
+          <div id="aptV_Cash" class="text-sm font-semibold">—</div>
+        </div>
+        <div>
+          <div class="text-xs text-gray-500 mb-1">Cash-on-Cash</div>
+          <div id="aptV_CoC" class="text-sm font-semibold">—</div>
+        </div>
       </div>
-    </div>`;
-  };
-}
+    `;
+    // Insert near the apartment section (try after inputs)
+    anchor.appendChild(block);
+    return block;
+  }
 
-/* 4) GOOD displayMarketResults (override any old one) */
-(function(){
-  function goodDisplay(results){
-    const el = document.getElementById('marketResults');
-    if(!el) return;
-    if(!Array.isArray(results) || !results.length){
-      el.innerHTML = '<p class="text-gray-500 text-center py-8">No market data available</p>';
-      return;
+  function collectFromFields(fields) {
+    return {
+      price:        fields.price?.value,
+      units:        fields.units?.value,
+      rent:         fields.rent?.value,
+      vacancyPct:   fields.vacancyPct?.value,
+      otherIncome:  fields.otherIncome?.value,
+      expenseRatio: fields.expenseRatio?.value,
+      // If LTV input is actually "Down Payment %", convert: DP% -> LTV%
+      ltv:          fields.ltv ? (fields.ltv.placeholder?.match(/Down/i) ? String(100 - num(fields.ltv.value)) : fields.ltv.value) : '',
+      rate:         fields.rate?.value,
+      amortYears:   fields.amortYears?.value,
+      acqPct:       fields.acqPct?.value
+    };
+  }
+
+  function renderValuationResults(r) {
+    $('#aptV_NOI')?.replaceChildren(document.createTextNode(money(r.NOI)));
+    $('#aptV_Cap')?.replaceChildren(document.createTextNode(r.cap==null ? '—' : pct(r.cap, 2)));
+    $('#aptV_DSCR')?.replaceChildren(document.createTextNode(r.dscr==null ? '—' : r.dscr.toFixed(2)));
+    $('#aptV_ADS')?.replaceChildren(document.createTextNode(money(r.ADS)));
+    $('#aptV_Cash')?.replaceChildren(document.createTextNode(money(r.cashIn)));
+    $('#aptV_CoC')?.replaceChildren(document.createTextNode(r.coc==null ? '—' : pct(r.coc, 1)));
+  }
+
+  function wireValuation() {
+    const { fields, root } = findAptFieldsInValuation();
+    // Require minimum fields
+    if (!fields.price || !fields.units || !fields.rent) return; // apartment block not present
+
+    const resultsBlock = ensureValuationResultsBlock(root);
+
+    // Avoid double-binding
+    if (fields.analyzeBtn && !fields.analyzeBtn.dataset.aptWired) {
+      fields.analyzeBtn.addEventListener('click', () => {
+        const r = analyzeApt(collectFromFields(fields));
+        renderValuationResults(r);
+      });
+      fields.analyzeBtn.dataset.aptWired = '1';
     }
-    const norm = results.map(r=>{
-      if(r.zipCode && r.data) return r;
+
+    // Auto-calc when fields blur (optional; minimal)
+    [
+      fields.price, fields.units, fields.rent, fields.vacancyPct, fields.otherIncome,
+      fields.expenseRatio, fields.ltv, fields.rate, fields.amortYears, fields.acqPct
+    ].filter(Boolean).forEach(el => {
+      if (!el.dataset.aptWired) {
+        el.addEventListener('change', () => {
+          const r = analyzeApt(collectFromFields(fields));
+          renderValuationResults(r);
+        });
+        el.dataset.aptWired = '1';
+      }
+    });
+
+    resultsBlock.style.display = 'block';
+  }
+
+  // ---------- add a small "Apartment Analyzer" in Analyzers hub (if present) ----------
+  function ensureAnalyzersPanel() {
+    const hub = $('[data-tab-panel="analyzers"], #analyzers, section#analyzers');
+    if (!hub) return;
+
+    if ($('#aptAnalyzerCard', hub)) return; // already added
+
+    const card = document.createElement('div');
+    card.id = 'aptAnalyzerCard';
+    card.className = 'card border rounded-xl p-4 mt-4';
+    card.innerHTML = `
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">Apartment Analyzer</h3>
+        <div class="flex items-center gap-2">
+          <button id="aptLoadSample2" class="btn btn-outline btn-sm">Load Sample</button>
+          <button id="aptRun2" class="btn btn-primary btn-sm">Analyze</button>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mt-3">
+        <input id="apt2_price" class="rounded-xl border-gray-200" placeholder="Price">
+        <input id="apt2_units" class="rounded-xl border-gray-200" placeholder="Units">
+        <input id="apt2_rent" class="rounded-xl border-gray-200" placeholder="Avg Rent / mo">
+        <input id="apt2_vac" class="rounded-xl border-gray-200" placeholder="Vacancy %">
+        <input id="apt2_other" class="rounded-xl border-gray-200" placeholder="Other Inc / mo">
+        <input id="apt2_exp" class="rounded-xl border-gray-200" placeholder="OpEx % EGI">
+        <input id="apt2_ltv" class="rounded-xl border-gray-200" placeholder="LTV %">
+        <input id="apt2_rate" class="rounded-xl border-gray-200" placeholder="Rate %">
+        <input id="apt2_amort" class="rounded-xl border-gray-200" placeholder="Amort yrs">
+        <input id="apt2_acq" class="rounded-xl border-gray-200" placeholder="Acq %">
+      </div>
+      <div id="apt2_results" class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 hidden">
+        <div><div class="text-xs text-gray-500 mb-1">NOI</div><div id="apt2_noi" class="text-xl font-bold">—</div></div>
+        <div><div class="text-xs text-gray-500 mb-1">Cap Rate</div><div id="apt2_cap" class="text-xl font-bold">—</div></div>
+        <div><div class="text-xs text-gray-500 mb-1">DSCR</div><div id="apt2_dscr" class="text-xl font-bold">—</div></div>
+        <div><div class="text-xs text-gray-500 mb-1">Annual Debt Service</div><div id="apt2_ads" class="text-sm font-semibold">—</div></div>
+        <div><div class="text-xs text-gray-500 mb-1">Cash Required</div><div id="apt2_cash" class="text-sm font-semibold">—</div></div>
+        <div><div class="text-xs text-gray-500 mb-1">Cash-on-Cash</div><div id="apt2_coc" class="text-sm font-semibold">—</div></div>
+      </div>
+    `;
+    hub.appendChild(card);
+
+    const SAMPLE = {
+      price: 1200000, units: 12, rent: 1100, vacancyPct: 6, otherIncome: 250, expenseRatio: 35,
+      ltv: 70, rate: 6.75, amortYears: 30, acqPct: 2
+    };
+
+    function collect2() {
       return {
-        zipCode: r.zip || r.zipCode || '—', city:r.city, state:r.state,
-        score: r.score ?? null, classification: r.classification ?? null,
-        data: {
-          avgDaysOnMarket: r.avgDaysOnMarket ?? r.data?.avgDaysOnMarket,
-          monthsOfSupply: r.monthsOfSupply ?? r.data?.monthsOfSupply ?? r.inventory,
-          saleToListRatio: r.saleToListRatio ?? r.data?.saleToListRatio,
-          priceReductions: r.priceReductionsPct ?? r.data?.priceReductions
-        },
-        insights: r.notes || r.insights || [], evidence: r.evidence || [],
-        lastUpdated: r.lastUpdated || new Date().toISOString()
+        price:        $('#apt2_price').value,
+        units:        $('#apt2_units').value,
+        rent:         $('#apt2_rent').value,
+        vacancyPct:   $('#apt2_vac').value,
+        otherIncome:  $('#apt2_other').value,
+        expenseRatio: $('#apt2_exp').value,
+        ltv:          $('#apt2_ltv').value,
+        rate:         $('#apt2_rate').value,
+        amortYears:   $('#apt2_amort').value,
+        acqPct:       $('#apt2_acq').value
       };
+    }
+
+    function render2(r) {
+      $('#apt2_noi').textContent  = money(r.NOI);
+      $('#apt2_cap').textContent  = r.cap==null ? '—' : pct(r.cap, 2);
+      $('#apt2_dscr').textContent = r.dscr==null ? '—' : r.dscr.toFixed(2);
+      $('#apt2_ads').textContent  = money(r.ADS);
+      $('#apt2_cash').textContent = money(r.cashIn);
+      $('#apt2_coc').textContent  = r.coc==null ? '—' : pct(r.coc, 1);
+      $('#apt2_results').classList.remove('hidden');
+    }
+
+    $('#aptLoadSample2').addEventListener('click', () => {
+      $('#apt2_price').value = SAMPLE.price;
+      $('#apt2_units').value = SAMPLE.units;
+      $('#apt2_rent').value  = SAMPLE.rent;
+      $('#apt2_vac').value   = SAMPLE.vacancyPct;
+      $('#apt2_other').value = SAMPLE.otherIncome;
+      $('#apt2_exp').value   = SAMPLE.expenseRatio;
+      $('#apt2_ltv').value   = SAMPLE.ltv;
+      $('#apt2_rate').value  = SAMPLE.rate;
+      $('#apt2_amort').value = SAMPLE.amortYears;
+      $('#apt2_acq').value   = SAMPLE.acqPct;
+
+      render2(analyzeApt(SAMPLE));
     });
-    el.innerHTML = norm.map(window.renderMarketCard).join('');
-    updateMarketInsights(norm);
+
+    $('#aptRun2').addEventListener('click', () => {
+      render2(analyzeApt(collect2()));
+    });
   }
 
-  window.displayMarketResults = goodDisplay; // ← override any duplicate
+  // ---------- dedupe older/unused apartment code ----------
+  // If you previously had global functions with these names, we neutralize them to avoid double-binding:
+  ['analyzeApartments', 'calcApartmentDeal', 'renderApartmentResults'].forEach(fn => {
+    if (typeof window[fn] === 'function') {
+      console.warn(`[Apartment Analyzer] Detected legacy function "${fn}". It will be shadowed by the new module.`);
+    }
+  });
+
+  // ---------- boot ----------
+  document.addEventListener('DOMContentLoaded', () => {
+    try { wireValuation(); } catch (e) { console.error('Apartment valuation wire failed', e); }
+    try { ensureAnalyzersPanel(); } catch (e) { console.error('Analyzers panel add failed', e); }
+    console.log('Apartment Analyzer ready');
+  });
+
+  // expose minimal API if you need it elsewhere
+  window.AptAnalyzer = { analyze: analyzeApt };
 })();
-
-/* 5) Insights (define if missing) */
-if (typeof window.updateMarketInsights !== 'function') {
-  window.updateMarketInsights = function(results){
-    const el = document.getElementById('marketInsights');
-    if(!el) return;
-    if(!Array.isArray(results) || !results.length){
-      el.innerHTML = '<p class="text-gray-500">Run an analysis to see insights</p>';
-      return;
-    }
-    const hot = results.filter(r=>r.classification==='HOT');
-    const avg = Math.round(results.reduce((s,r)=>s+(r.score||0),0)/results.length);
-    const best = results[0];
-    const lines=[];
-    if(hot.length) lines.push(`🔥 Found ${hot.length} hot market${hot.length>1?'s':''}: ${hot.slice(0,4).map(m=>m.zipCode).join(', ')}${hot.length>4?'…':''}`);
-    lines.push(`📊 Average market score: ${avg}/100`);
-    if(best) lines.push(`🎯 Best opportunity: ${best.zipCode}${best.city?` (${best.city}, ${best.state})`:''} — ${best.score}`);
-    if(best?.data?.avgDaysOnMarket < 30) lines.push(`⚡ Fast-moving: ${best.zipCode} has sub-30 DOM`);
-    el.innerHTML = lines.map(t=>`<div class="flex items-start gap-2"><span class="text-sm">${t}</span></div>`).join('');
-  };
-}
-
-/* 6) Minimal API client (define if missing) */
-if (!window.HotMarketsAPI) {
-  window.HotMarketsAPI = {
-    get base(){ return localStorage.getItem('HOT_MARKETS_API') || 'https://dl22vwp2qk.execute-api.us-east-1.amazonaws.com/prod/hot-markets'; },
-    get token(){ return localStorage.getItem('HOT_MARKETS_TOKEN') || ''; },
-    async fetchHotMarkets({ location, category='sfr_sub300k', timeframe='30d' }) {
-      if (!this.base) throw new Error('Hot Markets API URL not set.');
-      if (!this.token) throw new Error('API token not set.');
-      // Try header auth, then fall back to ?token=
-      let url = `${this.base}?location=${encodeURIComponent(location)}&category=${encodeURIComponent(category)}&timeframe=${encodeURIComponent(timeframe)}`;
-      let res = await fetch(url, { headers: { Authorization: `Bearer ${this.token}` } });
-      if (res.status===401 || res.status===403) {
-        url = `${this.base}?location=${encodeURIComponent(location)}&category=${encodeURIComponent(category)}&timeframe=${encodeURIComponent(timeframe)}&token=${encodeURIComponent(this.token)}`;
-        res = await fetch(url);
-      }
-      const raw = await res.text();
-      let data;
-      try { data = JSON.parse(raw); }
-      catch { const s=raw.indexOf('['), e=raw.lastIndexOf(']'); if (s>=0 && e>s) data = JSON.parse(raw.slice(s,e+1)); }
-      if (!res.ok) throw new Error((data && (data.error||data.message)) || `HTTP ${res.status}`);
-      if (!Array.isArray(data)) throw new Error('API returned unexpected data.');
-      return data;
-    }
-  };
-}
-
-/* 7) Lightweight initializer (since your file is missing one) */
-document.addEventListener('DOMContentLoaded', () => {
-  // Preload defaults if missing
-  if(!localStorage.getItem('HOT_MARKETS_API')){
-    localStorage.setItem('HOT_MARKETS_API','https://dl22vwp2qk.execute-api.us-east-1.amazonaws.com/prod/hot-markets');
-  }
-  // Keep your token setting as you already did:
-  // localStorage.setItem('HOT_MARKETS_TOKEN','9716');
-
-  // Wire Settings save
-  document.getElementById('saveAiSettings')?.addEventListener('click', ()=>{
-    const apiUrl = document.getElementById('hotMarketsApiUrl')?.value?.trim();
-    const token  = document.getElementById('hotMarketsToken')?.value?.trim();
-    const ev     = document.getElementById('evidenceModeToggle')?.checked ? '1' : '0';
-    if(apiUrl) localStorage.setItem('HOT_MARKETS_API', apiUrl);
-    if(token)  localStorage.setItem('HOT_MARKETS_TOKEN', token);
-    localStorage.setItem('HMF_EVIDENCE', ev);
-    showNotification('Settings saved','success');
-  });
-
-  // Wire quick chips
-  document.querySelectorAll('#quickZipCodes .quick-zip-btn').forEach(btn=>{
-    btn.addEventListener('click', function(){
-      const inp = document.getElementById('locationInput');
-      if (inp) inp.value = this.dataset.loc;
-    });
-  });
-
-  // Wire Analyze button
-  const analyze = document.getElementById('analyzeMarkets');
-  if (analyze && !analyze._wired) {
-    analyze._wired = true;
-    analyze.addEventListener('click', async function(){
-      const inp = document.getElementById('locationInput');
-      const loc = (inp?.value || '').trim();
-      if(!loc){ alert('Enter a city/state or ZIPs'); return; }
-      if(!HotMarketsAPI.token){ alert('Set your API token in Settings'); return; }
-      this.disabled=true; const original=this.textContent; this.textContent='Analyzing…';
-      try{
-        const results = await HotMarketsAPI.fetchHotMarkets({ location: loc, category:'sfr_sub300k', timeframe:'30d' });
-        window.displayMarketResults(results);
-        const saved=JSON.parse(localStorage.getItem('analyzedLocations')||'[]');
-        if(!saved.includes(loc)) saved.push(loc);
-        localStorage.setItem('analyzedLocations', JSON.stringify(saved.slice(-20)));
-      }catch(e){
-        const c=document.getElementById('marketResults');
-        if(c){
-          c.innerHTML = `
-            <div class="border rounded-xl p-4 bg-red-50 border-red-200 text-red-900">
-              <div class="font-semibold mb-1">Market fetch failed</div>
-              <div class="text-sm opacity-80">${(e&&e.message)?String(e.message):'Unknown error'}</div>
-            </div>`;
-        }
-        showNotification(e.message||'Analysis failed','error');
-        console.error('Market analysis error:', e);
-      }finally{
-        this.disabled=false; this.textContent=original;
-      }
-    });
-  }
-});
 </script>
 </body>
 </html>
