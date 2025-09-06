@@ -9334,5 +9334,239 @@ function renderMarketResultsFromApi(apiData, originalQuery) {
   });
 })();
 </script>
+  <script>
+/* ---------- FIX PATCH: Market Intel bootstrap & override ---------- */
+
+/* 1) Tiny toast fallback */
+window.showNotification = window.showNotification || function (msg, type='info'){
+  try {
+    const el=document.createElement('div'); el.textContent=msg;
+    el.style.cssText='position:fixed;left:50%;top:16px;transform:translateX(-50%);padding:10px 14px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.15);z-index:9999;background:#e5e7eb;color:#111827';
+    if(type==='success')el.style.background='#d1fae5';
+    if(type==='error')el.style.background='#fee2e2';
+    document.body.appendChild(el); setTimeout(()=>el.remove(),2200);
+  } catch {}
+};
+
+/* 2) Safe trends helper (if not already defined) */
+window.MarketIntelligence = window.MarketIntelligence || {
+  getMarketTrends(n){
+    const t=[], dom=+n?.avgDaysOnMarket, mos=+n?.monthsOfSupply, slr=+n?.saleToListRatio, pr=+n?.priceReductions;
+    if (!isNaN(dom) && dom<30) t.push({type:'positive',text:'Fast moving inventory'});
+    if (!isNaN(mos) && mos<2)  t.push({type:'positive',text:'Low months of supply'});
+    if (!isNaN(pr)  && pr>=12) t.push({type:'positive',text:'High price reductions'});
+    if (!isNaN(slr) && slr>=95) t.push({type:'caution',text:'Tight sale/list spreads'});
+    return t;
+  }
+};
+
+/* 3) Card renderer (only define if missing) */
+if (typeof window.renderMarketCard !== 'function') {
+  window.renderMarketCard = function(m){
+    const { zipCode, city, state, score, classification, data, insights=[], evidence=[], lastUpdated } = m;
+    const zip = zipCode || m.zip || '—';
+    const loc = [city, state].filter(Boolean).join(', ');
+    const avgDOM  = data?.avgDaysOnMarket ?? m.avgDaysOnMarket ?? 'N/A';
+    const mos     = data?.monthsOfSupply   ?? m.monthsOfSupply   ?? m.inventory ?? 'N/A';
+    const slr     = data?.saleToListRatio  ?? m.saleToListRatio  ?? 'N/A';
+    const reducts = data?.priceReductions ?? data?.priceReductionsPct ?? m.priceReductionsPct;
+    const updated = lastUpdated ? new Date(lastUpdated).toLocaleDateString() : new Date().toLocaleDateString();
+    const cls = String(classification||'').toUpperCase();
+    const wrapColor =
+      cls==='HOT'  ? 'bg-red-50 border-red-200 text-red-900' :
+      cls==='WARM' ? 'bg-orange-50 border-orange-200 text-orange-900' :
+      cls==='COOL' ? 'bg-blue-50 border-blue-200 text-blue-900' :
+                     'bg-gray-50 border-gray-200 text-gray-900';
+    const trends = window.MarketIntelligence.getMarketTrends({
+      avgDaysOnMarket: avgDOM, monthsOfSupply: mos, saleToListRatio: slr, priceReductions: reducts
+    });
+    const tag = (t) => `<span class="text-[10px] px-2 py-1 rounded-full bg-gray-100 border">${t}</span>`;
+    return `
+    <div class="border rounded-xl p-4 ${wrapColor}">
+      <div class="flex items-start justify-between gap-2 mb-2">
+        <div>
+          <h4 class="font-semibold text-lg">${zip}</h4>
+          ${loc ? `<div class="text-xs opacity-75">${loc}</div>` : ''}
+        </div>
+        <div class="flex items-baseline gap-1">
+          <span class="font-bold text-2xl">${Number.isFinite(score)?score:'—'}</span>
+          <span class="text-sm opacity-75">${Number.isFinite(score)?'/ 100':''}</span>
+        </div>
+      </div>
+      <div class="mb-3">
+        <span class="px-2 py-1 rounded-full text-xs font-medium ${wrapColor}">
+          ${(cls||'UNRATED')} MARKET
+        </span>
+      </div>
+      <div class="grid grid-cols-2 gap-3 text-sm mb-3">
+        <div><span class="text-gray-600">Days on Market:</span> <span class="font-medium ml-1">${avgDOM}</span></div>
+        <div><span class="text-gray-600">Months of Supply:</span> <span class="font-medium ml-1">${mos}</span></div>
+        <div><span class="text-gray-600">Sale/List Ratio:</span> <span class="font-medium ml-1">${slr}${Number.isFinite(slr)?'%':''}</span></div>
+        <div><span class="text-gray-600">% Reductions:</span> <span class="font-medium ml-1">${Number.isFinite(reducts)? (reducts+'%') : (reducts ?? 'N/A')}</span></div>
+      </div>
+      ${trends.length ? `
+      <div class="space-y-1 mb-2">
+        <h5 class="text-sm font-medium">Market Trends:</h5>
+        ${trends.map(tr => `<div class="flex items-center gap-2 text-xs">• ${tr.text}</div>`).join('')}
+      </div>` : ''}
+      ${(insights && insights.length) ? `
+      <div class="space-y-1 mb-2">
+        <h5 class="text-sm font-medium">Insights:</h5>
+        ${insights.map(txt => `<div class="flex items-center gap-2 text-xs">• ${txt}</div>`).join('')}
+      </div>` : ''}
+      ${(evidence && evidence.length) ? `
+      <div class="mt-1">
+        <div class="text-xs font-medium mb-1">Evidence:</div>
+        <div class="flex flex-wrap gap-1">
+          ${evidence.map(tag).join('')}
+        </div>
+      </div>` : ''}
+      <div class="mt-3 pt-2 border-t border-gray-200">
+        <p class="text-xs opacity-70">Updated: ${updated}</p>
+      </div>
+    </div>`;
+  };
+}
+
+/* 4) GOOD displayMarketResults (override any old one) */
+(function(){
+  function goodDisplay(results){
+    const el = document.getElementById('marketResults');
+    if(!el) return;
+    if(!Array.isArray(results) || !results.length){
+      el.innerHTML = '<p class="text-gray-500 text-center py-8">No market data available</p>';
+      return;
+    }
+    const norm = results.map(r=>{
+      if(r.zipCode && r.data) return r;
+      return {
+        zipCode: r.zip || r.zipCode || '—', city:r.city, state:r.state,
+        score: r.score ?? null, classification: r.classification ?? null,
+        data: {
+          avgDaysOnMarket: r.avgDaysOnMarket ?? r.data?.avgDaysOnMarket,
+          monthsOfSupply: r.monthsOfSupply ?? r.data?.monthsOfSupply ?? r.inventory,
+          saleToListRatio: r.saleToListRatio ?? r.data?.saleToListRatio,
+          priceReductions: r.priceReductionsPct ?? r.data?.priceReductions
+        },
+        insights: r.notes || r.insights || [], evidence: r.evidence || [],
+        lastUpdated: r.lastUpdated || new Date().toISOString()
+      };
+    });
+    el.innerHTML = norm.map(window.renderMarketCard).join('');
+    updateMarketInsights(norm);
+  }
+
+  window.displayMarketResults = goodDisplay; // ← override any duplicate
+})();
+
+/* 5) Insights (define if missing) */
+if (typeof window.updateMarketInsights !== 'function') {
+  window.updateMarketInsights = function(results){
+    const el = document.getElementById('marketInsights');
+    if(!el) return;
+    if(!Array.isArray(results) || !results.length){
+      el.innerHTML = '<p class="text-gray-500">Run an analysis to see insights</p>';
+      return;
+    }
+    const hot = results.filter(r=>r.classification==='HOT');
+    const avg = Math.round(results.reduce((s,r)=>s+(r.score||0),0)/results.length);
+    const best = results[0];
+    const lines=[];
+    if(hot.length) lines.push(`🔥 Found ${hot.length} hot market${hot.length>1?'s':''}: ${hot.slice(0,4).map(m=>m.zipCode).join(', ')}${hot.length>4?'…':''}`);
+    lines.push(`📊 Average market score: ${avg}/100`);
+    if(best) lines.push(`🎯 Best opportunity: ${best.zipCode}${best.city?` (${best.city}, ${best.state})`:''} — ${best.score}`);
+    if(best?.data?.avgDaysOnMarket < 30) lines.push(`⚡ Fast-moving: ${best.zipCode} has sub-30 DOM`);
+    el.innerHTML = lines.map(t=>`<div class="flex items-start gap-2"><span class="text-sm">${t}</span></div>`).join('');
+  };
+}
+
+/* 6) Minimal API client (define if missing) */
+if (!window.HotMarketsAPI) {
+  window.HotMarketsAPI = {
+    get base(){ return localStorage.getItem('HOT_MARKETS_API') || 'https://dl22vwp2qk.execute-api.us-east-1.amazonaws.com/prod/hot-markets'; },
+    get token(){ return localStorage.getItem('HOT_MARKETS_TOKEN') || ''; },
+    async fetchHotMarkets({ location, category='sfr_sub300k', timeframe='30d' }) {
+      if (!this.base) throw new Error('Hot Markets API URL not set.');
+      if (!this.token) throw new Error('API token not set.');
+      // Try header auth, then fall back to ?token=
+      let url = `${this.base}?location=${encodeURIComponent(location)}&category=${encodeURIComponent(category)}&timeframe=${encodeURIComponent(timeframe)}`;
+      let res = await fetch(url, { headers: { Authorization: `Bearer ${this.token}` } });
+      if (res.status===401 || res.status===403) {
+        url = `${this.base}?location=${encodeURIComponent(location)}&category=${encodeURIComponent(category)}&timeframe=${encodeURIComponent(timeframe)}&token=${encodeURIComponent(this.token)}`;
+        res = await fetch(url);
+      }
+      const raw = await res.text();
+      let data;
+      try { data = JSON.parse(raw); }
+      catch { const s=raw.indexOf('['), e=raw.lastIndexOf(']'); if (s>=0 && e>s) data = JSON.parse(raw.slice(s,e+1)); }
+      if (!res.ok) throw new Error((data && (data.error||data.message)) || `HTTP ${res.status}`);
+      if (!Array.isArray(data)) throw new Error('API returned unexpected data.');
+      return data;
+    }
+  };
+}
+
+/* 7) Lightweight initializer (since your file is missing one) */
+document.addEventListener('DOMContentLoaded', () => {
+  // Preload defaults if missing
+  if(!localStorage.getItem('HOT_MARKETS_API')){
+    localStorage.setItem('HOT_MARKETS_API','https://dl22vwp2qk.execute-api.us-east-1.amazonaws.com/prod/hot-markets');
+  }
+  // Keep your token setting as you already did:
+  // localStorage.setItem('HOT_MARKETS_TOKEN','9716');
+
+  // Wire Settings save
+  document.getElementById('saveAiSettings')?.addEventListener('click', ()=>{
+    const apiUrl = document.getElementById('hotMarketsApiUrl')?.value?.trim();
+    const token  = document.getElementById('hotMarketsToken')?.value?.trim();
+    const ev     = document.getElementById('evidenceModeToggle')?.checked ? '1' : '0';
+    if(apiUrl) localStorage.setItem('HOT_MARKETS_API', apiUrl);
+    if(token)  localStorage.setItem('HOT_MARKETS_TOKEN', token);
+    localStorage.setItem('HMF_EVIDENCE', ev);
+    showNotification('Settings saved','success');
+  });
+
+  // Wire quick chips
+  document.querySelectorAll('#quickZipCodes .quick-zip-btn').forEach(btn=>{
+    btn.addEventListener('click', function(){
+      const inp = document.getElementById('locationInput');
+      if (inp) inp.value = this.dataset.loc;
+    });
+  });
+
+  // Wire Analyze button
+  const analyze = document.getElementById('analyzeMarkets');
+  if (analyze && !analyze._wired) {
+    analyze._wired = true;
+    analyze.addEventListener('click', async function(){
+      const inp = document.getElementById('locationInput');
+      const loc = (inp?.value || '').trim();
+      if(!loc){ alert('Enter a city/state or ZIPs'); return; }
+      if(!HotMarketsAPI.token){ alert('Set your API token in Settings'); return; }
+      this.disabled=true; const original=this.textContent; this.textContent='Analyzing…';
+      try{
+        const results = await HotMarketsAPI.fetchHotMarkets({ location: loc, category:'sfr_sub300k', timeframe:'30d' });
+        window.displayMarketResults(results);
+        const saved=JSON.parse(localStorage.getItem('analyzedLocations')||'[]');
+        if(!saved.includes(loc)) saved.push(loc);
+        localStorage.setItem('analyzedLocations', JSON.stringify(saved.slice(-20)));
+      }catch(e){
+        const c=document.getElementById('marketResults');
+        if(c){
+          c.innerHTML = `
+            <div class="border rounded-xl p-4 bg-red-50 border-red-200 text-red-900">
+              <div class="font-semibold mb-1">Market fetch failed</div>
+              <div class="text-sm opacity-80">${(e&&e.message)?String(e.message):'Unknown error'}</div>
+            </div>`;
+        }
+        showNotification(e.message||'Analysis failed','error');
+        console.error('Market analysis error:', e);
+      }finally{
+        this.disabled=false; this.textContent=original;
+      }
+    });
+  }
+});
+</script>
 </body>
 </html>
