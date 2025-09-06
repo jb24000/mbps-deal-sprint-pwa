@@ -507,19 +507,22 @@ analyzeBtn.addEventListener('click', async function() {
     this.textContent = originalText;
   }
 });
-       <!-- Market Analysis -->
-        <section class="card">
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="text-lg font-semibold">Market Analysis</h3>
-          </div>
+        </script>     
+<!-- Market Analysis -->
+  <section class="card">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="text-lg font-semibold">Market Analysis</h3>
+    </div>
+    <div class="space-y-3 mb-4">
+      <div class="flex gap-2">
+        <input id="locationInput" class="flex-1 rounded-xl border-gray-200"
+               placeholder="Enter ZIP(s) or City, ST (e.g., &quot;27909&quot;, &quot;Phoenix, AZ&quot;, &quot;27909; 85032&quot;)">
+        <button id="analyzeMarkets" class="btn btn-primary">Analyze Market</button>
+      </div>
+    </div>
+  </section>
 
-          <div class="space-y-3 mb-4">
-            <div class="flex gap-2">
-              <input id="locationInput" class="flex-1 rounded-xl border-gray-200"
-                     placeholder="Enter ZIP(s) or City, ST (e.g., "27909", "Phoenix, AZ", "27909; 85032")">
-              <button id="analyzeMarkets" class="btn btn-primary">Analyze Market</button>
-            </div>
- <!-- Quick buttons -->
+  <!-- Quick buttons -->
   <div class="flex flex-wrap gap-2">
     <button class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs hover:bg-blue-200" onclick="document.getElementById('locationInput').value='Phoenix, AZ'">Phoenix, AZ</button>
     <button class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs hover:bg-blue-200" onclick="document.getElementById('locationInput').value='Atlanta, GA'">Atlanta, GA</button>
