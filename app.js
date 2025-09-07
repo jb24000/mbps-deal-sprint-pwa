@@ -28,6 +28,165 @@
 
   let state = load();
 
+// API Integration - Add after "let state = load();"
+  const DEALS_API_URL = 'https://t4e3bq9493.execute-api.us-east-1.amazonaws.com';
+  
+  // API helper functions
+  async function apiCall(endpoint, method = 'GET', data = null) {
+    try {
+      const options = {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Origin': 'https://jb24000.github.io'
+        }
+      };
+      
+      if (data) {
+        options.body = JSON.stringify(data);
+      }
+      
+      const response = await fetch(`${DEALS_API_URL}${endpoint}`, options);
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    } catch (error) {
+      console.error('API call failed:', error);
+      throw error;
+    }
+  }
+
+  // Save lead to API
+  async function saveLeadToAPI(lead) {
+    try {
+      const apiLead = {
+        DealId: lead.id,
+        address: lead.address || '',
+        city: lead.city || '',
+        zip: lead.zip || '',
+        list: lead.list || 0,
+        arv: lead.arv || 0,
+        repairs: lead.repairs || 0,
+        offer: lead.offer || 0,
+        agent: lead.agent || '',
+        phone: lead.phone || '',
+        photos: lead.photos || '',
+        comps: lead.comps || '',
+        status: lead.status || 'New',
+        notes: lead.notes || '',
+        updated: lead.updated || Date.now(),
+        createdAt: new Date().toISOString()
+      };
+      
+      const result = await apiCall('/deal', 'POST', apiLead);
+      console.log('Lead saved to API:', result);
+      return result;
+    } catch (error) {
+      console.error('Failed to save lead to API:', error);
+      // Don't throw - let it save to localStorage as fallback
+      return null;
+    }
+  }
+
+  // Load all leads from API
+  async function loadLeadsFromAPI() {
+    try {
+      const apiLeads = await apiCall('/deals');
+      console.log('Loaded leads from API:', apiLeads.length);
+      
+      // Convert API format back to app format
+      const convertedLeads = apiLeads.map(apiLead => ({
+        id: apiLead.DealId,
+        address: apiLead.address || '',
+        city: apiLead.city || '',
+        zip: apiLead.zip || '',
+        list: apiLead.list || 0,
+        arv: apiLead.arv || 0,
+        repairs: apiLead.repairs || 0,
+        offer: apiLead.offer || 0,
+        agent: apiLead.agent || '',
+        phone: apiLead.phone || '',
+        photos: apiLead.photos || '',
+        comps: apiLead.comps || '',
+        status: apiLead.status || 'New',
+        notes: apiLead.notes || '',
+        updated: apiLead.updated || Date.now()
+      }));
+      
+      return convertedLeads;
+    } catch (error) {
+      console.error('Failed to load leads from API:', error);
+      return [];
+    }
+  }
+
+  // Sync leads: merge API and local data
+  async function syncLeads() {
+    try {
+      const apiLeads = await loadLeadsFromAPI();
+      const localLeads = state.leads || [];
+      
+      // Create a map of all leads (API takes precedence for same ID)
+      const allLeadsMap = new Map();
+      
+      // Add local leads first
+      localLeads.forEach(lead => {
+        allLeadsMap.set(lead.id, lead);
+      });
+      
+      // Add API leads (overwrites local if same ID and newer)
+      apiLeads.forEach(apiLead => {
+        const existing = allLeadsMap.get(apiLead.id);
+        if (!existing || (apiLead.updated || 0) >= (existing.updated || 0)) {
+          allLeadsMap.set(apiLead.id, apiLead);
+        }
+      });
+      
+      // Update state with merged data
+      state.leads = Array.from(allLeadsMap.values());
+      save(); // Save merged data to localStorage
+      
+      console.log('Synced leads:', state.leads.length);
+      return state.leads;
+    } catch (error) {
+      console.error('Sync failed:', error);
+      return state.leads; // Return local data as fallback
+    }
+  }
+
+  // Enhanced save function that also saves to API
+  async function saveWithAPI() {
+    save(); // Save to localStorage first (immediate)
+    
+    // Try to sync latest leads to API (background)
+    try {
+      // Save any local leads that might not be in API yet
+      for (const lead of state.leads) {
+        if (lead.updated > (Date.now() - 60000)) { // Only sync recent changes
+          await saveLeadToAPI(lead);
+        }
+      }
+    } catch (error) {
+      console.error('Background API sync failed:', error);
+    }
+  }
+
+  // Initialize: Load and sync data on startup
+  async function initializeApp() {
+    try {
+      await syncLeads();
+      renderLeads(); // Re-render with synced data
+      console.log('App initialized with synced data');
+    } catch (error) {
+      console.error('App initialization failed:', error);
+      // App will work with local data only
+    }
+  }
+
+  // Run sync on page load
+  initializeApp();
+
   // Tabs
   $$(".tabs button").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -149,7 +308,7 @@
 
   function money(n){ const v = parseFloat(n||0); return isNaN(v) ? "$0" : "$"+v.toLocaleString(undefined,{maximumFractionDigits:0}); }
 
-  $("#leadForm").addEventListener("submit", (e)=>{
+$("#leadForm").addEventListener("submit", async (e)=>{
     e.preventDefault();
     const id = $("#leadId").value || uid();
     const record = {
@@ -169,9 +328,22 @@
       notes: $("#leadNotes").value.trim(),
       updated: Date.now()
     };
+    
+    // Save to local state
     const i = state.leads.findIndex(x=>x.id===id);
     if (i>=0) state.leads[i] = record; else state.leads.push(record);
-    save(); renderLeads($("#leadSearch").value); resetLeadForm();
+    save(); 
+    
+    // Save to API (background)
+    try {
+      await saveLeadToAPI(record);
+      console.log('Lead saved to both local and API');
+    } catch (error) {
+      console.log('Saved locally, API sync will retry later');
+    }
+    
+    renderLeads($("#leadSearch").value); 
+    resetLeadForm();
   });
 
   $("#leadReset").addEventListener("click", resetLeadForm);
