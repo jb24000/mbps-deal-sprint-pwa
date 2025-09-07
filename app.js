@@ -630,3 +630,237 @@ $("#leadForm").addEventListener("submit", async (e)=>{
   });
 
 })();
+
+// Market Intel Integration - Add to bottom of app.js
+
+// Save Market Intel settings
+function setupMarketIntelSettings() {
+  const saveBtn = $("#saveAiSettings");
+  if (saveBtn) {
+    saveBtn.addEventListener("click", () => {
+      const apiUrl = $("#hotMarketsApiUrl")?.value?.trim() || '';
+      const token = $("#hotMarketsToken")?.value?.trim() || '';
+      const evidence = $("#evidenceModeToggle")?.checked || false;
+      
+      localStorage.setItem('HOT_MARKETS_API', apiUrl);
+      localStorage.setItem('HOT_MARKETS_TOKEN', token);
+      localStorage.setItem('HMF_EVIDENCE', evidence ? '1' : '0');
+      
+      alert('Market Intel settings saved!');
+    });
+  }
+}
+
+// Market Intelligence API call
+async function analyzeMarket(location) {
+  const apiUrl = localStorage.getItem('HOT_MARKETS_API') || '';
+  const token = localStorage.getItem('HOT_MARKETS_TOKEN') || '';
+  
+  if (!apiUrl || !token) {
+    throw new Error('Please configure API URL and Token in Market Intel settings first');
+  }
+  
+  try {
+    const url = `${apiUrl}?location=${encodeURIComponent(location)}&token=${encodeURIComponent(token)}`;
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`API Error ${response.status}: ${errorText}`);
+    }
+    
+    const data = await response.json();
+    
+    // Save to recent searches
+    const recentSearches = JSON.parse(localStorage.getItem('recentMarketSearches') || '[]');
+    if (!recentSearches.includes(location)) {
+      recentSearches.unshift(location);
+      if (recentSearches.length > 5) recentSearches.pop();
+      localStorage.setItem('recentMarketSearches', JSON.stringify(recentSearches));
+      updateQuickZipCodes();
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Market analysis failed:', error);
+    throw error;
+  }
+}
+
+// Display market results
+function displayMarketResults(results, location) {
+  const container = $("#marketResults");
+  if (!container) return;
+  
+  if (!results || !Array.isArray(results) || results.length === 0) {
+    container.innerHTML = '<p class="text-gray-500">No market data found for this location.</p>';
+    return;
+  }
+  
+  const html = results.map(market => {
+    const scoreColor = market.classification === 'HOT' ? 'text-red-600' : 
+                      market.classification === 'WARM' ? 'text-orange-600' : 
+                      market.classification === 'COOL' ? 'text-blue-600' : 'text-gray-600';
+    
+    return `
+      <div class="border rounded-xl p-4 bg-white dark:bg-gray-800">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <h4 class="font-semibold text-lg">${market.city}, ${market.state} ${market.zipCode}</h4>
+            <div class="flex items-center gap-2">
+              <span class="text-2xl font-bold ${scoreColor}">${market.score || 0}</span>
+              <span class="px-2 py-1 rounded-full text-xs font-medium ${scoreColor} bg-current bg-opacity-10">
+                ${market.classification || 'UNKNOWN'}
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3 text-sm">
+          <div>
+            <div class="text-gray-500">Days on Market</div>
+            <div class="font-semibold">${market.data?.avgDaysOnMarket || 'N/A'}</div>
+          </div>
+          <div>
+            <div class="text-gray-500">Months Supply</div>
+            <div class="font-semibold">${market.data?.monthsOfSupply || 'N/A'}</div>
+          </div>
+          <div>
+            <div class="text-gray-500">Sale to List</div>
+            <div class="font-semibold">${market.data?.saleToListRatio ? market.data.saleToListRatio + '%' : 'N/A'}</div>
+          </div>
+          <div>
+            <div class="text-gray-500">Price Reductions</div>
+            <div class="font-semibold">${market.data?.priceReductions ? market.data.priceReductions + '%' : 'N/A'}</div>
+          </div>
+        </div>
+        
+        ${market.insights && market.insights.length > 0 ? `
+          <div class="mb-3">
+            <div class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Insights:</div>
+            <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+              ${market.insights.map(insight => `<li>• ${insight}</li>`).join('')}
+            </ul>
+          </div>
+        ` : ''}
+        
+        ${market.evidence && market.evidence.length > 0 ? `
+          <div>
+            <div class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Evidence:</div>
+            <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+              ${market.evidence.map(evidence => `<li>• ${evidence}</li>`).join('')}
+            </ul>
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }).join('');
+  
+  container.innerHTML = html;
+  updateMarketInsights(results, location);
+}
+
+// Update market insights
+function updateMarketInsights(results, location) {
+  const container = $("#marketInsights");
+  if (!container || !results.length) return;
+  
+  const hotMarkets = results.filter(m => m.classification === 'HOT').length;
+  const avgScore = Math.round(results.reduce((sum, m) => sum + (m.score || 0), 0) / results.length);
+  const topMarket = results[0];
+  
+  const insights = [
+    `Analyzed ${results.length} markets in ${location}`,
+    `${hotMarkets} hot markets found (score 80+)`,
+    `Average market score: ${avgScore}`,
+    topMarket ? `Top market: ${topMarket.city}, ${topMarket.state} (Score: ${topMarket.score})` : null
+  ].filter(Boolean);
+  
+  container.innerHTML = insights.map(insight => 
+    `<p class="text-sm">• ${insight}</p>`
+  ).join('');
+}
+
+// Update quick zip codes from recent searches
+function updateQuickZipCodes() {
+  const container = $("#quickZipCodes");
+  if (!container) return;
+  
+  const recentSearches = JSON.parse(localStorage.getItem('recentMarketSearches') || '[]');
+  
+  if (recentSearches.length === 0) {
+    container.innerHTML = '<p class="text-xs text-gray-500">Recently analyzed locations will appear here</p>';
+    return;
+  }
+  
+  const html = recentSearches.map(search => 
+    `<button class="quick-location px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs hover:bg-blue-200" 
+             data-location="${search}">${search}</button>`
+  ).join('');
+  
+  container.innerHTML = html;
+  
+  // Add click handlers for quick locations
+  container.querySelectorAll('.quick-location').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const location = btn.getAttribute('data-location');
+      $("#locationInput").value = location;
+    });
+  });
+}
+
+// Setup Market Intel functionality
+function setupMarketIntel() {
+  setupMarketIntelSettings();
+  
+  // Analyze button
+  const analyzeBtn = $("#analyzeMarkets");
+  const locationInput = $("#locationInput");
+  
+  if (analyzeBtn && locationInput) {
+    analyzeBtn.addEventListener("click", async () => {
+      const location = locationInput.value.trim();
+      if (!location) {
+        alert('Please enter a location to analyze');
+        return;
+      }
+      
+      try {
+        analyzeBtn.textContent = 'Analyzing...';
+        analyzeBtn.disabled = true;
+        
+        const results = await analyzeMarket(location);
+        displayMarketResults(results, location);
+        
+      } catch (error) {
+        console.error('Market analysis error:', error);
+        const container = $("#marketResults");
+        if (container) {
+          container.innerHTML = `<div class="p-4 bg-red-50 border border-red-200 rounded-xl">
+            <p class="text-red-600 font-medium">Analysis Failed</p>
+            <p class="text-red-600 text-sm">${error.message}</p>
+          </div>`;
+        }
+      } finally {
+        analyzeBtn.textContent = 'Analyze';
+        analyzeBtn.disabled = false;
+      }
+    });
+  }
+  
+  // Clear cache button
+  const refreshBtn = $("#refreshMarkets");
+  if (refreshBtn) {
+    refreshBtn.addEventListener("click", () => {
+      localStorage.removeItem('recentMarketSearches');
+      updateQuickZipCodes();
+      $("#marketResults").innerHTML = '';
+      $("#marketInsights").innerHTML = '<p class="text-gray-500">Run an analysis to see insights and trends</p>';
+    });
+  }
+  
+  updateQuickZipCodes();
+}
+
+// Initialize Market Intel when DOM is ready
+document.addEventListener('DOMContentLoaded', setupMarketIntel);
