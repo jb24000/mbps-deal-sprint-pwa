@@ -850,4 +850,21 @@
   // Initialize app with API sync
   initializeApp();
 
+// Add this to your existing app.js (at the very bottom)
+const DEALS_API_URL = 'https://t4e3bq9493.execute-api.us-east-1.amazonaws.com';
+
+async function loadLeadsFromAPI() {
+  const response = await fetch(`${DEALS_API_URL}/deals`);
+  return response.json();
+}
+
+async function saveLeadToAPI(lead) {
+  const response = await fetch(`${DEALS_API_URL}/deal`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ DealId: lead.id, ...lead })
+  });
+  return response.json();
+}
+
 })();
