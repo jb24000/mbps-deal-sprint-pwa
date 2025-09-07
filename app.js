@@ -1,5 +1,5 @@
 (() => {
-  // Simple store
+  // ===== CORE STATE MANAGEMENT =====
   const KEY = "mbps_ds_v1";
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
@@ -28,9 +28,9 @@
 
   let state = load();
 
-// API Integration - Add after "let state = load();"
+  // ===== API INTEGRATION =====
   const DEALS_API_URL = 'https://t4e3bq9493.execute-api.us-east-1.amazonaws.com';
-  
+
   // API helper functions
   async function apiCall(endpoint, method = 'GET', data = null) {
     try {
@@ -84,7 +84,6 @@
       return result;
     } catch (error) {
       console.error('Failed to save lead to API:', error);
-      // Don't throw - let it save to localStorage as fallback
       return null;
     }
   }
@@ -155,23 +154,168 @@
     }
   }
 
-  // Enhanced save function that also saves to API
-  async function saveWithAPI() {
-    save(); // Save to localStorage first (immediate)
+  // ===== MARKET INTEL API =====
+  
+  // Market Intelligence API call
+  async function analyzeMarket(location) {
+    const apiUrl = localStorage.getItem('HOT_MARKETS_API') || '';
+    const token = localStorage.getItem('HOT_MARKETS_TOKEN') || '';
     
-    // Try to sync latest leads to API (background)
+    if (!apiUrl || !token) {
+      throw new Error('Please configure API URL and Token in Market Intel settings first');
+    }
+    
     try {
-      // Save any local leads that might not be in API yet
-      for (const lead of state.leads) {
-        if (lead.updated > (Date.now() - 60000)) { // Only sync recent changes
-          await saveLeadToAPI(lead);
-        }
+      const url = `${apiUrl}?location=${encodeURIComponent(location)}&token=${encodeURIComponent(token)}`;
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`API Error ${response.status}: ${errorText}`);
       }
+      
+      const data = await response.json();
+      
+      // Save to recent searches
+      const recentSearches = JSON.parse(localStorage.getItem('recentMarketSearches') || '[]');
+      if (!recentSearches.includes(location)) {
+        recentSearches.unshift(location);
+        if (recentSearches.length > 5) recentSearches.pop();
+        localStorage.setItem('recentMarketSearches', JSON.stringify(recentSearches));
+        updateQuickZipCodes();
+      }
+      
+      return data;
     } catch (error) {
-      console.error('Background API sync failed:', error);
+      console.error('Market analysis failed:', error);
+      throw error;
     }
   }
 
+  // Display market results
+  function displayMarketResults(results, location) {
+    const container = $("#marketResults");
+    if (!container) return;
+    
+    if (!results || !Array.isArray(results) || results.length === 0) {
+      container.innerHTML = '<p class="text-gray-500">No market data found for this location.</p>';
+      return;
+    }
+    
+    const html = results.map(market => {
+      const scoreColor = market.classification === 'HOT' ? 'text-red-600' : 
+                        market.classification === 'WARM' ? 'text-orange-600' : 
+                        market.classification === 'COOL' ? 'text-blue-600' : 'text-gray-600';
+      
+      return `
+        <div class="border rounded-xl p-4 bg-white dark:bg-gray-800">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h4 class="font-semibold text-lg">${market.city}, ${market.state} ${market.zipCode}</h4>
+              <div class="flex items-center gap-2">
+                <span class="text-2xl font-bold ${scoreColor}">${market.score || 0}</span>
+                <span class="px-2 py-1 rounded-full text-xs font-medium ${scoreColor} bg-current bg-opacity-10">
+                  ${market.classification || 'UNKNOWN'}
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3 text-sm">
+            <div>
+              <div class="text-gray-500">Days on Market</div>
+              <div class="font-semibold">${market.data?.avgDaysOnMarket || 'N/A'}</div>
+            </div>
+            <div>
+              <div class="text-gray-500">Months Supply</div>
+              <div class="font-semibold">${market.data?.monthsOfSupply || 'N/A'}</div>
+            </div>
+            <div>
+              <div class="text-gray-500">Sale to List</div>
+              <div class="font-semibold">${market.data?.saleToListRatio ? market.data.saleToListRatio + '%' : 'N/A'}</div>
+            </div>
+            <div>
+              <div class="text-gray-500">Price Reductions</div>
+              <div class="font-semibold">${market.data?.priceReductions ? market.data.priceReductions + '%' : 'N/A'}</div>
+            </div>
+          </div>
+          
+          ${market.insights && market.insights.length > 0 ? `
+            <div class="mb-3">
+              <div class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Insights:</div>
+              <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                ${market.insights.map(insight => `<li>• ${insight}</li>`).join('')}
+              </ul>
+            </div>
+          ` : ''}
+          
+          ${market.evidence && market.evidence.length > 0 ? `
+            <div>
+              <div class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Evidence:</div>
+              <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                ${market.evidence.map(evidence => `<li>• ${evidence}</li>`).join('')}
+              </ul>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }).join('');
+    
+    container.innerHTML = html;
+    updateMarketInsights(results, location);
+  }
+
+  // Update market insights
+  function updateMarketInsights(results, location) {
+    const container = $("#marketInsights");
+    if (!container || !results.length) return;
+    
+    const hotMarkets = results.filter(m => m.classification === 'HOT').length;
+    const avgScore = Math.round(results.reduce((sum, m) => sum + (m.score || 0), 0) / results.length);
+    const topMarket = results[0];
+    
+    const insights = [
+      `Analyzed ${results.length} markets in ${location}`,
+      `${hotMarkets} hot markets found (score 80+)`,
+      `Average market score: ${avgScore}`,
+      topMarket ? `Top market: ${topMarket.city}, ${topMarket.state} (Score: ${topMarket.score})` : null
+    ].filter(Boolean);
+    
+    container.innerHTML = insights.map(insight => 
+      `<p class="text-sm">• ${insight}</p>`
+    ).join('');
+  }
+
+  // Update quick zip codes from recent searches
+  function updateQuickZipCodes() {
+    const container = $("#quickZipCodes");
+    if (!container) return;
+    
+    const recentSearches = JSON.parse(localStorage.getItem('recentMarketSearches') || '[]');
+    
+    if (recentSearches.length === 0) {
+      container.innerHTML = '<p class="text-xs text-gray-500">Recently analyzed locations will appear here</p>';
+      return;
+    }
+    
+    const html = recentSearches.map(search => 
+      `<button class="quick-location px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs hover:bg-blue-200" 
+               data-location="${search}">${search}</button>`
+    ).join('');
+    
+    container.innerHTML = html;
+    
+    // Add click handlers for quick locations
+    container.querySelectorAll('.quick-location').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const location = btn.getAttribute('data-location');
+        $("#locationInput").value = location;
+      });
+    });
+  }
+
+  // ===== INITIALIZATION =====
+  
   // Initialize: Load and sync data on startup
   async function initializeApp() {
     try {
@@ -180,14 +324,10 @@
       console.log('App initialized with synced data');
     } catch (error) {
       console.error('App initialization failed:', error);
-      // App will work with local data only
     }
   }
 
-  // Run sync on page load
-  initializeApp();
-
-  // Tabs
+  // ===== TAB NAVIGATION =====
   $$(".tabs button").forEach(btn => {
     btn.addEventListener("click", () => {
       $$(".tabs button").forEach(b => b.classList.remove("active"));
@@ -198,7 +338,7 @@
     });
   });
 
-  // Online/offline
+  // ===== ONLINE/OFFLINE STATUS =====
   function updateNet() {
     $("#online").hidden = !navigator.onLine;
     $("#offline").hidden = navigator.onLine;
@@ -208,7 +348,7 @@
   updateNet();
   $("#year").textContent = new Date().getFullYear();
 
-  // ------- Dashboard tasks -------
+  // ===== DASHBOARD TASKS =====
   const dayTasks = [
     ["Pick 2–3 hot ZIPs via Privy Investor Activity", "Create saved searches + alerts", "Seed buyers list from recent flips"],
     ["Comp 15–25 properties (Live CMA)", "Compute MAO, call 20 agents", "Send 8–12 offers"],
@@ -216,7 +356,7 @@
     ["Re-comp countered deals", "Negotiate + tighten timelines", "Aim for 2–3 acceptances/counters"],
     ["Get a contract signed", "Dispo: blast buyers + schedule showings", "Book 3–5 walkthroughs"],
     ["Showings + best-and-final", "Select reliable buyer + EMD", "Line up backup buyer"],
-    ["Title/attorney coordination", "Confirm closing date + access", "Prep next week’s pipeline"]
+    ["Title/attorney coordination", "Confirm closing date + access", "Prep next week's pipeline"]
   ];
 
   function renderDays() {
@@ -248,7 +388,6 @@
       box.appendChild(list);
       wrap.appendChild(box);
     });
-    // initial progress bar
     updateProgress();
   }
 
@@ -264,14 +403,10 @@
     $("#progressBar").style.width = pct + "%";
   }
 
-  renderDays();
-
-  // ------- Leads -------
+  // ===== LEAD MANAGEMENT =====
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
-
   function getNum(el){ const v = parseFloat(el?.value || 0); return isNaN(v) ? 0 : v; }
   function computeMAO(arv, repairs, percent, fee){ return Math.max(0, arv * percent - repairs - fee); }
-
   function resetLeadForm(){ $("#leadForm").reset(); $("#leadId").value=""; }
 
   function renderLeads(filter=""){
@@ -308,7 +443,8 @@
 
   function money(n){ const v = parseFloat(n||0); return isNaN(v) ? "$0" : "$"+v.toLocaleString(undefined,{maximumFractionDigits:0}); }
 
-$("#leadForm").addEventListener("submit", async (e)=>{
+  // Lead form submission with API integration
+  $("#leadForm").addEventListener("submit", async (e)=>{
     e.preventDefault();
     const id = $("#leadId").value || uid();
     const record = {
@@ -392,9 +528,7 @@ $("#leadForm").addEventListener("submit", async (e)=>{
   $("#leadSearch").addEventListener("input", (e)=> renderLeads(e.target.value));
   $("#exportLeads").addEventListener("click", ()=> exportCSV("leads.csv", state.leads));
 
-  renderLeads();
-
-  // ------- Buyers -------
+  // ===== BUYER MANAGEMENT =====
   function resetBuyerForm(){ $("#buyerForm").reset(); $("#buyerId").value=""; }
   function renderBuyers(filter=""){
     const tbody = $("#buyerTable tbody"); tbody.innerHTML="";
@@ -415,6 +549,7 @@ $("#leadForm").addEventListener("submit", async (e)=>{
         tbody.appendChild(tr);
       });
   }
+
   $("#buyerForm").addEventListener("submit", (e)=>{
     e.preventDefault();
     const id = $("#buyerId").value || uid();
@@ -432,6 +567,7 @@ $("#leadForm").addEventListener("submit", async (e)=>{
     if (i>=0) state.buyers[i]=record; else state.buyers.push(record);
     save(); renderBuyers($("#buyerSearch").value); resetBuyerForm();
   });
+
   $("#buyerReset").addEventListener("click", resetBuyerForm);
   $("#buyerTable").addEventListener("click",(e)=>{
     const btn = e.target.closest("button"); if (!btn) return;
@@ -446,7 +582,7 @@ $("#leadForm").addEventListener("submit", async (e)=>{
       $("#buyerZips").value = B.zips||"";
       $("#buyerCriteria").value = B.criteria||"";
       $("#buyerNotes").value = B.notes||"";
-      document.querySelector('[data-tab=\"buyers\"]').click();
+      document.querySelector('[data-tab="buyers"]').click();
     }
     if (did){
       state.buyers = state.buyers.filter(x=>x.id!==did);
@@ -455,9 +591,78 @@ $("#leadForm").addEventListener("submit", async (e)=>{
   });
   $("#buyerSearch").addEventListener("input", (e)=> renderBuyers(e.target.value));
   $("#exportBuyers").addEventListener("click", ()=> exportCSV("buyers.csv", state.buyers));
-  renderBuyers();
 
-  // ------- Scripts copy buttons -------
+  // ===== MARKET INTEL SETUP =====
+  function setupMarketIntelSettings() {
+    const saveBtn = $("#saveAiSettings");
+    if (saveBtn) {
+      saveBtn.addEventListener("click", () => {
+        const apiUrl = $("#hotMarketsApiUrl")?.value?.trim() || '';
+        const token = $("#hotMarketsToken")?.value?.trim() || '';
+        const evidence = $("#evidenceModeToggle")?.checked || false;
+        
+        localStorage.setItem('HOT_MARKETS_API', apiUrl);
+        localStorage.setItem('HOT_MARKETS_TOKEN', token);
+        localStorage.setItem('HMF_EVIDENCE', evidence ? '1' : '0');
+        
+        alert('Market Intel settings saved!');
+      });
+    }
+  }
+
+  function setupMarketIntel() {
+    setupMarketIntelSettings();
+    
+    // Analyze button
+    const analyzeBtn = $("#analyzeMarkets");
+    const locationInput = $("#locationInput");
+    
+    if (analyzeBtn && locationInput) {
+      analyzeBtn.addEventListener("click", async () => {
+        const location = locationInput.value.trim();
+        if (!location) {
+          alert('Please enter a location to analyze');
+          return;
+        }
+        
+        try {
+          analyzeBtn.textContent = 'Analyzing...';
+          analyzeBtn.disabled = true;
+          
+          const results = await analyzeMarket(location);
+          displayMarketResults(results, location);
+          
+        } catch (error) {
+          console.error('Market analysis error:', error);
+          const container = $("#marketResults");
+          if (container) {
+            container.innerHTML = `<div class="p-4 bg-red-50 border border-red-200 rounded-xl">
+              <p class="text-red-600 font-medium">Analysis Failed</p>
+              <p class="text-red-600 text-sm">${error.message}</p>
+            </div>`;
+          }
+        } finally {
+          analyzeBtn.textContent = 'Analyze';
+          analyzeBtn.disabled = false;
+        }
+      });
+    }
+    
+    // Clear cache button
+    const refreshBtn = $("#refreshMarkets");
+    if (refreshBtn) {
+      refreshBtn.addEventListener("click", () => {
+        localStorage.removeItem('recentMarketSearches');
+        updateQuickZipCodes();
+        $("#marketResults").innerHTML = '';
+        $("#marketInsights").innerHTML = '<p class="text-gray-500">Run an analysis to see insights and trends</p>';
+      });
+    }
+    
+    updateQuickZipCodes();
+  }
+
+  // ===== COPY SCRIPT BUTTONS =====
   $$("button[data-copy]").forEach(btn => {
     btn.addEventListener("click", () => {
       const id = btn.getAttribute("data-copy");
@@ -472,12 +677,11 @@ $("#leadForm").addEventListener("submit", async (e)=>{
     });
   });
 
-  // ------- Calculator -------
+  // ===== CALCULATOR =====
   function fillCalcDefaults(){
     $("#calcPercent").value = state.settings.percent;
     $("#calcFee").value = state.settings.fee;
   }
-  fillCalcDefaults();
 
   $("#calcForm").addEventListener("submit",(e)=>{
     e.preventDefault();
@@ -489,7 +693,7 @@ $("#leadForm").addEventListener("submit", async (e)=>{
     $("#calcOut").textContent = "MAO: $" + Math.round(mao).toLocaleString();
   });
 
-  // ------- Settings -------
+  // ===== SETTINGS =====
   function renderSettings(){
     $("#setZips").value = state.settings.zips || "";
     $("#setPercent").value = state.settings.percent;
@@ -501,7 +705,6 @@ $("#leadForm").addEventListener("submit", async (e)=>{
     $("#setPhone").value = state.settings.phone || "";
     $("#setZipFilter").checked = !!state.settings.zipFilter;
   }
-  renderSettings();
 
   $("#settingsForm").addEventListener("submit",(e)=>{
     e.preventDefault();
@@ -516,6 +719,7 @@ $("#leadForm").addEventListener("submit", async (e)=>{
     state.settings.zipFilter = $("#setZipFilter").checked;
     save(); fillCalcDefaults(); alert("Settings saved.");
   });
+
   function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
 
   $("#resetAll").addEventListener("click", ()=>{
@@ -525,7 +729,7 @@ $("#leadForm").addEventListener("submit", async (e)=>{
     location.reload();
   });
 
-  // ------- Export CSV -------
+  // ===== CSV EXPORT =====
   function exportCSV(filename, arr){
     if (!arr || !arr.length) { alert("Nothing to export."); return; }
     const headers = Object.keys(arr[0]);
@@ -539,7 +743,7 @@ $("#leadForm").addEventListener("submit", async (e)=>{
     setTimeout(()=>URL.revokeObjectURL(url), 500);
   }
 
-  // ------- Email helpers -------
+  // ===== EMAIL HELPERS =====
   function emailForLead(lead){
     const s = state.settings;
     const mao = computeMAO(+lead.arv||0, +lead.repairs||0, s.percent, s.fee);
@@ -584,7 +788,7 @@ $("#leadForm").addEventListener("submit", async (e)=>{
     return {url, body};
   }
 
-  // ------- Preview Modal -------
+  // ===== MODAL FUNCTIONALITY =====
   const modal = document.getElementById('previewModal');
   const modalClose = document.getElementById('modalClose');
   const previewSubject = document.getElementById('previewSubject');
@@ -629,238 +833,21 @@ $("#leadForm").addEventListener("submit", async (e)=>{
     try { await navigator.clipboard.writeText(previewSMS.value); alert('SMS copied.'); } catch { alert('Copy failed.'); }
   });
 
-})();
-
-// Market Intel Integration - Add to bottom of app.js
-
-// Save Market Intel settings
-function setupMarketIntelSettings() {
-  const saveBtn = $("#saveAiSettings");
-  if (saveBtn) {
-    saveBtn.addEventListener("click", () => {
-      const apiUrl = $("#hotMarketsApiUrl")?.value?.trim() || '';
-      const token = $("#hotMarketsToken")?.value?.trim() || '';
-      const evidence = $("#evidenceModeToggle")?.checked || false;
-      
-      localStorage.setItem('HOT_MARKETS_API', apiUrl);
-      localStorage.setItem('HOT_MARKETS_TOKEN', token);
-      localStorage.setItem('HMF_EVIDENCE', evidence ? '1' : '0');
-      
-      alert('Market Intel settings saved!');
-    });
-  }
-}
-
-// Market Intelligence API call
-async function analyzeMarket(location) {
-  const apiUrl = localStorage.getItem('HOT_MARKETS_API') || '';
-  const token = localStorage.getItem('HOT_MARKETS_TOKEN') || '';
+  // ===== APP INITIALIZATION =====
   
-  if (!apiUrl || !token) {
-    throw new Error('Please configure API URL and Token in Market Intel settings first');
-  }
-  
-  try {
-    const url = `${apiUrl}?location=${encodeURIComponent(location)}&token=${encodeURIComponent(token)}`;
-    const response = await fetch(url);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`API Error ${response.status}: ${errorText}`);
-    }
-    
-    const data = await response.json();
-    
-    // Save to recent searches
-    const recentSearches = JSON.parse(localStorage.getItem('recentMarketSearches') || '[]');
-    if (!recentSearches.includes(location)) {
-      recentSearches.unshift(location);
-      if (recentSearches.length > 5) recentSearches.pop();
-      localStorage.setItem('recentMarketSearches', JSON.stringify(recentSearches));
-      updateQuickZipCodes();
-    }
-    
-    return data;
-  } catch (error) {
-    console.error('Market analysis failed:', error);
-    throw error;
-  }
-}
-
-// Display market results
-function displayMarketResults(results, location) {
-  const container = $("#marketResults");
-  if (!container) return;
-  
-  if (!results || !Array.isArray(results) || results.length === 0) {
-    container.innerHTML = '<p class="text-gray-500">No market data found for this location.</p>';
-    return;
-  }
-  
-  const html = results.map(market => {
-    const scoreColor = market.classification === 'HOT' ? 'text-red-600' : 
-                      market.classification === 'WARM' ? 'text-orange-600' : 
-                      market.classification === 'COOL' ? 'text-blue-600' : 'text-gray-600';
-    
-    return `
-      <div class="border rounded-xl p-4 bg-white dark:bg-gray-800">
-        <div class="flex items-center justify-between mb-3">
-          <div>
-            <h4 class="font-semibold text-lg">${market.city}, ${market.state} ${market.zipCode}</h4>
-            <div class="flex items-center gap-2">
-              <span class="text-2xl font-bold ${scoreColor}">${market.score || 0}</span>
-              <span class="px-2 py-1 rounded-full text-xs font-medium ${scoreColor} bg-current bg-opacity-10">
-                ${market.classification || 'UNKNOWN'}
-              </span>
-            </div>
-          </div>
-        </div>
-        
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3 text-sm">
-          <div>
-            <div class="text-gray-500">Days on Market</div>
-            <div class="font-semibold">${market.data?.avgDaysOnMarket || 'N/A'}</div>
-          </div>
-          <div>
-            <div class="text-gray-500">Months Supply</div>
-            <div class="font-semibold">${market.data?.monthsOfSupply || 'N/A'}</div>
-          </div>
-          <div>
-            <div class="text-gray-500">Sale to List</div>
-            <div class="font-semibold">${market.data?.saleToListRatio ? market.data.saleToListRatio + '%' : 'N/A'}</div>
-          </div>
-          <div>
-            <div class="text-gray-500">Price Reductions</div>
-            <div class="font-semibold">${market.data?.priceReductions ? market.data.priceReductions + '%' : 'N/A'}</div>
-          </div>
-        </div>
-        
-        ${market.insights && market.insights.length > 0 ? `
-          <div class="mb-3">
-            <div class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Insights:</div>
-            <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-              ${market.insights.map(insight => `<li>• ${insight}</li>`).join('')}
-            </ul>
-          </div>
-        ` : ''}
-        
-        ${market.evidence && market.evidence.length > 0 ? `
-          <div>
-            <div class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Evidence:</div>
-            <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-              ${market.evidence.map(evidence => `<li>• ${evidence}</li>`).join('')}
-            </ul>
-          </div>
-        ` : ''}
-      </div>
-    `;
-  }).join('');
-  
-  container.innerHTML = html;
-  updateMarketInsights(results, location);
-}
-
-// Update market insights
-function updateMarketInsights(results, location) {
-  const container = $("#marketInsights");
-  if (!container || !results.length) return;
-  
-  const hotMarkets = results.filter(m => m.classification === 'HOT').length;
-  const avgScore = Math.round(results.reduce((sum, m) => sum + (m.score || 0), 0) / results.length);
-  const topMarket = results[0];
-  
-  const insights = [
-    `Analyzed ${results.length} markets in ${location}`,
-    `${hotMarkets} hot markets found (score 80+)`,
-    `Average market score: ${avgScore}`,
-    topMarket ? `Top market: ${topMarket.city}, ${topMarket.state} (Score: ${topMarket.score})` : null
-  ].filter(Boolean);
-  
-  container.innerHTML = insights.map(insight => 
-    `<p class="text-sm">• ${insight}</p>`
-  ).join('');
-}
-
-// Update quick zip codes from recent searches
-function updateQuickZipCodes() {
-  const container = $("#quickZipCodes");
-  if (!container) return;
-  
-  const recentSearches = JSON.parse(localStorage.getItem('recentMarketSearches') || '[]');
-  
-  if (recentSearches.length === 0) {
-    container.innerHTML = '<p class="text-xs text-gray-500">Recently analyzed locations will appear here</p>';
-    return;
-  }
-  
-  const html = recentSearches.map(search => 
-    `<button class="quick-location px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs hover:bg-blue-200" 
-             data-location="${search}">${search}</button>`
-  ).join('');
-  
-  container.innerHTML = html;
-  
-  // Add click handlers for quick locations
-  container.querySelectorAll('.quick-location').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const location = btn.getAttribute('data-location');
-      $("#locationInput").value = location;
-    });
+  // Initialize all components when DOM is ready
+  document.addEventListener('DOMContentLoaded', () => {
+    setupMarketIntel();
   });
-}
 
-// Setup Market Intel functionality
-function setupMarketIntel() {
-  setupMarketIntelSettings();
+  // Initialize core app functionality
+  renderDays();
+  renderLeads();
+  renderBuyers();
+  renderSettings();
+  fillCalcDefaults();
   
-  // Analyze button
-  const analyzeBtn = $("#analyzeMarkets");
-  const locationInput = $("#locationInput");
-  
-  if (analyzeBtn && locationInput) {
-    analyzeBtn.addEventListener("click", async () => {
-      const location = locationInput.value.trim();
-      if (!location) {
-        alert('Please enter a location to analyze');
-        return;
-      }
-      
-      try {
-        analyzeBtn.textContent = 'Analyzing...';
-        analyzeBtn.disabled = true;
-        
-        const results = await analyzeMarket(location);
-        displayMarketResults(results, location);
-        
-      } catch (error) {
-        console.error('Market analysis error:', error);
-        const container = $("#marketResults");
-        if (container) {
-          container.innerHTML = `<div class="p-4 bg-red-50 border border-red-200 rounded-xl">
-            <p class="text-red-600 font-medium">Analysis Failed</p>
-            <p class="text-red-600 text-sm">${error.message}</p>
-          </div>`;
-        }
-      } finally {
-        analyzeBtn.textContent = 'Analyze';
-        analyzeBtn.disabled = false;
-      }
-    });
-  }
-  
-  // Clear cache button
-  const refreshBtn = $("#refreshMarkets");
-  if (refreshBtn) {
-    refreshBtn.addEventListener("click", () => {
-      localStorage.removeItem('recentMarketSearches');
-      updateQuickZipCodes();
-      $("#marketResults").innerHTML = '';
-      $("#marketInsights").innerHTML = '<p class="text-gray-500">Run an analysis to see insights and trends</p>';
-    });
-  }
-  
-  updateQuickZipCodes();
-}
+  // Initialize app with API sync
+  initializeApp();
 
-// Initialize Market Intel when DOM is ready
-document.addEventListener('DOMContentLoaded', setupMarketIntel);
+})();
