@@ -868,3 +868,114 @@ async function saveLeadToAPI(lead) {
 }
 
 })();
+
+// API Integration - Add to bottom of existing app.js
+const DEALS_API_URL = 'https://t4e3bq9493.execute-api.us-east-1.amazonaws.com';
+
+async function apiCall(endpoint, method = 'GET', data = null) {
+  const options = {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      'Origin': 'https://jb24000.github.io'
+    }
+  };
+  
+  if (data) {
+    options.body = JSON.stringify(data);
+  }
+  
+  const response = await fetch(`${DEALS_API_URL}${endpoint}`, options);
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.status}`);
+  }
+  return response.json();
+}
+
+async function saveLeadToAPI(lead) {
+  try {
+    const apiLead = {
+      DealId: lead.id,
+      address: lead.address || '',
+      city: lead.city || '',
+      zip: lead.zip || '',
+      list: lead.list || 0,
+      arv: lead.arv || 0,
+      repairs: lead.repairs || 0,
+      offer: lead.offer || 0,
+      agent: lead.agent || '',
+      phone: lead.phone || '',
+      photos: lead.photos || '',
+      comps: lead.comps || '',
+      status: lead.status || 'New',
+      notes: lead.notes || '',
+      updated: lead.updated || Date.now(),
+      createdAt: new Date().toISOString()
+    };
+    
+    const result = await apiCall('/deal', 'POST', apiLead);
+    console.log('Lead saved to API:', result);
+    return result;
+  } catch (error) {
+    console.error('Failed to save lead to API:', error);
+    return null;
+  }
+}
+
+async function loadLeadsFromAPI() {
+  try {
+    const apiLeads = await apiCall('/deals');
+    console.log('Loaded leads from API:', apiLeads.length);
+    
+    return apiLeads.map(apiLead => ({
+      id: apiLead.DealId,
+      address: apiLead.address || '',
+      city: apiLead.city || '',
+      zip: apiLead.zip || '',
+      list: apiLead.list || 0,
+      arv: apiLead.arv || 0,
+      repairs: apiLead.repairs || 0,
+      offer: apiLead.offer || 0,
+      agent: apiLead.agent || '',
+      phone: apiLead.phone || '',
+      photos: apiLead.photos || '',
+      comps: apiLead.comps || '',
+      status: apiLead.status || 'New',
+      notes: apiLead.notes || '',
+      updated: apiLead.updated || Date.now()
+    }));
+  } catch (error) {
+    console.error('Failed to load leads from API:', error);
+    return [];
+  }
+}
+
+// Hook into existing lead form submission
+document.addEventListener('DOMContentLoaded', function() {
+  const originalSubmit = document.getElementById('leadForm').onsubmit;
+  
+  document.getElementById('leadForm').addEventListener('submit', async function(e) {
+    // Let original submission happen first
+    setTimeout(async () => {
+      try {
+        // Find the most recently added lead
+        const leads = JSON.parse(localStorage.getItem('mbps_ds_v1') || '{}').leads || [];
+        if (leads.length > 0) {
+          const newestLead = leads.sort((a,b) => (b.updated||0) - (a.updated||0))[0];
+          await saveLeadToAPI(newestLead);
+          console.log('Lead synced to API successfully');
+        }
+      } catch (error) {
+        console.log('Lead saved locally, API sync failed:', error.message);
+      }
+    }, 100);
+  });
+  
+  // Load and merge leads on startup
+  loadLeadsFromAPI().then(apiLeads => {
+    if (apiLeads.length > 0) {
+      console.log('Syncing', apiLeads.length, 'leads from API');
+      // You can manually merge these with your local leads if needed
+    }
+  });
+});
