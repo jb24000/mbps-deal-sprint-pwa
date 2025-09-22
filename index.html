@@ -9785,5 +9785,34 @@ function renderMarketResultsFromApi(apiData, originalQuery) {
     }, false);
   });
 </script>
+  <script>
+  const API   = "https://dl22vwp2qk.execute-api.us-east-1.amazonaws.com/prod";
+  const TOKEN = "my-super-token-123"; 
+
+  async function fetchHotMarkets({ location="NC", category="sfr_sub300k", timeframe="30d" } = {}) {
+    const base = `${API}/hot-markets/sign-get?location=${encodeURIComponent(location)}&category=${encodeURIComponent(category)}&timeframe=${encodeURIComponent(timeframe)}`;
+    let res = await fetch(base, {
+      method: "GET",
+      headers: { "Authorization": `Bearer ${TOKEN}`, "Content-Type": "application/json" }
+    });
+    if (res.status === 401) {
+      const urlWithToken = `${base}&token=${encodeURIComponent(TOKEN)}`;
+      res = await fetch(urlWithToken, { method: "GET" });
+    }
+    if (!res.ok) throw new Error(`HotMarkets HTTP ${res.status}`);
+    return res.json();
+  }
+
+  // Example call that runs on page load
+  document.addEventListener("DOMContentLoaded", () => {
+    fetchHotMarkets({ location: "North Carolina" })
+      .then(data => {
+        console.log("Hot Markets:", data);
+        // TODO: plug data into your Market Intel cards
+      })
+      .catch(err => console.error("HotMarkets error:", err));
+  });
+</script>
 </body>
 </html>
+
