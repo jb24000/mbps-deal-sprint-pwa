@@ -9840,6 +9840,74 @@ function renderMarketResultsFromApi(apiData, originalQuery) {
       .catch(err => console.error("HotMarkets error:", err));
   });
 </script>
+  <script>
+/* ==== HOT MARKETS: one-time front-end override ==== */
+/* 1) Point to the working managed API + your token */
+(function () {
+  const API   = "https://lxapcw8oi7.execute-api.us-east-1.amazonaws.com/prod"; // new managed API
+  const TOKEN = "my-super-token-123"; // one of your TOKENS_JSON values
+
+  // Persist so the rest of your app picks it up
+  try {
+    localStorage.setItem("HOT_MARKETS_API", API);
+    localStorage.setItem("HOT_MARKETS_TOKEN", TOKEN);
+  } catch (_) {}
+
+  // Helpers used below
+  function getHotApiBase() {
+    const base = (window.API || localStorage.getItem("HOT_MARKETS_API") || API || "").replace(/\/+$/, "");
+    if (!base) throw new Error("API base not set");
+    return base;
+  }
+  function getHotToken() {
+    return (localStorage.getItem("HOT_MARKETS_TOKEN") || TOKEN || "").trim();
+  }
+
+  /* 2) Drop-in replacement for cloudGetJSON used by your sync code
+        - Sends Authorization header (and falls back to ?token=)
+        - Works whether backend returns {url} or a market-data array
+  */
+  window.cloudGetJSON = async function cloudGetJSON(key) {
+    const base  = getHotApiBase();
+    const token = getHotToken();
+    const ep    = `${base}/hot-markets/sign-get?key=${encodeURIComponent(key)}`;
+
+    // Try with header first
+    let r = await fetch(ep, {
+      method: "GET",
+      headers: token
+        ? { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" }
+        : { "Content-Type": "application/json" }
+    });
+
+    // Fallback if some path strips auth headers
+    if (r.status === 401 && token) {
+      r = await fetch(`${ep}&token=${encodeURIComponent(token)}`, { method: "GET" });
+    }
+    if (!r.ok) throw new Error("sign-get failed " + r.status);
+
+    const first = await r.json();
+
+    // If backend returned market array (current behavior), just pass it through
+    if (Array.isArray(first)) return first;
+
+    // If backend returned { url }, fetch the object as originally designed
+    if (first && typeof first === "object" && typeof first.url === "string") {
+      const r2 = await fetch(first.url, { cache: "no-store" });
+      if (r2.status === 404) return null;
+      if (!r2.ok) throw new Error("GET object failed " + r2.status);
+      return r2.json();
+    }
+
+    // Anything else is unexpected—surface a clear error once
+    console.warn("[cloudGetJSON] Unexpected response shape:", first);
+    throw new Error("Unexpected response from sign-get");
+  };
+
+  /* 3) Optional: a helper you can call from console if you rotate tokens */
+  window.setHotToken = (t) => localStorage.setItem("HOT_MARKETS_TOKEN", t);
+})();
+</script>
 </body>
 </html>
 
