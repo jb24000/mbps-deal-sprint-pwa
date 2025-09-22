@@ -1295,6 +1295,13 @@ analyzeBtn._initialized = true;
             <input type="file" id="photoInput" accept="image/*" class="hidden" />
             <div id="photoPreview" class="mt-2 hidden"><img id="photoImg" class="w-full h-36 object-cover rounded-xl border"/></div>
           </div>
+            <div class="md:col-span-2">
+            <div class="flex items-center justify-between">
+              <h4 class="font-semibold">Checklist</h4>
+              <span id="wf-stage-badge" class="badge"></span>
+            </div>
+            <div id="wf-checklist" class="mt-2"></div>
+          </div>
           <div class="md:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-3 mt-2">
             <button type="button" id="genPdfBtn" class="btn btn-outline"><i data-lucide="file-text"></i>PDF</button>
             <button type="submit" class="btn btn-primary"><i data-lucide="save"></i>Save</button>
@@ -9709,6 +9716,106 @@ function renderMarketResultsFromApi(apiData, originalQuery) {
     await persistFn(moved); // your existing API save
     refreshFn && refreshFn();
   };
+</script>
+  <script type="module">
+  import cfg from './workflow/workflow.config.json' assert { type:'json' };
+  import { loadWorkflow, badgeText } from './workflow/workflow-engine.js';
+  import { renderChecklist } from './workflow/ui-helpers.js';
+
+  const WF = loadWorkflow(cfg);
+  window.__WF__ = WF;
+
+  // Map your existing Status select -> workflow Stage
+  function mapStatusToStage(status){
+    const m = {lead:'Prospect', offer:'Lead', pending:'Under Contract', sent:'Under Contract',
+               signed:'Under Contract', attorney:'Title/Attorney', closed:'Closing'};
+    return m[status] || 'Prospect';
+  }
+
+  // Minimal deal object from the current form (only what we need)
+  function buildDealFromForm(){
+    const status = document.getElementById('status')?.value || 'lead';
+    return {
+      id: document.getElementById('dealId')?.value || 'DRAFT',
+      status,
+      stage: mapStatusToStage(status),
+      cl: window._wfCL || {}     // keep checklist state across re-renders
+    };
+  }
+
+  // Draw into #wf-checklist + #wf-stage-badge
+  function renderWorkflowForContracts(){
+    const badge = document.getElementById('wf-stage-badge');
+    const box   = document.getElementById('wf-checklist');
+    if (!badge || !box) return;
+
+    const deal = buildDealFromForm();
+    renderChecklist(box, WF, deal.stage, deal, (updated)=>{
+      window._wfCL = updated.cl || {};
+      badge.textContent = badgeText(WF, updated.stage, updated.cl);
+    });
+    badge.textContent = badgeText(WF, deal.stage, deal.cl);
+  }
+
+  // Render when the form is present
+  function renderIfFormPresent(){
+    if (document.getElementById('dealForm')) renderWorkflowForContracts();
+  }
+
+  document.addEventListener('DOMContentLoaded', renderIfFormPresent);
+  // Re-render when Status changes
+  document.addEventListener('change', (e)=>{
+    if (e.target?.id === 'status') renderWorkflowForContracts();
+  });
+  // Re-render after your “Pre-fill from Selected Lead” button fills the form
+  document.getElementById('dealFromLeadBtn')?.addEventListener('click', ()=>{
+    setTimeout(renderWorkflowForContracts, 0);
+  });
+</script>
+  <!-- all your existing scripts -->
+<script type="module" src="./workflow/workflow-engine.js"></script>
+<script type="module" src="./workflow/ui-helpers.js"></script>
+
+<!-- ✅ AFTER-SAVE HOOK -->
+<script type="module">
+  import { proposeNextAction, applyNextStage } from './workflow/workflow-engine.js';
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('dealForm');
+    if (!form) return;
+
+    let dealsBefore = JSON.parse(localStorage.getItem('deals') || '[]');
+
+    form.addEventListener('submit', (e) => {
+      // let your existing code run first, then our hook executes
+      setTimeout(() => {
+        const dealsAfter = JSON.parse(localStorage.getItem('deals') || '[]');
+        const deal = dealsAfter[0]; // newest, since you unshift on save
+        if (!deal || !window.__WF__) return;
+
+        deal.stage = deal.stage || 'Prospect';
+        deal.cl    = deal.cl    || (window._wfCL || {});
+
+        const next = proposeNextAction(window.__WF__, deal.stage, deal.cl);
+        if (!next.ready) return;
+
+        if (window.confirm(next.text.replaceAll('**',''))) {
+          const moved = applyNextStage(window.__WF__, deal);
+          dealsAfter[0] = moved;
+          localStorage.setItem('deals', JSON.stringify(dealsAfter));
+
+          if (window.renderDealsTable) window.renderDealsTable();
+          if (window.renderPipeline) window.renderPipeline();
+
+          window._wfCL = {}; // reset checklist
+          if (window.renderWorkflowForContracts) {
+            window.renderWorkflowForContracts(moved);
+          }
+        }
+        dealsBefore = dealsAfter;
+      }, 0);
+    }, false);
+  });
 </script>
 </body>
 </html>
