@@ -9921,6 +9921,117 @@ function renderMarketResultsFromApi(apiData, originalQuery) {
   window.setHotToken = (t) => localStorage.setItem("HOT_MARKETS_TOKEN", t);
 })();
 </script>
+  <script>
+(function () {
+  window.__hot = window.__hot || {};
+  __hot.getBase = () =>
+    (window.API || localStorage.getItem("HOT_MARKETS_API") || "https://lxapcw8oi7.execute-api.us-east-1.amazonaws.com/prod").replace(/\/+$/,'');
+  __hot.getToken = () =>
+    (localStorage.getItem("HOT_MARKETS_TOKEN") || "my-super-token-123").trim();
+})();
+</script>
+  <script>
+window.cloudGetJSON = async function cloudGetJSON(key) {
+  const base  = __hot.getBase();
+  const token = __hot.getToken();
+  const ep    = `${base}/hot-markets/sign-get?key=${encodeURIComponent(key)}`;
+
+  // header first
+  let r = await fetch(ep, {
+    method: "GET",
+    headers: token ? { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" } : { "Content-Type": "application/json" }
+  });
+  // fallback to ?token=
+  if (r.status === 401 && token) {
+    r = await fetch(`${ep}&token=${encodeURIComponent(token)}`, { method: "GET" });
+  }
+
+  // If backend isn’t patched yet (502), treat as “no data”
+  if (!r.ok) {
+    console.warn("[cloudGetJSON] sign-get non-OK", r.status);
+    return null;
+  }
+
+  const first = await r.json();
+
+  // If server accidentally returns market array here, just pass it back
+  if (Array.isArray(first)) return first;
+
+  // Only fetch if we truly have a presigned URL
+  if (first && typeof first === "object" && typeof first.url === "string" && first.url) {
+    const r2 = await fetch(first.url, { cache: "no-store" });
+    if (r2.status === 404) return null;
+    if (!r2.ok) {
+      console.warn("[cloudGetJSON] presigned GET non-OK", r2.status);
+      return null;
+    }
+    return r2.json();
+  }
+
+  console.warn("[cloudGetJSON] Unexpected shape for key:", key, first);
+  return null;
+};
+</script>
+<script>
+// A) Hot Markets widget
+async function fetchHotMarkets({ location="North Carolina", category="sfr_sub300k", timeframe="30d" } = {}) {
+  const base  = __hot.getBase();
+  const token = __hot.getToken();
+  const q = new URLSearchParams({ location, category, timeframe }).toString();
+  const url = `${base}/hot-markets/sign-get?${q}`;
+
+  // header first
+  let res = await fetch(url, {
+    method: "GET",
+    headers: token ? { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" } : { "Content-Type": "application/json" }
+  });
+  // fallback
+  if (res.status === 401 && token) {
+    res = await fetch(`${url}&token=${encodeURIComponent(token)}`, { method: "GET" });
+  }
+  if (!res.ok) throw new Error(`HotMarkets HTTP ${res.status}`);
+  return res.json();
+}
+
+// B) Analyzer: use proper endpoint (NOT the root), map city/state → location
+const MarketAPI = {
+  async fetchRealMarketData(city, state) {
+    const base  = __hot.getBase();
+    const token = __hot.getToken();
+    const location = state ? `${city}, ${state}` : city;
+    const q = new URLSearchParams({ location, category: "sfr_sub300k", timeframe: "30d" }).toString();
+    const url = `${base}/hot-markets/sign-get?${q}`;
+
+    // header first
+    let res = await fetch(url, {
+      method: "GET",
+      headers: token ? { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" } : { "Content-Type": "application/json" }
+    });
+    // fallback
+    if (res.status === 401 && token) {
+      res = await fetch(`${url}&token=${encodeURIComponent(token)}`, { method: "GET" });
+    }
+
+    if (!res.ok) throw new Error(`API request failed: ${res.status}`);
+    return res.json();
+  },
+
+  async analyzeMarket(city, state) {
+    try {
+      const data = await this.fetchRealMarketData(city, state);
+      // your existing downstream analysis can continue here…
+      return data;
+    } catch (e) {
+      console.warn("[Analyzer] API failed, using demo data:", e);
+      // keep your existing demo fallback
+      return [
+        { zipCode:"85032", city:"Phoenix", state:"AZ", score:81, classification:"HOT", data:{avgDaysOnMarket:22,monthsOfSupply:1.7,saleToListRatio:98.1,priceReductions:13.8}, insights:["Tight MOS","Strong investor activity"] },
+        { zipCode:"27703", city:"Durham",  state:"NC", score:74, classification:"WARM", data:{avgDaysOnMarket:27,monthsOfSupply:1.8,saleToListRatio:97.3,priceReductions:12.6}, insights:["Entry SFR"] }
+      ];
+    }
+  }
+};
+</script>
 </body>
 </html>
 
